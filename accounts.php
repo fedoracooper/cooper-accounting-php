@@ -57,6 +57,12 @@
 		else
 			// Editing an existing account; re-use the parent id
 			$account_parent_id = $_POST['account_parent_id'];
+		$active = 0;
+		if (isset ($_POST['active']) && $_POST['active'] == '1')
+		{
+			// active flag is set
+			$active = 1;
+		}
 
 		$error = $account->Init_account (
 			$account_parent_id,
@@ -64,7 +70,8 @@
 			$_POST['account_descr'],
 			$_POST['account_debit'],
 			$_POST['equation_side'],
-			$_POST['account_id']
+			$_POST['account_id'],
+			$active
 		);
 
 		if ($error == '')
@@ -124,7 +131,11 @@
 	$side_dropdown = Build_dropdown ($side_list, 'equation_side',
 		$account->get_equation_side());
 	
-
+	// Active checkbox
+	if ($account->get_active() == 1)
+		$active_txt = ' CHECKED';
+	else
+		$active_txt = '';
 ?>
 
 
@@ -208,6 +219,12 @@
 		<td></td>
 		<td>Equation side:</td>
 		<td><?= $side_dropdown ?></td>
+	</tr>
+
+	<tr>
+		<td></td>
+		<td>Active:</td>
+		<td><input type="checkbox" name="active" value="1"<?= $active_txt ?>></td>
 	</tr>
 
 	<tr>

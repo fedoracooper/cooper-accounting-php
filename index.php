@@ -124,6 +124,7 @@
 			$_POST['check_number'],
 			$_POST['gas_miles'],
 			$_POST['gas_gallons'],
+			$_POST['trans_status'],
 			$_POST['trans_id'],
 			'',		//account display
 			NULL,	//ledger amt
@@ -229,13 +230,13 @@
 		<td colspan="2"><input type="submit" value="<" name="prev_month"> &nbsp;
 		<input type="submit" value=">" name="next_month"></td>
 	</tr>
-
+<!--
 	<tr>
 		<td colspan="6"><hr></td>
-	</tr>
+	</tr>	-->
 </table>
 
-<table class="trans-table">
+<table class="trans-table" cellpadding="0" cellspacing="0">
 	<tr>
 		<th>Edit</th>
 		<th>Date</th>
@@ -243,24 +244,26 @@
 		<th>Vendor</th>
 		<th>Account</th>
 		<th style="text-align: right;">Amount</th>
-		<th style="text-align: right; padding-right: 5px;">Total</th>
-		<th>Period</th>
+		<th style="text-align: right; padding-right: 5px; border-right: 1px solid black;">Total</th>
+		<th style="text-align: center;">Period</th>
 	</tr>
-
+<!--
 	<tr>
 		<td colspan="8"><hr></td>
 	</tr>
+-->
 
 <?
 	$last_trans_id = -1;
 	$next_trans = NULL;
+	$tr_style = '';
 
 	// Loop through each transaction in the list
 	foreach ($trans_list as $key=> $trans_item)
 	{
 		$new_row = false;
-		$td_style = '';
-		$new_text = '';
+		$td_style = ' style="border-right: 1px solid black;"';
+		$new_text = '<td></td>';
 		$hr_text = '';
 
 		if ($key -1 >= 0)	// index keys are in reverse order
@@ -273,6 +276,23 @@
 		{
 			//new transaction
 			$new_row = true;
+		}
+
+		
+		if ($new_row)
+		{
+			// change the row style
+			if ($trans_item->get_trans_status() == 0)
+			{
+				// unpaid ledger item: show the row in red
+				$tr_style = ' style="background-color: #FF8888;"';
+			}
+			elseif ($tr_style == '') { // even rows get a different color
+				$tr_style = ' style="background-color: #F7CB9F;"';	//#FBAF79"';
+			}
+			else{
+				$tr_style = '';
+			}
 		}
 
 		if ($next_trans === NULL)
@@ -288,8 +308,8 @@
 			if (date ('m/Y', $time1) != date ('m/Y', $time2))
 			{
 				// month or year change: add a break
-				$td_style = '';	//' style="border: 1px solid black"';
-				$new_text = date ('F', $time1);
+				//$td_style = '';	//' style="border: 1px solid black"';
+				$new_text = '<td style="padding-left: 10px;">'. date ('F', $time1). '</td>';
 			}
 			if (date ('Y', $time1) != date ('Y', $time2))
 			{
@@ -297,21 +317,35 @@
 				$hr_text = "	<tr style=\"\">\n".
 					"		<td colspan=\"8\"><hr></td>\n".
 					"	</tr>\n\n";
-				$new_text = '<span style="padding-left: 10px; '.
+				$new_text = '<td style="padding-left: 10px; '.
 					'padding-right:10px; font-weight: bold; '.
-					'border: 1px solid black">Dec. '.
-					date ('Y', $time1). '</span>';
-				$td_style = ' style="font-weight: bold"';
+					'border: 1px solid black">Dec '.
+					date ('Y', $time1). '</td>';
+				$td_style = ' style="font-weight: bold; border-right: 1px solid black;"';
 			}
-
+			elseif ($next_trans !== NULL)
+			{
+				// no EOY break; insert break after current date
+				$trans_time = strtotime ($trans_item->get_accounting_date_sql());
+				$next_time = strtotime ($next_trans->get_accounting_date_sql());
+				if ($next_time > time() && $trans_time < time())
+				{
+					$hr_text = "	<tr>\n".
+					'		<td style="border-right: 1px solid black; border-bottom: 1px solid black; border-top: 1px solid black; text-align: center;" '.
+						"colspan=\"7\">&nbsp;</td>\n".
+					'		<td style="border-bottom: 1px solid black; padding-left: 5px;">Today</td>'.
+					"	</tr>\n\n";
+				}
+			}
 		}
 
-		echo "	<tr>\n";
+		echo "	<tr$tr_style>\n";
 		if ($new_row) {
 			echo '		<td><input type="submit" style="height: 18px; '.
 				'font-size: 8pt;" onClick="clickEdit()" name="edit" value="'.
 				$trans_item->get_trans_id(). "\"></td> \n".
-			"		<td>". $trans_item->get_accounting_date(false). "</td>\n".
+			"		<td style=\"width: 72px;\">".
+				$trans_item->get_accounting_date(false). "</td>\n".
 			"		<td>". $trans_item->get_trans_descr(). "</td>\n".
 			"		<td>". $trans_item->get_trans_vendor(). "</td>\n";
 		}
@@ -324,29 +358,36 @@
 		echo "		<td>". $trans_item->get_account_display(). "</td>\n".
 			"		<td class=\"currency\">". $trans_item->get_ledger_amount(). "</td>\n".
 			"		<td$td_style class=\"currency\">". $trans_item->get_ledger_total(). "</td>\n".
-			"		<td style=\"padding-left: 8px;\">$new_text</td>\n".
+			"		$new_text\n".
 			"	</tr>\n\n";
 
 		echo $hr_text;
 
 		$last_trans_id = $trans_item->get_trans_id();
 	}
+
+	// Build Transaction list dropdown
+	$status_list = array (1=> 'Fulfilled', 0=> 'To-do');
+	$status_dropdown = Build_dropdown ($status_list, 'trans_status',
+		$trans->get_trans_status());
 ?>
+<!--
 	<tr>
 		<td colspan="8"><hr></td>
-	</tr>
+	</tr>	-->
 
 </table>
 
 <table class="transaction">
 	<tr>
-		<td colspan="4" style="font-weight: bold;">
+		<td colspan="2" style="font-weight: bold;">
 			<a name="edit_trans"><?
 			if ($trans->get_trans_id() < 0)
 				echo "New Transaction";
 			else
 				echo "Edit Transaction (". $trans->get_trans_id(). ")";
 			?></a></td>
+		<td colspan="2"><?= $status_dropdown ?></td>
 	</tr>
 
 	<tr>
@@ -396,13 +437,17 @@
 	</tr>
 
 <?
+	$show_inactive = 0;
+	// only show inactive accounts when editing
+	if ($editClick == 1)
+		$show_inactive = 1;
 	// Transaction dropdowns (account_id,account_debit as the key)
 	$acctL_list = Account::Get_account_list ($_SESSION['login_id'], 'L',
-		-1, false, true);
+		-1, false, true, $show_inactive);
 	$acctL_list = array ('-1' => '--Select--') + $acctL_list;
 
 	$acctR_list = Account::Get_account_list ($_SESSION['login_id'], 'R',
-		-1, false, true);
+		-1, false, true, $show_inactive);
 	$acctR_list = array ('-1' => '--Select--') + $acctR_list;
 
 	// Get all the values from the LHS & RHS arrays
@@ -454,8 +499,9 @@
 	if ($trans->get_trans_id() > -1)
 	{
 		// currently editing; show delete button
-		echo '<td><input type="submit" name="delete" '.
-			'onClick="return confirmDelete()" value="Delete transaction"></td>';
+		echo '<td style="padding-right: 25px;"><input type="submit" name="delete" '.
+			"onClick=\"return confirmDelete()\" value=\"Delete transaction\"></td>\n".
+			"<td><input type=\"submit\" value=\"Cancel\" name=\"cancel\"></td>\n";
 	}
 ?>
 	</tr>

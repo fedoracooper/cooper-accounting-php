@@ -182,6 +182,8 @@ class Account
 	private	$m_account_descr		= '';
 	private	$m_account_debit		= 1;	// 1 = debit, -1 = credit
 	private	$m_equation_side		= 'R';	// 'L' or 'R'
+	private $m_active				= 1;
+
 
 	// ACCESSOR methods: called typically after load from DB
 	public function get_account_id() {
@@ -208,6 +210,9 @@ class Account
 	public function get_equation_side() {
 		return $this->m_equation_side;
 	}
+	public function get_active() {
+		return $this->m_active;
+	}
 
 	// Initialize all the variables, with account_id being optional.
 	// This is called after an account save is posted, so it is assumed
@@ -219,7 +224,8 @@ class Account
 		$account_descr,
 		$account_debit,
 		$equation_side,
-		$account_id = -1)
+		$account_id = -1,
+		$active = 1)
 	{
 		// VALIDATE
 		$error = '';
@@ -240,6 +246,7 @@ class Account
 			$this->m_account_debit		= $account_debit;
 			$this->m_equation_side		= $equation_side;
 			$this->m_account_id			= $account_id;
+			$this->m_active				= $active;
 		}
 
 		return $error;
@@ -263,6 +270,7 @@ class Account
 			$this->m_account_descr		= addslashes ($row['account_descr']);
 			$this->m_account_debit		= $row['account_debit'];
 			$this->m_equation_side		= $row['equation_side'];
+			$this->m_active				= $row['active'];
 
 			$success = true;
 		}
@@ -289,10 +297,11 @@ class Account
 			$sql = "INSERT INTO accounts \n".
 				"(login_id, account_parent_id, ".
 				"account_name, account_descr, ".
-				" account_debit, equation_side) \n".
+				" account_debit, equation_side, active) \n".
 				"VALUES ($this->m_login_id, $account_parent_id, ".
 				" '$this->m_account_name', '$this->m_account_descr', ".
-				" $this->m_account_debit, '$this->m_equation_side') ";
+				" $this->m_account_debit, '$this->m_equation_side', ".
+				" $this->m_active) ";
 		}
 		else
 		{
@@ -303,7 +312,8 @@ class Account
 				"  account_name = '$this->m_account_name', ".
 				"  account_descr = '$this->m_account_descr', ".
 				"  account_debit = $this->m_account_debit, ".
-				"  equation_side = '$this->m_equation_side' \n".
+				"  equation_side = '$this->m_equation_side', ".
+				"  active = $this->m_active \n".
 				"WHERE account_id = $this->m_account_id ";
 		}
 
@@ -355,10 +365,13 @@ class Account
 			account_id => Account_display
 		unless show_debit is true, in which case it is
 			'account_id,account_debit' => Account_display
+		For the full account list, only show active accounts.
+		Otherwise show inactive as well, for editing.
 
 	*/
 	public static function Get_account_list ($login_id, $equation_side = '',
-		$account_parent_id = -1, $force_parent = false, $show_debit = false)
+		$account_parent_id = -1, $force_parent = false, $show_debit = false,
+		$show_inactive = false)
 	{
 
 		if ($account_parent_id < 0 && !$force_parent)
@@ -369,7 +382,7 @@ class Account
 				"  concat( ifnull( concat(a3.account_name, ':'), ''), ".
 				"    ifnull( concat( a2.account_name, ':'), ''), ".
 				"    a.account_name) as account_display, ".
-				"  a.account_debit \n".
+				"  a.account_debit, a.active \n".
 				"FROM Accounts a \n".		// represents any account (top to bottom)
 				"LEFT JOIN Accounts a2 on ".
 				"  a.account_parent_id = a2.account_id \n".
@@ -380,6 +393,10 @@ class Account
 			{
 				$sql .= "and a.equation_side = '$equation_side' ";
 			}
+			if (!$show_inactive)
+			{
+				$sql .= "AND a.active = 1 ";
+			}
 			$sql .= "\n ORDER BY concat(ifnull( concat( a3.account_name, ':'), ''), ".
 				"    ifnull( concat( a2.account_name, ':'), ''), ".
 				"    a.account_name) ";
@@ -388,7 +405,7 @@ class Account
 		{
 			// query only one level of accounts
 			$sql = "SELECT a.account_id, a.account_name as account_display, ".
-				"  a.account_debit \n".
+				"  a.account_debit, a.active \n".
 				"FROM Accounts a \n".
 				"WHERE login_id = $login_id ";
 			if ($account_parent_id > -1 || $force_parent)
@@ -413,11 +430,16 @@ class Account
 			// loop through each account id and display name
 			while ($row = mysql_fetch_array($rs, MYSQL_ASSOC))
 			{
+				$active = $row['active'];
 				if ($show_debit)
 					$key = $row['account_id']. ','. $row['account_debit'];
 				else
 					$key = $row['account_id'];
-				$account_list[$key] = $row['account_display'];
+				$account_display = $row['account_display'];
+				if ($active == 0)
+					$account_display.= ' (inactive)';
+
+				$account_list[$key] = $account_display;
 			}
 		}
 		mysql_close();
@@ -446,6 +468,7 @@ class Transaction
 	private	$m_check_number		= NULL;
 	private	$m_gas_miles		= NULL;
 	private	$m_gas_gallons		= NULL;
+	private $m_trans_status		= 1;	// 0=unpaid (to-do), 1=paid (fulfilled)
 
 	private	$m_account_display	= '';
 	private	$m_ledger_amount	= NULL;
@@ -519,6 +542,9 @@ class Transaction
 		else
 			return $this->m_gas_gallons;
 	}
+	public function get_trans_status() {
+		return $this->m_trans_status;
+	}
 	public function get_account_display() {
 		return stripslashes ($this->m_account_display);
 	}
@@ -574,6 +600,7 @@ class Transaction
 		$check_number,
 		$gas_miles,
 		$gas_gallons,
+		$trans_status,
 		$trans_id = -1,
 		$account_display = '',
 		$ledger_amount = NULL,
@@ -617,6 +644,7 @@ class Transaction
 		else
 			$this->m_gas_gallons = $gas_gallons;
 
+		$this->m_trans_status		= $trans_status;
 		$this->m_trans_id			= $trans_id;
 		$this->m_account_display	= $account_display;
 		$this->m_ledger_amount		= $ledger_amount;
@@ -695,6 +723,7 @@ class Transaction
 			$this->m_check_number		= $row['check_number'];
 			$this->m_gas_miles			= $row['gas_miles'];
 			$this->m_gas_gallons		= $row['gas_gallons'];
+			$this->m_trans_status		= $row['trans_status'];
 		}
 		if ($error == '')
 		{
@@ -758,12 +787,13 @@ class Transaction
 			$sql = "INSERT INTO Transactions \n".
 				"(login_id, trans_descr, trans_date, accounting_date, ".
 				" trans_vendor, trans_comment, check_number, gas_miles, ".
-				" gas_gallons) \n".
+				" gas_gallons, trans_status) \n".
 				"VALUES( $this->m_login_id, '$this->m_trans_descr', ".
 				" '{$this->get_trans_date_sql()}', ".
 				" '{$this->get_accounting_date_sql()}', ".
 				" '$this->m_trans_vendor', $trans_comment, ".
-				"$check_number, $gas_miles, $gas_gallons ) ";
+				"$check_number, $gas_miles, $gas_gallons, ".
+				"$this->m_trans_status ) ";
 		}
 		else
 		{
@@ -777,7 +807,8 @@ class Transaction
 				" trans_comment = $trans_comment, ".	// single quotes are included in the var
 				" check_number = $check_number, ".
 				" gas_miles = $gas_miles, ".
-				" gas_gallons = $gas_gallons \n".
+				" gas_gallons = $gas_gallons, ".
+				" trans_status = $this->m_trans_status \n".
 				"WHERE trans_id = $this->m_trans_id ";
 		}
 
@@ -911,26 +942,6 @@ class Transaction
 		// Convert to mysql dates
 		$start_date_sql = convert_date ($start_date, 1);
 		$end_date_sql = convert_date ($end_date, 1);
-		$start_date_total = NULL;
-		if ($equation_side == 'R')
-		{	// Only do period totals for RHS accounts (revenue & expenses)
-			$start_date_arr = split ('/', $start_date);
-			switch ($total_period)
-			{
-				case 'month':
-					// total starting from 1st of start_date month
-					$start_date_total = $start_date_arr[2]. '-'. $start_date_arr[0].
-						'-01';
-					break;
-				case 'year':
-					$start_date_total = $start_date_arr[2]. '-01-01';
-					break;
-				case 'visible':
-					// filter by visible dates
-					$start_date_total = $start_date_sql;
-			}
-		}
-
 
 		/*
 			The ledger amount has to have the correct sign. If the ledger
@@ -946,7 +957,8 @@ class Transaction
 		*/
 		$sql = "SELECT t.trans_id, trans_descr, trans_date, accounting_date, ".
 			" trans_vendor, trans_comment, check_number, gas_miles, ".
-			" gas_gallons, a.account_name, a2.account_name as account2_name, ".
+			" gas_gallons, trans_status, a.account_name, ".
+			" a2.account_name as account2_name, ".
 			" a2.account_id as a2_account_id, a.account_id, ".
 			"  (ledger_amount * a.account_debit * $account_debit) as amount \n". 
 			"FROM Transactions t \n".
@@ -997,6 +1009,7 @@ class Transaction
 					$row['check_number'],
 					$row['gas_miles'],
 					$row['gas_gallons'],
+					$row['trans_status'],
 					$row['trans_id'],
 					$account_display,
 					$row['amount']
@@ -1009,6 +1022,28 @@ class Transaction
 			// Loop through the transactions & calculate the totals
 			foreach ($trans_list as $trans)
 			{
+				$start_date_total = NULL;
+				if ($equation_side == 'R')
+				{	// Only do period totals for RHS accounts (revenue & expenses)
+					// The min_date for the total depends on each transaction;
+					// It is the first of the month or first of the year of the accounting date.
+					$start_date_arr = split ('/', $trans->get_accounting_date(false));
+					switch ($total_period)
+					{
+						case 'month':
+							// total starting from 1st of start_date month
+							$start_date_total = $start_date_arr[2]. '-'. $start_date_arr[0].
+								'-01';
+							break;
+						case 'year':
+							$start_date_total = $start_date_arr[2]. '-01-01';
+							break;
+						case 'visible':
+							// filter by visible dates
+							$start_date_total = $start_date_sql;
+					}
+				}
+
 				$trans->Set_trans_balance ($account_id, $account_debit,
 					$start_date_total);
 			}
@@ -1068,4 +1103,5 @@ class Transaction
 
 
 }	//End Transaction class
+
 ?>

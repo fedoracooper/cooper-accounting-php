@@ -15,18 +15,31 @@
 	width: 400px;
 }
 
+table.trans-table
+{
+	border: 1px solid black;
+	margin-top: 8px;
+	margin-bottom: 5px;
+}
+table.trans-table tr
+{
+	/* background-color: #EEEEFF; */
+
+}
 table.trans-table th
 {
 	color: #5555CC;
 	text-align: left;
-	padding-left: 2px;
-	padding-right: 2px;
+	padding: 2px;
+	border-bottom: 1px solid black;
 }
-
 table.trans-table td
 {
-	padding-right: 6px;
+	padding-right: 8px;
+	vertical-align: top;
 }
+
+
 
 table.transaction
 {

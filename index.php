@@ -224,7 +224,7 @@
 		}
 		echo "	<tr>\n";
 		if ($new_row) {
-			echo '		<td><input type="submit" name="edit" value="'.
+			echo '		<td><input type="submit" style="height: 18px; font-size: 8pt;" name="edit" value="'.
 				$trans_item->get_trans_id(). "\"></td> \n".
 			"		<td>". $trans_item->get_trans_date(). "</td>\n".
 			'		<td>'. $trans_item->get_trans_descr(). "</td>\n".

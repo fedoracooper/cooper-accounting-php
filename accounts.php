@@ -11,7 +11,7 @@
 		// redirect to login if they have not logged in
 		header ("Location: login.php");
 	}
-	elseif ($_SESSION['login_admin'] != 1)
+	elseif ($_SESSION['login_admin'] < 1)
 	{
 		// no admin permission; naughty!
 		header ("Location: login.php");

@@ -222,6 +222,9 @@ class Account
 		$account_parent_id = -1, $force_parent = false, $show_debit = false,
 		$show_inactive = false, $top2_tiers = false)
 	{
+		$account_list = array();
+		if ($login_id < 0)
+			return $account_list;	// empty list
 
 		if ($account_parent_id < 0 && !$force_parent)
 		{
@@ -273,7 +276,6 @@ class Account
 			$sql.= "\n ORDER BY a.account_name ";
 		}
 
-		$account_list = array();
 		db_connect();
 		$rs = mysql_query($sql);
 		$err = db_error ($rs, $sql);

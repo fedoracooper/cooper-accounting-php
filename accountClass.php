@@ -193,6 +193,15 @@ class Account
 		account names are displayed. force_parent forces the query to filter
 		by parent_account_id, even if it is -1.
 
+		Params:
+			login_id	User's login id; will always filter by this
+			equation_side	Can be 'L' or 'R' to only show accounts from 1 side
+			account_parent_id	Can specify a list of accounts with this parent
+			force_parent
+			show_debit		Include the debit value in the list key (account_id, debit)
+			show_inactive	Show accounts that have a Active = 0 or 1
+			top2_tiers		Do not show third-tier accounts
+
 		All Accounts: parent = -1, force = false
 		Top accounts: parent = NULL, force = false
 		Sec accounts: parent = -1 to n, force = true	- filter, regardless of parent_id
@@ -205,10 +214,13 @@ class Account
 		For the full account list, only show active accounts.
 		Otherwise show inactive as well, for editing.
 
+		top2_tiers: when true, this will retrieve a list of the top 2 tiers 
+		of accounts.
+
 	*/
 	public static function Get_account_list ($login_id, $equation_side = '',
 		$account_parent_id = -1, $force_parent = false, $show_debit = false,
-		$show_inactive = false)
+		$show_inactive = false, $top2_tiers = false)
 	{
 
 		if ($account_parent_id < 0 && !$force_parent)
@@ -233,6 +245,11 @@ class Account
 			if (!$show_inactive)
 			{
 				$sql .= "AND a.active = 1 ";
+			}
+			if ($top2_tiers)
+			{
+				// ignore rows at the third tier
+				$sql .= "AND a3.account_id IS NULL ";
 			}
 			$sql .= "\n ORDER BY concat(ifnull( concat( a3.account_name, ':'), ''), ".
 				"    ifnull( concat( a2.account_name, ':'), ''), ".
@@ -340,7 +357,7 @@ class Account
 		}
 
 		// SQL statement: group the summary by month & year (once per account)
-		for ($i = 0; $i <2; $i++)
+		for ($i = 0; $i < 2; $i++)
 		{
 			$group_sql = "month(t.accounting_date), year(t.accounting_date) ";
 			$month_sql = "month(t.accounting_date) as accounting_month, ";
@@ -385,10 +402,17 @@ class Account
 			}
 
 			$ytd_total = 0;
+			$last_key = '';
+			$last_year = 0;
 			// (YYYY-MM) => (month, year, account1_sum, account2_sum)
 			while ($row = mysql_fetch_array ($rs, MYSQL_ASSOC))
 			{
 				$summary_year = $row['accounting_year'];
+				if ($summary_year != $last_year)
+				{
+					// new year; reset the YTD totals
+					$ytd_total = 0;
+				}
 				$summary_month = $row['accounting_month'];
 				$summary_month = str_pad ($summary_month, 2, '0',
 					STR_PAD_LEFT);
@@ -403,6 +427,17 @@ class Account
 						$row['account_sum'], 0,
 						$ytd_total, 0
 					);
+					if ($last_key != '')
+					{
+						// for account YTD, when not on first row,
+						// grab last month's value as default.
+						// This is in case this month has no data;
+						// the YTD should still stay the same.
+//						$summary_list[$key][3] =
+//							$summary_list[$last_key][3];
+//						$summary_list[$key][5] =
+//							$summary_list[$last_key][5];
+					}
 				}
 				else
 				{
@@ -424,18 +459,116 @@ class Account
 					}
 
 				}
-				if ($summary_month == 12)
-					$ytd_total = 0;	//reset YTD total @ end of year
 
+				$last_key = $key;
+				$last_year = $summary_year;
 			}	// row loop
 		}	// account loop
 
 		mysql_close();
 		// re-sort by the key in descending order
-		krsort ($summary_list);
+		ksort ($summary_list);
 
 		return $error;
 	}	// End Get_summary_list
+
+
+	/*	Created 10/28/2004
+		This function calculates the total miles, gallons, and MPG
+		for each Car expense account that has gas_gallons & gas_miles data.
+
+		returns:
+		//	array (account_name, num_records, total_miles, total_gallons,
+				total_dollars)
+	*/
+	public static function Get_gas_totals (&$totals)
+	{
+		$totals = array();
+		$sql = "SELECT min(a.account_name) as account_name, ".
+			"  count(*) as cnt, sum(gas_miles) as total_miles, ".
+			"  sum(gas_gallons) as total_gallons, ".
+			"  sum(ledger_amount) as total_dollars \n".
+			"FROM transactions t \n".
+			"INNER JOIN ledgerEntries le ON ".
+			"  le.trans_id = t.trans_id \n".
+			"INNER JOIN accounts a ON ".
+			"  a.account_id = le.account_id ".
+			"  AND a.account_parent_id = $_SESSION[car_account_id] \n".
+			"WHERE gas_gallons > 0 AND gas_miles > 0 \n".
+			"GROUP BY a.account_id " ;
+		db_connect();
+		$rs = mysql_query ($sql);
+		$error = db_error($rs, $sql);
+		if ($error != '')
+			return $error;
+
+		while ($row = mysql_fetch_array ($rs, MYSQL_ASSOC))
+		{
+			$totals[] = array ($row['account_name'],
+				$row['cnt'],
+				$row['total_miles'],
+				$row['total_gallons'],
+				$row['total_dollars']
+			);
+		}
+		mysql_close();
+
+		return $error;
+	}	// End Gas totals
+
+
+	/*
+		Get breakdown of account dollars based on a parent account
+		and a date range.
+		Params:
+			date range, account parent id
+		Returns:
+			error string:  empty when no error
+	*/
+	public static function Get_account_breakdown ($start_date, $end_date,
+		$account_id, &$account_list)
+	{
+		$account_list = array();
+		$error = '';
+		// convert dates into mysql dates
+		$start_sql = convert_date ($start_date, 1);
+		$end_sql = convert_date ($end_date, 1);
+		if ($account_id < 0)
+			return 'You must enter a correct account id';
+		elseif ($start_sql == '')
+			return 'Start date is invalid.';
+		elseif ($end_sql == '')
+			return 'End date is invalid.';
+
+		$sql = "SELECT sum( ledger_amount ) AS total_amount, ".
+			"  min( ifnull( a2.account_name, a.account_name ) ) as name  \n".
+			"FROM ledgerEntries le \n".
+			"INNER  JOIN transactions t ON t.trans_id = le.trans_id \n".
+			"INNER  JOIN accounts a ON le.account_id = a.account_id \n".
+			"LEFT  JOIN accounts a2 ON a.account_parent_id = a2.account_id ".
+			"  AND a2.account_id <> $account_id \n".
+			"WHERE ( a.account_parent_id= $account_id ".
+			"  OR a2.account_parent_id= $account_id ) \n".
+			"  AND t.accounting_date >=  '$start_sql' ".
+			"  AND t.accounting_date <=  '$end_sql' \n".
+			"GROUP BY IFNULL( a2.account_id, a.account_id ) \n".
+			"ORDER BY total_amount DESC " ;
+
+		db_connect();
+		$rs = mysql_query ($sql);
+		$error = db_error ($rs, $sql);
+		if ($error != '')
+			return $error;
+
+		// account_list (account_name, account_total)
+		while ($row = mysql_fetch_row($rs))
+		{
+			$account_list[] = array ($row[1], $row[0]);
+		}
+		mysql_close();
+
+		return $error;
+	}
 
 
 }	//End Account class

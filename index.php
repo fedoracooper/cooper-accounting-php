@@ -193,24 +193,20 @@
 		<td><h3>Account Ledger</h3>
 		<td style="padding-left: 300px;">
 			<a href="login.php?logout=1">Logout <?= $_SESSION['display_name'] ?></a></td>
+	<?
+		if ($_SESSION['login_admin'] == 1)
+		{ ?>
+		<td style="padding-left: 13px;">
+			<a href="accounts.php">Manage Accounts</a></td>
+	<?	}	//end accounts link	 ?>	
 	</tr>
 
 	<tr>
 		<td></td>
 		<td style="padding-left: 300px;">
 			<a href="account_summary.php">Account Summary</a></td>
+		<td style="padding-left: 13px;"><a href="account_breakdown.php">Account Breakdown</a></td>
 	</tr>
-
-	<?
-		if ($_SESSION['login_admin'] == 1)
-		{ ?>
-	<tr>
-		<td></td>
-		<td style="padding-left: 300px;">
-			<a href="accounts.php">Manage Accounts</a></td>
-	</tr>
-	<?	}	//end accounts link	 ?>
-
 
 </table>
 
@@ -356,7 +352,7 @@
 		}
 		elseif ($miles != '' && $gall != '') {
 			$mpg = round ((float)$miles / (float)$gall, 1);
-			$other = $mpg. ' mpg';
+			$other = sprintf ("%0.1f", $mpg) . ' mpg';
 		}
 		elseif ($miles != '') {
 			$other = $trans_item->get_gas_miles(true). ' mi';

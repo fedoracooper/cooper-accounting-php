@@ -136,6 +136,7 @@ function get_auto_increment()
 // mm/dd/yy (normal) and yyyy-mm-dd (mySQL)
 // mode = 1  - normal -> mysql
 // mode = 2  - mysql -> normal
+// Returns empty string on failure
 function convert_date ($dateStr, $mode)
 {
 	$newDate = '';

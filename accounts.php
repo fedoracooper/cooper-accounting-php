@@ -122,7 +122,8 @@
 		$ter_account_id);
 
 	// Build account_debit dropdown
-	$debit_list = array ('1' => 'Debit', '-1' => 'Credit');
+	$debit_list = array ('1' => 'Debit (assets, expenses)',
+		'-1' => 'Credit (liabilities, income)');
 	$debit_dropdown = Build_dropdown ($debit_list, 'account_debit',
 		$account->get_account_debit());
 

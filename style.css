@@ -39,7 +39,21 @@ table.trans-table td
 	vertical-align: top;
 }
 
+table.summary-form td
+{
+	padding-right: 6px;
+}
 
+table.summary-list
+{
+	margin-left: 50px;
+	border: 1px solid black;
+}
+table.summary-list td
+{
+	padding-right: 10px;
+	padding-left: 10px;
+}
 
 table.transaction
 {

@@ -293,7 +293,7 @@ class Account
 		unless the end date is on the end of a year or month in the past.
 
 		summary_list
-			(YYYY-MM) => (month, year, account1_sum, account2_sum, total)
+			(YYYY-MM) => (month, year, account1_sum, account2_sum)
 
 	*/
 	public static function Get_summary_list ($account1_id, $account2_id,
@@ -309,16 +309,21 @@ class Account
 			return 'Start date is invalid';
 		elseif ($end_time == -1)
 			return 'End date is invalid';
+		$start_date_sql = date ('Y-m-d', $start_time);
+		$end_date_sql = date ('Y-m-d', $end_time);
 
 		// Query the normal balance of the selected accounts
-		$sql = "SELECT a.account_id, a.account_debit \n".
+		$sql = "SELECT a.account_id, a.account_debit ".
 			"FROM accounts a \n".
 			"WHERE account_id IN ($account1_id, $account2_id) ";
 		db_connect();
 		$rs = mysql_query ($sql);
 		$error = db_error ($rs, $sql);
 		if ($error != '')
+		{
+			mysql_close();
 			return $error;
+		}
 		$account1_debit = 1;
 		$account2_debit = 1;
 		while ($row = mysql_fetch_array ($rs, MYSQL_ASSOC))
@@ -330,20 +335,30 @@ class Account
 		}
 
 		// SQL statement: group the summary by month & year (once per account)
-		for ($i = 0; $i <2; $i++)
+		for ($i = 0; $i <4; $i++)
 		{
-			if ($i == 0)
+			$group_sql = "month(t.accounting_date), year(t.accounting_date) ";
+			$month_sql = "month(t.accounting_date) as accounting_month, ";
+			if ($i == 0 || $i == 2)
 			{
 				$account_id = $account1_id;
 				$account_debit = $account1_debit;
 			}
-			else
+			elseif ($i == 1 || $i == 3)
 			{
 				$account_id = $account2_id;
 				$account_debit = $account2_debit;
 			}
+			if ($i == 2 || $i == 3)
+			{
+				// yearly summary
+				$group_sql = "year(t.accounting_date) \n";
+				// count as month 13, as this sorts after december
+				$month_sql = "13 as accounting_month, ";
+			}
+
 			$sql = "SELECT sum(ledger_amount * a.account_debit * $account_debit) ".
-				"  as account_sum, month(t.accounting_date) as accounting_month, ".
+				"  as account_sum, $month_sql".
 				"  year(t.accounting_date) as accounting_year \n".
 				"FROM transactions t \n".
 				"INNER JOIN ledgerEntries le on le.trans_id = t.trans_id \n".
@@ -354,14 +369,60 @@ class Account
 				"  a2.account_parent_id = $account_id) ".
 				"  and t.accounting_date >= '$start_date_sql' ".
 				"  and t.accounting_date <= '$end_date_sql' \n".
-				"GROUP BY month(t.accounting_date), year(t.accounting_date) \n".
+				"GROUP BY $group_sql \n".
 				"ORDER BY year(accounting_date) DESC, month(accounting_date) DESC ";
-			
-			
-		}
+			$rs = mysql_query ($sql);
+			$error = db_error ($rs, $sql);
+			if ($error != '')
+			{
+				mysql_close();
+				return $error;
+			}
 
+			// (YYYY-MM) => (month, year, account1_sum, account2_sum)
+			while ($row = mysql_fetch_array ($rs, MYSQL_ASSOC))
+			{
+				$summary_year = $row['accounting_year'];
+				$summary_month = $row['accounting_month'];
+				$summary_month = str_pad ($summary_month, 2, '0',
+					STR_PAD_LEFT);
+				$key = $summary_year. '-'. $summary_month;
+				if ($i == 0 || $i == 2)
+				{
+					// account 1 query (always a new list item)
+					$summary_list[$key] = array (
+						(int)$summary_month,
+						$summary_year,
+						$row['account_sum'], 0
+					);
+				}
+				else
+				{
+					// account2: check for existing list item
+					if (array_key_exists ($key, $summary_list))
+					{
+						$summary_list[$key][3] = $row['account_sum'];
+					}
+					else
+					{
+						// no existing data for this month
+						$summary_list[$key] = array (
+							(int)$summary_month,
+							$summary_year,
+							0, $row['account_sum']
+						);
+					}
 
-	}
+				}
+			}	// row loop
+		}	// account loop
+
+		mysql_close();
+		// re-sort by the key in descending order
+		krsort ($summary_list);
+
+		return $error;
+	}	// End Get_summary_list
 
 
 }	//End Account class

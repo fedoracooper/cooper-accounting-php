@@ -164,4 +164,22 @@ function convert_date ($dateStr, $mode)
 	return $newDate;
 }
 
+// Given a number, this will return an HTML-formatted
+// one. Negatives are red, and a dollar sign will be shown
+function format_currency ($amount)
+{
+	$txt = '';
+	if (is_numeric ($amount))
+	{
+		$amount_str = number_format ($amount, 2);
+		if ($amount < 0)
+			$txt =  '<span style="color: red;">$'.
+				$amount_str. '</span>';
+		else
+			$txt = '$'. $amount_str;
+	}
+
+	return $txt;
+}
+
 ?>

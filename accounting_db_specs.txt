@@ -1,0 +1,300 @@
+9/22/2004
+Cooper Blake
+Accounting Software database design
+
+Login
+	login_id		PK	tinyint
+	login_user			varchar(25)
+	login_password			varchar(25)
+	login_admin			tinyint (0 or 1)
+	display_name			varchar(50)	Descriptive name (Cooper S. Blake)
+
+Transactions
+	trans_id		PK	int
+	login_id		FK	tinyint
+	trans_descr			varchar(50)
+	trans_date			date		orders transactions on the screen
+	accounting_date			date		date when transaction gets totalled
+	trans_vendor			varchar(50)
+	trans_comment		null	text
+	check_number		null	smallint
+	gas_miles		null	decimal(4, 0)
+	gas_gallons		null	decimal(4, 2)
+
+LedgerEntries
+	ledger_id		PK	int
+	trans_id		FK	int
+	account_id		FK	smallint
+	ledger_amount			decimal(9, 2)	9,999,999.99 max
+
+
+Accounts
+	account_id		PK	smallint
+	login_id		FK	tinyint		
+	account_parent_id	FK(nl)	smallint	link to own table for parent accounts
+	account_name			varchar(25)
+	account_descr			varchar(50)
+	account_debit			tinyint (1 = debit, -1 = credit)
+	equation_side			enum ('L', 'R')	left vs. right side of the equation
+
+
+
+PAGES
+
+Session Vars
+	login_id		-1 = not logged in
+	login_user
+	display_name
+	login_admin
+
+1. Login Page
+	Objects: username, password, Submit button
+	Actions: authenticate, redirect to Account Ledger
+2. Manage Accounts
+	Objects:
+		Top Account, Secondary Account, Tertiary Account (drop down)
+		New account name, New account description (text box)
+		Normal balance, Equation side (drop down)
+		Edit, Save (button)
+	Actions:
+		Top Parent selection queries for Secondary parents
+		Secondary queries for Tertiary
+		Save button performs update or insert
+		Edit button loads data of deepest selected account
+	Code:
+		Verify that login_admin session var is 1
+		Load Top Account with all parent-less accounts
+			Each Top selection populates Secondary
+			Each Secondary selection populates Tertiary
+			Always reload existing selections
+		Edit: load selected tertiary / secondary / top account as selected
+		Save: insert or update records as required
+3. Account Ledger
+	Objects:
+		Filter Bar: select account, from date, to date, row limit, total period, filter button
+			Revenue total period = Monthly, Yearly, Visible dates
+		Transaction display:
+			Date, Description, Vendor, Account, Amount, Total
+			Edit button for each row
+		New / Edit Transaction:
+			Date, Check #, Miles, Gallons, Description, Vendor (text box)
+			Note (text area)
+			Account / Amount ledger entries
+				5 rows: 1 column LHS, 2 columns RHS
+			Totals: Assets - Liabilities, Revenue - Expenses (text)
+			Save, Delete (button)
+				Delete is only visible when in Edit mode
+	Actions:
+		Filter account select or Filter button press: re-query the database
+			1 query is run for all the transaction data
+			1 aggregate query is run for each transaction: total amount
+				- stored in an array for retrieval on display
+		Transaction Edit buttons populate the Transaction box
+		Transaction Save button inserts or updates as needed
+			Box is then cleared & reset to Add mode
+	Code:
+		Account is always selected: default to Liabilities ?
+		Default start date as first of current month
+		Default end date as end of current month
+		Default limit to 10
+		Default Revenue Total Period to Monthly
+		Filter button runs the Get_transaction_list method & redraws
+		Edit buttons populate the transaction box
+			Always in either Edit or Insert mode
+
+
+CLASSES
+
+Account
+	Attributes
+		Variable		Default value
+		account_id		-1	indicates new account
+		login_id		-1	must be initialized
+		account_parent_id	null
+		account_name		""
+		account_descr		""
+		account_debit		1
+		equation_side		'L'
+	Methods
+		Account(login_id, account_parent_id, account_name
+			account_descr, account_debit, equation_side)
+			Constructor for new account
+		Load_account(account_id)
+			Populate fields from database
+		Save_account()
+			Updates or inserts to database, depending on account_id
+		Get_account_list(login_id, equation_side = '', account_parent_id = -1)
+			Static function: class does not need to be instantiated
+			Returns an array with the specified accounts.
+			With just one argument, it will get all accounts for the given user.
+			List
+				key = account_id
+				value = account_name
+
+Transaction
+	Attributes
+		trans_id		-1
+		login_id		-1
+		trans_descr		''
+		trans_date		0
+		accounting_date		0
+		trans_vendor		''
+		trans_comment		''
+		check_number		-1
+		gas_miles		-1
+		gas_gallons		-1
+		account_display		''
+		ledger_amount		null
+	
+	Methods
+		Transaction(login_id, trans_descr, trans_date, accounting_date,
+			trans_vendor, trans_comment, check_number, gas_miles,
+			gas_gallons, trans_id = -1, account_display = '',
+			ledger_amount = null)
+			Constructor for new transaction
+		Load_transaction(trans_id)
+			Populate from database
+		Save_transaction()
+			Updates or inserts into database
+		Get_transaction_list(account_id, start_date, end_date, limit)
+			Static function
+			1. Queries account_id to get account_debit
+			2. Queries for all the transactions in the range
+				For each transaction, an object is created.
+			3. Queries the total amount for each transaction & stores in a list
+			Returns an array of transaction objects
+		
+		
+Utilities
+	Functions
+		Build_dropdown(data_list, dropdown_name) => string
+			List must be of format value->Text.
+			This takes a key/value list and returns the HTML of a dropdown control
+
+
+QUERIES
+
+List of accounts
+
+	select coalesce(a3.account_name + ':', '')
+		+ coalesce(a2.account_name + ':', '')
+		+ a.account_name as account_display,
+		account_id
+	from Accounts a		-- represents any account (top to bottom)
+	left join Accounts a2 on
+	  a.account_parent_id = a2.account_id
+	left join Accounts a3 on
+	  a2.account_parent_id = a3.account_id
+	where a.login_id = X
+
+V = selected_account_debit
+
+Account Ledger entries: list all transactions on an account & its children.
+	Running totals of accounts have to be queried separately.
+	- LHS: show all-time total
+	- RHS: show monthly or YTD total
+	select trans_id, trans_date, trans_descr, a.account_name,
+	  a2.account_name as account2_name,
+	  (ledger_amount * a.account_debit * V) as amount	--V = selected account debit value
+	from Transactions t
+	inner join LedgerEntries le on
+		le.trans_id = t.trans_id
+	inner join Accounts a on
+		le.account_id = a.account_id
+	left join Accounts a2 on	-- join the account's parent, if it exists
+		a.account_parent_id = a2.account_id
+	where (a.account_id = X
+	  or a2.account_id = X
+	  or a2.account_parent_id = X )
+	  and trans_date >= [start date]
+	  and trans_date <= [end date]
+	order by trans_date DESC, t.trans_id DESC	--needed to use LIMIT; must reverse row order on display
+	limit Y		--optional limit clause
+
+Current Balance (debit accounts)
+	select sum(ledger_amount * a.account_debit * V) as balance
+	from LedgerEntries le
+	inner join Transactions t on
+		le.trans_id = t.trans_id
+	inner join Accounts a on
+		le.account_id = a.account_id
+	left join Accounts a2 on
+		a.account_parent_id = a2.account_id
+	where (a.account_id = Y or
+	  a2.account_id = Y or a2.account_parent_id = Y) and
+	  (t.accounting_date < X or
+	   t.accounting_date = X and t.trans_id <= Z)
+
+
+Monthly Total
+	select sum(ledger_amount * a.account_debit * V) as monthly_total
+	from LedgerEntries le
+	inner join Transactions t on
+		le.trans_id = t.trans_id
+	inner join Accounts sel on	--currently selected account
+		sel.account_id = Y
+	inner join Accounts a on
+		le.account_id = a.account_id
+	left join Accounts a2 on
+		a.account_parent_id = a2.account_id
+	where (a.account_id = Y or
+	  a2.account_id = Y or a2.account_parent_id = Y) and
+	  t.accounting_date >= W and
+	  (t.accounting_date < X or
+	   t.accounting_date = X and t.trans_id <= Z)
+
+ACCOUNTS
+
+Assets (debit)
+  Checking (Citizens)
+  Brokerage (E*Trade)
+  Prepaid insurance
+  Prepaid Ascent expenses
+  Prepaid rent
+  Paypal
+
+Liabilities (credit)
+  Discover
+  Chase Mastercard
+  Best Buy card
+
+Income (credit)
+  Ascent
+  Gifts
+  Independent jobs
+
+Expenses (debit)
+  Taxes
+    Federal Income
+    State Income
+    Local Income
+    Social Security
+    SUI
+  Cars
+    Elise Gas
+    Civic Gas
+    Elise maintenance
+    Civic maintenance
+  Bills
+    Gas
+    Electric
+    Sewage
+    Water
+    Phone/DSL
+    Cable
+    Dental insurance
+    Optical insurance
+    Health insurance
+  Groceries
+  Dining
+  Software
+    Music
+    Movies
+    Computer
+  Electronics
+    Computer
+    Audio/Video
+  Household
+  Travel
+  Cash expenditures
+  Miscellaneous

@@ -1,0 +1,36 @@
+.error
+{
+	color: red;
+	width: 500px;
+}
+
+.currency
+{
+	text-align: right;
+}
+
+.indented-block
+{
+	margin-left: 50px;
+	width: 400px;
+}
+
+table.trans-table th
+{
+	color: #5555CC;
+	text-align: left;
+	padding-left: 2px;
+	padding-right: 2px;
+}
+
+table.trans-table td
+{
+	padding-right: 6px;
+}
+
+table.transaction
+{
+	border-left: 1px solid black;
+	border-right: 1px solid black;
+	border-top: 1px solid black;
+}

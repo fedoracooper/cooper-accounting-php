@@ -290,10 +290,15 @@ class Account
 		from account1, with the total being displayed as well.
 
 		The first two items will be Year to Date (YTD) and Month to Date (MTD),
-		unless the end date is on the end of a year or month in the past.
+		unless the end date is on the end of a year or month in the past. The
+		YTD sums keep a running total for the year.
+
+		The list is built in chronological order so that the YTD sums can be
+		calculated; it is then reversed for display
 
 		summary_list
-			(YYYY-MM) => (month, year, account1_sum, account2_sum)
+			(YYYY-MM) => (month, year, account1_sum, account2_sum,
+				account1_ytd, account2_ytd)
 
 	*/
 	public static function Get_summary_list ($account1_id, $account2_id,
@@ -335,7 +340,7 @@ class Account
 		}
 
 		// SQL statement: group the summary by month & year (once per account)
-		for ($i = 0; $i <4; $i++)
+		for ($i = 0; $i <2; $i++)
 		{
 			$group_sql = "month(t.accounting_date), year(t.accounting_date) ";
 			$month_sql = "month(t.accounting_date) as accounting_month, ";
@@ -370,7 +375,7 @@ class Account
 				"  and t.accounting_date >= '$start_date_sql' ".
 				"  and t.accounting_date <= '$end_date_sql' \n".
 				"GROUP BY $group_sql \n".
-				"ORDER BY year(accounting_date) DESC, month(accounting_date) DESC ";
+				"ORDER BY year(accounting_date) ASC, month(accounting_date) ASC ";
 			$rs = mysql_query ($sql);
 			$error = db_error ($rs, $sql);
 			if ($error != '')
@@ -379,6 +384,7 @@ class Account
 				return $error;
 			}
 
+			$ytd_total = 0;
 			// (YYYY-MM) => (month, year, account1_sum, account2_sum)
 			while ($row = mysql_fetch_array ($rs, MYSQL_ASSOC))
 			{
@@ -387,13 +393,15 @@ class Account
 				$summary_month = str_pad ($summary_month, 2, '0',
 					STR_PAD_LEFT);
 				$key = $summary_year. '-'. $summary_month;
+				$ytd_total += $row['account_sum'];
 				if ($i == 0 || $i == 2)
 				{
 					// account 1 query (always a new list item)
 					$summary_list[$key] = array (
 						(int)$summary_month,
 						$summary_year,
-						$row['account_sum'], 0
+						$row['account_sum'], 0,
+						$ytd_total, 0
 					);
 				}
 				else
@@ -402,6 +410,7 @@ class Account
 					if (array_key_exists ($key, $summary_list))
 					{
 						$summary_list[$key][3] = $row['account_sum'];
+						$summary_list[$key][5] = $ytd_total;
 					}
 					else
 					{
@@ -409,11 +418,15 @@ class Account
 						$summary_list[$key] = array (
 							(int)$summary_month,
 							$summary_year,
-							0, $row['account_sum']
+							0, $row['account_sum'],
+							0, $ytd_total
 						);
 					}
 
 				}
+				if ($summary_month == 12)
+					$ytd_total = 0;	//reset YTD total @ end of year
+
 			}	// row loop
 		}	// account loop
 

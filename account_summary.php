@@ -122,20 +122,26 @@
 
 <?
 	// left border for right-most column
-	$td_style = 'style="border-left: 1px solid black;"';
+	$td_style = 'style="border-left: 1px solid black; "';
+	$c_style = 'style="border-left: 2px solid black; "';	// center divider
 ?>
 
 <table class="summary-list" cellspacing="0" cellpadding="0">
 	<tr>
 		<th>Period</th>
-		<th>Account 1 - </th>
-		<th>Account 2 = </th>
-		<th <?= $td_style ?>>Net</th>
+		<th>Account 1 </th>
+		<th>Account 2 </th>
+		<th <?= $td_style ?>>Net </th>
+		<th <?= $c_style ?>>Account 1 YTD </th>
+		<th>Account 2 YTD </th>
+		<th <?= $td_style ?>>Net YTD </th>
 	</tr>
 
 <?
 	// Loop through summary list
-	// (YYYY-MM) => (month, year, account1_sum, account2_sum)
+	// (YYYY-MM) => (month, year, account1_sum, account2_sum,
+	//		account1_ytd, account2_ytd)
+	$i = 0;
 	foreach ($summary_list as $summary_data)
 	{
 		$period_txt = '';
@@ -144,6 +150,9 @@
 		$account1_sum = $summary_data[2];
 		$account2_sum = $summary_data[3];
 		$account_total = $account1_sum - $account2_sum;
+		$account1_ytd = $summary_data[4];
+		$account2_ytd = $summary_data[5];
+		$ytd_total = $account1_ytd - $account2_ytd;
 
 		$end_date_arr = getdate (strtotime ($end_date));
 		if ($period_month == 13)
@@ -168,17 +177,20 @@
 		}
 
 		$number_span = '';
-		$account1_str = format_currency ($account1_sum);
-		$account2_str = format_currency ($account2_sum);
-		$account_total_str = format_currency ($account_total);
 
 		// Output HTML
 		$hr_html = '';
-		if ($period_month == 13)
+
+		if ($period_month == 12 || $i == 0)
 		{
+			if ($i == 0)
+				$descr_txt = "$period_year YTD";
+			else
+				$descr_txt = $period_year;
+
 			$hr_html = "	<tr> \n".
-				"		<td colspan=\"3\"><hr></td> \n".
-				"		<td $td_style><hr></td> \n".
+				"		<td style=\"border-top: 1px solid black; border-bottom: 1px solid black;\"".
+				" colspan=\"7\">$descr_txt</td> \n".
 				"	</tr> \n\n";
 		}
 
@@ -186,12 +198,23 @@
 
 		echo "	<tr> \n".
 			"		<td>$period_txt</td> \n".
-			"		<td class=\"currency\">$account1_str</td> \n".
-			"		<td class=\"currency\">$account2_str</td> \n".
-			"		<td class=\"currency\" $td_style>$account_total_str</td> \n".
+			"		<td class=\"currency\">". format_currency($account1_sum).
+				"</td> \n".
+			"		<td class=\"currency\">". format_currency($account2_sum).
+				"</td> \n".
+			"		<td class=\"currency\" $td_style>".
+				format_currency($account_total). "</td> \n".
+			"		<td class=\"currency\" $c_style>". format_currency($account1_ytd).
+				"</td> \n".
+			"		<td class=\"currency\">". format_currency($account2_ytd).
+				"</td> \n".
+			"		<td class=\"currency\" $td_style>".
+				format_currency($ytd_total). "</td> \n".
 			"	</tr> \n\n";
 
-		echo $hr_html;
+		//echo $hr_html;
+
+		$i++;
 	}
 
 ?>

@@ -1,3 +1,11 @@
+th
+{
+	color: #5555CC;
+	text-align: left;
+	padding: 2px;
+	border-bottom: 1px solid black;
+}
+
 .error
 {
 	color: red;
@@ -26,13 +34,6 @@ table.trans-table tr
 	/* background-color: #EEEEFF; */
 
 }
-table.trans-table th
-{
-	color: #5555CC;
-	text-align: left;
-	padding: 2px;
-	border-bottom: 1px solid black;
-}
 table.trans-table td
 {
 	padding-right: 8px;
@@ -46,13 +47,18 @@ table.summary-form td
 
 table.summary-list
 {
-	margin-left: 50px;
+	margin-left: 20px;
 	border: 1px solid black;
 }
 table.summary-list td
 {
 	padding-right: 10px;
 	padding-left: 10px;
+}
+table.summary-list th
+{
+	padding-right: 5px;
+	padding-left: 5px;
 }
 
 table.transaction

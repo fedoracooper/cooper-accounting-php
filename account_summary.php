@@ -158,6 +158,8 @@
 		$account2_sum = $summary_data[3];
 		$account_total = $account1_sum + ($account2_sum * $net_multiplier);
 		$account_pct = 0;
+		$ytd_pct = 0.0;
+
 		if ($account1_sum != 0)
 		{
 			if ($net_multiplier < 0)
@@ -167,15 +169,7 @@
 		}
 		$account1_ytd = $summary_data[4];
 		$account2_ytd = $summary_data[5];
-		$ytd_total = $account1_ytd + ($account2_ytd * $net_multiplier);
-		$ytd_pct = 0.0;
-		if ($account1_ytd != 0)
-		{
-			if ($net_multiplier < 0)
-				$ytd_pct = $ytd_total / $account1_ytd;
-			else
-				$ytd_pct = $account2_ytd / $account1_ytd;
-		}
+		
 		if ($account1_ytd == 0.0 && $i > 0 && $period_month != 1)
 		{
 			// grab last non-zero YTD val if it's zero;
@@ -198,6 +192,16 @@
 			$last_ytd2 = $account2_ytd;
 		}
 
+		// calcuate YTD total & percent AFTER ytd amounts are settled
+		$ytd_total = $account1_ytd + ($account2_ytd * $net_multiplier);
+		if ($account1_ytd != 0)
+		{
+			if ($net_multiplier < 0)
+				$ytd_pct = $ytd_total / $account1_ytd;
+			else
+				$ytd_pct = $account2_ytd / $account1_ytd;
+		}
+
 
 		$end_date_arr = getdate (strtotime ($end_date));
 		if ($period_month == 13)
@@ -209,12 +213,14 @@
 			else
 				$period_txt = $period_year;
 		}
+		/*
 		elseif ($period_month == $end_date_arr['mon']
 			&& $period_year == $end_date_arr['year'])
 		{
 			// current end month
 			$period_txt = 'MTD';
 		}
+		*/
 		else
 		{
 			// Get regular name of the month

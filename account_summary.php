@@ -17,6 +17,7 @@
 	$end_date = date ('m/d/Y');
 	$account1_id = 15;
 	$account2_id = 14;
+	$net_multiplier = -1;
 
 	if (isset ($_POST['calc']))
 	{
@@ -35,6 +36,7 @@
 		{	// don't update dates unless valid
 			$start_date		= $_POST['start_date'];
 			$end_date		= $_POST['end_date'];
+			$net_multiplier = (int)$_POST['net_multiplier'];
 		}
 		$account1_id	= $_POST['account1_id'];
 		$account2_id	= $_POST['account2_id'];
@@ -46,6 +48,10 @@
 		$account1_id);
 	$account2_dropdown = Build_dropdown ($account_list, 'account2_id',
 		$account2_id);
+	// plus / minus dropdown
+	$sum_list = array ('-1' => 'Subtract', '1' => 'Add');
+	$sum_dropdown = Build_dropdown ($sum_list, 'net_multiplier',
+		$net_multiplier);
 
 	// Get summary data
 	$summary_list = array();
@@ -109,6 +115,7 @@
 		<td><input type="text" name="start_date" value="<?= $start_date ?>"></td>
 		<td>To: </td> 
 		<td><input type="text" name="end_date" value="<?= $end_date ?>"></td>
+		<td><?= $sum_dropdown ?></td>
 	</tr>
 
 	<tr>
@@ -131,10 +138,10 @@
 		<th>Period</th>
 		<th>Account 1 </th>
 		<th>Account 2 </th>
-		<th <?= $td_style ?>>Net </th>
+		<th <?= $td_style ?>>Sum </th>
 		<th <?= $c_style ?>>Account 1 YTD </th>
 		<th>Account 2 YTD </th>
-		<th <?= $td_style ?>>Net YTD </th>
+		<th <?= $td_style ?>>Sum YTD </th>
 	</tr>
 
 <?
@@ -149,7 +156,7 @@
 		$period_year = $summary_data[1];
 		$account1_sum = $summary_data[2];
 		$account2_sum = $summary_data[3];
-		$account_total = $account1_sum - $account2_sum;
+		$account_total = $account1_sum + ($account2_sum * $net_multiplier);
 		$account1_ytd = $summary_data[4];
 		$account2_ytd = $summary_data[5];
 		$ytd_total = $account1_ytd - $account2_ytd;

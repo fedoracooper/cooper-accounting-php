@@ -13,8 +13,10 @@ class Transaction
 	private	$m_login_id			= -1;
 
 	private	$m_trans_descr		= '';
-	private	$m_trans_date		= '';	//must be initialized
-	private	$m_accounting_date	= '';	//must be initialized
+	private	$m_trans_time		= 0;	//must be initialized
+	private $m_trans_str		= '';	//incorrectly entered date
+	private	$m_accounting_time	= 0;	//must be initialized
+	private $m_accounting_str	= '';	//incorrectly entered date
 	private	$m_trans_vendor		= '';
 	private	$m_trans_comment	= NULL;
 	private	$m_check_number		= NULL;
@@ -32,7 +34,8 @@ class Transaction
 	function __construct ()
 	{
 		// Initialize date to today
-		$this->m_trans_date = date ('n/j/Y');
+		$this->m_trans_time = time();	 //date ('n/j/Y');
+		$this->m_accounting_time = $this->m_trans_time;
 	}
 
 	// ACCESSOR methods
@@ -46,26 +49,43 @@ class Transaction
 		return stripslashes ($this->m_trans_descr);
 	}
 	public function get_trans_date() {
-		return $this->m_trans_date;
+		$return_date = '';
+		if ($this->m_trans_time == -1)
+			return $this->m_trans_str;
+		else
+			return date ('m/d/Y', $this->m_trans_time);
 	}
 	public function get_trans_date_sql() {
 		// mySQL-formatted date
-		if ($this->m_trans_date != '')
-			return convert_date ($this->m_trans_date, 1);
+		if ($this->m_trans_time > 0)
+			return date ('Y-m-d', $this->m_trans_time);
 		else
 			return '';
 	}
-	public function get_accounting_date($blank = true) {
-		if ($this->m_accounting_date == $this->m_trans_date
-			&& $blank)
+	public function get_accounting_date($blank= true, $short= false) {
+		if ($this->m_accounting_time == $this->m_trans_time
+			&& $blank && $this->m_accounting_time > -1)
 			// same as transaction date; show blank field
 			return '';
+		elseif ($this->m_accounting_time == -1)
+		{
+			// incorrect date was entered; return this date
+			return $this->m_accounting_str;
+		}
 		else
-			return $this->m_accounting_date;
+		{		
+			if ($short)
+				// cut off last 2 digits of year
+				return date ('m/d/y', $this->m_accounting_time);
+			else
+				// normal date
+				return date ('m/d/Y', $this->m_accounting_time);
+		}
 	}
 	public function get_accounting_date_sql() {
 		// mySQL-formatted date
-		return convert_date ($this->m_accounting_date, 1);
+		//return convert_date ($this->m_accounting_date, 1);
+		return date ('Y-m-d', $this->m_accounting_time);
 	}
 	public function get_trans_vendor() {
 		return stripslashes ($this->m_trans_vendor);
@@ -82,11 +102,17 @@ class Transaction
 		else
 			return $this->m_check_number;
 	}
-	public function get_gas_miles() {
+	public function get_gas_miles($thousands = true) {
 		if (is_null ($this->m_gas_miles))
 			return '';
 		else
-			return $this->m_gas_miles;
+		{
+			if ($thousands)
+				// display using thousands separator
+				return number_format ($this->m_gas_miles);
+			else
+				return $this->m_gas_miles;
+		}
 	}
 	public function get_gas_gallons() {
 		if (is_null ($this->m_gas_gallons))
@@ -179,8 +205,8 @@ class Transaction
 		
 		$this->m_login_id			= $login_id;
 		$this->m_trans_descr		= $trans_descr;
-		$this->m_trans_date			= $trans_date;
-		$this->m_accounting_date	= $accounting_date;
+		$this->m_trans_time			= $trans_time;
+		$this->m_accounting_time	= $accounting_time;
 		$this->m_trans_vendor		= $trans_vendor;
 
 		$trans_comment = trim ($trans_comment);
@@ -197,7 +223,8 @@ class Transaction
 		if ($gas_miles == '')
 			$this->m_gas_miles = NULL;
 		else
-			$this->m_gas_miles = $gas_miles;
+			// strip thousands separators
+			$this->m_gas_miles = str_replace(',', '', $gas_miles);
 
 		if ($gas_gallons == '')
 			$this->m_gas_gallons = NULL;
@@ -248,10 +275,15 @@ class Transaction
 				round($ledger_total, 3);
 		elseif (trim ($trans_descr) == '')
 			$error = 'You must enter a description of the transaction';
-		elseif ($trans_time == -1)
+		elseif ($trans_time == -1) {
 			$error = 'Transaction Date is invalid';
-		elseif ($accounting_time == -1)
+			$this->m_trans_str = $trans_date;
+			$this->m_accounting_str = $accounting_date;
+		}
+		elseif ($accounting_time == -1) {
 			$error = 'Accounting Date is invalid';
+			$this->m_accounting_str = $accounting_date;
+		}
 		elseif (count ($ledger_list) < 2)
 			$error = 'You must have at least two ledger entries to save';
 
@@ -273,8 +305,8 @@ class Transaction
 			$this->m_login_id			= $row['login_id'];
 			$this->m_trans_descr		= addslashes ($row['trans_descr']);
 			// convert dates from yyyy-mm-dd to mm/dd/yyyy
-			$this->m_trans_date			= convert_date ($row['trans_date'], 2);
-			$this->m_accounting_date	= convert_date ($row['accounting_date'], 2);
+			$this->m_trans_time			= strtotime ($row['trans_date']);
+			$this->m_accounting_time	= strtotime ($row['accounting_date']);
 			$this->m_trans_vendor		= addslashes ($row['trans_vendor']);
 			if (is_null ($row['trans_comment']))
 				$this->m_trans_comment = NULL;

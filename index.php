@@ -195,6 +195,12 @@
 			<a href="login.php?logout=1">Logout <?= $_SESSION['display_name'] ?></a></td>
 	</tr>
 
+	<tr>
+		<td></td>
+		<td style="padding-left: 300px;">
+			<a href="account_summary.php">Account Summary</a></td>
+	</tr>
+
 	<?
 		if ($_SESSION['login_admin'] == 1)
 		{ ?>
@@ -243,9 +249,10 @@
 		<th>Description</th>
 		<th>Vendor</th>
 		<th>Account</th>
+		<th>Other</th>
 		<th style="text-align: right;">Amount</th>
 		<th style="text-align: right; padding-right: 5px; border-right: 1px solid black;">Total</th>
-		<th style="text-align: center;">Period</th>
+		<th style="text-align: center;">Per.</th>
 	</tr>
 <!--
 	<tr>
@@ -301,7 +308,7 @@
 		else
 			$time2 = strtotime ($next_trans->get_accounting_date(false));
 
-		if ($last_trans_id != -1)
+		if ($last_trans_id != -1 || true)	// always true now
 		{
 			$time1 = strtotime ($trans_item->get_accounting_date(false));
 			
@@ -309,17 +316,18 @@
 			{
 				// month or year change: add a break
 				//$td_style = '';	//' style="border: 1px solid black"';
-				$new_text = '<td style="padding-left: 10px;">'. date ('F', $time1). '</td>';
+				$new_text = '<td style="padding-left: 10px;">'.
+					substr (date ('F', $time1), 0, 3). '</td>';
 			}
 			if (date ('Y', $time1) != date ('Y', $time2))
 			{
 				// New year
 				$hr_text = "	<tr style=\"\">\n".
-					"		<td colspan=\"8\"><hr></td>\n".
+					"		<td colspan=\"9\"><hr></td>\n".
 					"	</tr>\n\n";
 				$new_text = '<td style="padding-left: 10px; '.
 					'padding-right:10px; font-weight: bold; '.
-					'border: 1px solid black">Dec '.
+					'border-top: 1px solid black; border-bottom: 1px solid black;">Dec '.
 					date ('Y', $time1). '</td>';
 				$td_style = ' style="font-weight: bold; border-right: 1px solid black;"';
 			}
@@ -332,11 +340,29 @@
 				{
 					$hr_text = "	<tr>\n".
 					'		<td style="border-right: 1px solid black; border-bottom: 1px solid black; border-top: 1px solid black; text-align: center;" '.
-						"colspan=\"7\">&nbsp;</td>\n".
-					'		<td style="border-bottom: 1px solid black; padding-left: 5px;">Today</td>'.
+						"colspan=\"8\">&nbsp;</td>\n".
+					'		<td style="border-bottom: 1px solid black; padding-left: 5px;">Tod.</td>'.
 					"	</tr>\n\n";
 				}
 			}
+		}
+
+		// if miles, gallons, or check # is recorded, display it
+		$other = '';
+		$miles = $trans_item->get_gas_miles(false);	 //get numeric form
+		$gall = $trans_item->get_gas_gallons();
+		if ($trans_item->get_check_number() != '') {
+			$other = 'chk #'. $trans_item->get_check_number();
+		}
+		elseif ($miles != '' && $gall != '') {
+			$mpg = round ((float)$miles / (float)$gall, 1);
+			$other = $mpg. ' mpg';
+		}
+		elseif ($miles != '') {
+			$other = $trans_item->get_gas_miles(true). ' mi';
+		}
+		elseif ($gall != '') {
+			$other = $gall. ' gal';
 		}
 
 		echo "	<tr$tr_style>\n";
@@ -344,8 +370,8 @@
 			echo '		<td><input type="submit" style="height: 18px; '.
 				'font-size: 8pt;" onClick="clickEdit()" name="edit" value="'.
 				$trans_item->get_trans_id(). "\"></td> \n".
-			"		<td style=\"width: 72px;\">".
-				$trans_item->get_accounting_date(false). "</td>\n".
+			"		<td style=\"width: 60px;\">".
+				$trans_item->get_accounting_date(false, true). "</td>\n".
 			"		<td>". $trans_item->get_trans_descr(). "</td>\n".
 			"		<td>". $trans_item->get_trans_vendor(). "</td>\n";
 		}
@@ -356,6 +382,7 @@
 				"		<td></td> \n";
 		}
 		echo "		<td>". $trans_item->get_account_display(). "</td>\n".
+			"		<td>$other</td> \n".
 			"		<td class=\"currency\">". $trans_item->get_ledger_amount(). "</td>\n".
 			"		<td$td_style class=\"currency\">". $trans_item->get_ledger_total(). "</td>\n".
 			"		$new_text\n".
@@ -403,7 +430,7 @@
 		<td><input type="text" size="4" maxlength="4" name="check_number"
 			value="<?= $trans->get_check_number() ?>"></td>
 		<td>Miles:</td>
-		<td><input type="text" size="6" maxlength="6" name="gas_miles"
+		<td><input type="text" size="7" maxlength="7" name="gas_miles"
 			value="<?= $trans->get_gas_miles() ?>"></td>
 		<td>Gallons:</td>
 		<td><input type="text" size="5" maxlength="5" name="gas_gallons"

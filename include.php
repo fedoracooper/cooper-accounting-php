@@ -15,6 +15,7 @@ session_start();
 
 require ('accountClass.php');
 require ('transactionClass.php');
+require ('loginClass.php');
 
 $login_admin = 0;
 $login_id = -1;
@@ -33,21 +34,28 @@ $navbar = "<table class=\"navbar\"> \n".
 	"		<td><a href=\"index.php\"";
 if ($current_page == 'index')
 	$navbar .= ' style="font-weight: bold;"';
-$navbar .= ">Account Ledger</a></td> \n".
+$navbar .= ">Ledger</a></td> \n".
 	"		<td><a href=\"account_summary.php\"";
 if ($current_page == 'account_summary')
 	$navbar .= ' style="font-weight: bold;"';
-$navbar .=	">Account Summary</a></td> \n".
+$navbar .=	">Monthly Comparisons</a></td> \n".
 	"		<td><a href=\"account_breakdown.php\"";
 if ($current_page == 'account_breakdown')
 	$navbar .= ' style="font-weight: bold;"';
-$navbar .= ">Account Breakdown</a></td> \n";
-if ($login_admin == 1)
+$navbar .= ">Period Breakdown</a></td> \n";
+if ($login_admin >= 1)
 {
 	$navbar .= "		<td><a href=\"accounts.php\"";
 	if ($current_page == 'accounts')
 		$navbar .= ' style="font-weight: bold;"';
-	$navbar .= ">Manage Accounts</a></td> \n";
+	$navbar .= ">Accounts</a></td> \n";
+}
+if ($login_admin >= 1)
+{
+	$navbar .= "		<td><a href=\"logins.php\"";
+	if ($current_page == 'logins')
+		$navbar .= ' style="font-weight: bold;"';
+	$navbar .= ">Manage Logins</a></td> \n";
 }
 if ($login_id > -1)
 	$navbar .= "		<td><a href=\"login.php?logout=1\">Logout ".

@@ -22,6 +22,7 @@
 	$trans = new Transaction();
 	$transL_ledgers = array();
 	$transR_ledgers = array();
+	$editClick = 0;
 	
 	if (isset ($_POST['sel_account_id']))
 	{
@@ -31,11 +32,32 @@
 		$end_date		= $_POST['end_date'];
 		$limit			= $_POST['limit'];
 		$total_period	= $_POST['total_period'];
+
+		$month_change = 0;
+		if (isset ($_POST['prev_month']))
+		{
+			// go back one month
+			$month_change = -1;
+		}
+		elseif (isset ($_POST['next_month']))
+		{
+			// forward one month
+			$month_change = 1;
+		}
+		if ($month_change <> 0)
+		{
+			$dateArr = split ('/', $start_date);
+			$start_time = mktime (0, 0, 0, $dateArr[0]+ $month_change, 1, $dateArr[2]);
+			$start_date = date ('n/j/Y', $start_time);
+			$end_time = mktime (0, 0, 0, $dateArr[0]+ $month_change+ 1, 0, $dateArr[2]);
+			$end_date = date ('n/j/Y', $end_time);
+		}
 	}
 	if (isset ($_POST['edit']))
 	{
 		// Loading a transaction & ledger entries from database.
 		$trans->Load_transaction($_POST['edit']);
+		$editClick = 1;		// used to set a form var for javascript
 	}
 
 	// Build the account list dropdown
@@ -146,11 +168,25 @@
 				+ 'current transaction?');
 		}
 
+		function clickEdit()
+		{
+			document.forms[0].editClick = 1;
+		}
+
+		function bodyLoad()
+		{
+			if (document.forms[0].editClick.value == "1")
+			{
+				document.forms[0].trans_date.focus();
+				document.forms[0].trans_date.select();
+			}
+		}
+
 	</script>
 </head>
 
 
-<body>
+<body onload="bodyLoad()">
 <table>
 	<tr>
 		<td><h3>Account Ledger</h3>
@@ -174,6 +210,7 @@
 <p class="error"><?= $error ?></p>
 
 <form method="post" action="index.php">
+<input type="hidden" name="editClick" value="<?= $editClick ?>">
 <table>
 
 	<tr>
@@ -182,17 +219,19 @@
 		<td><input type="text" size="10" maxlength="10" name="start_date" value="<?= $start_date ?>"></td>
 		<td>To: </td>
 		<td><input type="text" size="10" maxlength="10" name="end_date" value="<?= $end_date ?>"></td>
+		<td style="padding-left: 10px;"><input type="submit" name="filter" value="Filter transactions"></td>
 	</tr>
 	<tr>
 		<td>Rev. period: <?= $period_dropdown ?></td>
 		<td>Limit: </td>
 		<td><input type="text" size="3" maxlength="3" name="limit" value="<?= $limit ?>"></td>
 		<td></td>
-		<td><input type="submit" name="filter" value="Filter transactions"></td>
+		<td colspan="2"><input type="submit" value="<" name="prev_month"> &nbsp;
+		<input type="submit" value=">" name="next_month"></td>
 	</tr>
 
 	<tr>
-		<td colspan="5"><hr></td>
+		<td colspan="6"><hr></td>
 	</tr>
 </table>
 
@@ -205,29 +244,75 @@
 		<th>Account</th>
 		<th style="text-align: right;">Amount</th>
 		<th style="text-align: right; padding-right: 5px;">Total</th>
+		<th>Period</th>
 	</tr>
 
 	<tr>
-		<td colspan="7"><hr></td>
+		<td colspan="8"><hr></td>
 	</tr>
 
 <?
 	$last_trans_id = -1;
+	$next_trans = NULL;
+
 	// Loop through each transaction in the list
-	foreach ($trans_list as $trans_item)
+	foreach ($trans_list as $key=> $trans_item)
 	{
 		$new_row = false;
+		$td_style = '';
+		$new_text = '';
+		$hr_text = '';
+
+		if ($key -1 >= 0)	// index keys are in reverse order
+			// in range: get next account
+			$next_trans = $trans_list[$key - 1];
+		else
+			$next_trans = NULL;		// last row
+
 		if ($trans_item->get_trans_id() != $last_trans_id)
 		{
 			//new transaction
 			$new_row = true;
 		}
+
+		if ($next_trans === NULL)
+			// Add a day to the current end date (25 hrs for Daylight Savings)
+			$time2 = (strtotime ($end_date) + 60*60*25);
+		else
+			$time2 = strtotime ($next_trans->get_accounting_date(false));
+
+		if ($last_trans_id != -1)
+		{
+			$time1 = strtotime ($trans_item->get_accounting_date(false));
+			
+			if (date ('m/Y', $time1) != date ('m/Y', $time2))
+			{
+				// month or year change: add a break
+				$td_style = '';	//' style="border: 1px solid black"';
+				$new_text = date ('F', $time1);
+			}
+			if (date ('Y', $time1) != date ('Y', $time2))
+			{
+				// New year
+				$hr_text = "	<tr style=\"\">\n".
+					"		<td colspan=\"8\"><hr></td>\n".
+					"	</tr>\n\n";
+				$new_text = '<span style="padding-left: 10px; '.
+					'padding-right:10px; font-weight: bold; '.
+					'border: 1px solid black">Dec. '.
+					date ('Y', $time1). '</span>';
+				$td_style = ' style="font-weight: bold"';
+			}
+
+		}
+
 		echo "	<tr>\n";
 		if ($new_row) {
-			echo '		<td><input type="submit" style="height: 18px; font-size: 8pt;" name="edit" value="'.
+			echo '		<td><input type="submit" style="height: 18px; '.
+				'font-size: 8pt;" onClick="clickEdit()" name="edit" value="'.
 				$trans_item->get_trans_id(). "\"></td> \n".
-			"		<td>". $trans_item->get_trans_date(). "</td>\n".
-			'		<td>'. $trans_item->get_trans_descr(). "</td>\n".
+			"		<td>". $trans_item->get_accounting_date(false). "</td>\n".
+			"		<td>". $trans_item->get_trans_descr(). "</td>\n".
 			"		<td>". $trans_item->get_trans_vendor(). "</td>\n";
 		}
 		else {
@@ -238,26 +323,30 @@
 		}
 		echo "		<td>". $trans_item->get_account_display(). "</td>\n".
 			"		<td class=\"currency\">". $trans_item->get_ledger_amount(). "</td>\n".
-			"		<td class=\"currency\">". $trans_item->get_ledger_total(). "</td>\n".
+			"		<td$td_style class=\"currency\">". $trans_item->get_ledger_total(). "</td>\n".
+			"		<td style=\"padding-left: 8px;\">$new_text</td>\n".
 			"	</tr>\n\n";
+
+		echo $hr_text;
 
 		$last_trans_id = $trans_item->get_trans_id();
 	}
 ?>
 	<tr>
-		<td colspan="7"><hr></td>
+		<td colspan="8"><hr></td>
 	</tr>
 
 </table>
 
 <table class="transaction">
 	<tr>
-		<td colspan="4" style="font-weight: bold;"><?
+		<td colspan="4" style="font-weight: bold;">
+			<a name="edit_trans"><?
 			if ($trans->get_trans_id() < 0)
 				echo "New Transaction";
 			else
 				echo "Edit Transaction (". $trans->get_trans_id(). ")";
-			?></td>
+			?></a></td>
 	</tr>
 
 	<tr>

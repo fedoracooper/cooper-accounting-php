@@ -60,9 +60,16 @@
 <head>
 	<title>Accounting Login</title>
 	<link href="style.css" rel="stylesheet" type="text/css">
+	<script language="javascript" type="text/javascript">
+		function user_focus()
+		{
+			document.forms[0].login_user.focus();
+		}
+
+	</script>
 </head>
 
-<body>
+<body onload="user_focus()">
 <h3>Accounting Login</h3>
 <p class="error"><?= $error ?></p>
 <p>Please log in below.</p>

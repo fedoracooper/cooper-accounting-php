@@ -92,13 +92,13 @@ function parse_date ($date_str)
 	{
 		if (!is_numeric ($val))
 		{
-			echo "non-numeric date part";
+			//echo "non-numeric date part";
 			return -1;	// non-integer value
 		}
 	}
 	if (!checkdate ($dateArr[0], $dateArr[1], $dateArr[2]))
 	{
-		echo "failed checkdate";
+		//echo "failed checkdate";
 		return -1;	// invalid numbers
 	}
 	else
@@ -480,8 +480,9 @@ class Transaction
 		else
 			return '';
 	}
-	public function get_accounting_date() {
-		if ($this->m_accounting_date == $this->m_trans_date)
+	public function get_accounting_date($blank = true) {
+		if ($this->m_accounting_date == $this->m_trans_date
+			&& $blank)
 			// same as transaction date; show blank field
 			return '';
 		else
@@ -525,26 +526,32 @@ class Transaction
 		// Format decimal points
 		if (is_null ($this->m_ledger_amount))
 			return '';
-		elseif ($this->m_ledger_amount < 0)
-		{
-			// Negative number
-			return '<span style="color: red;">$'.
-				$this->m_ledger_amount. '</span>';
-		}
 		else
 		{
-			return '$'. $this->m_ledger_amount;
+			$numStr = number_format ($this->m_ledger_amount, 2);
+			if ($this->m_ledger_amount < 0)
+			{
+				// Negative number
+				return '<span style="color: red;">$'.
+					$numStr. '</span>';
+			}
+			else
+			{
+				return '$'. $numStr;
+			}
 		}
-
 	}
 	public function get_ledger_total() {
 		if (is_null ($this->m_ledger_total))
 			return '';
-		elseif ($this->m_ledger_total < 0)
-			return '<span style="color: red;">$'.
-				$this->m_ledger_total. '</span>';
 		else
-			return '$'. $this->m_ledger_total;
+		{
+			$numStr = number_format ($this->m_ledger_total, 2);
+			if ($this->m_ledger_total < 0)
+				return '<span style="color: red;">$'. $numStr. '</span>';
+			else
+				return '$'. $numStr;
+		}
 	}
 	public function get_ledgerL_list() {
 		return $this->m_ledgerL_list;
@@ -648,8 +655,9 @@ class Transaction
 			$ledger_total += ($ledger_data[2] * (float)$accountArr[1]);
 		}
 
-		if (abs ($ledger_total) > .01)
-			$error = "Transaction must total to zero; it currently totals \$$ledger_total";
+		if (abs ($ledger_total) > .001)
+			$error = "Transaction must total to zero; it currently totals \$".
+				round($ledger_total, 3);
 		elseif (trim ($trans_descr) == '')
 			$error = 'You must enter a description of the transaction';
 		elseif ($trans_time == -1)
@@ -881,7 +889,7 @@ class Transaction
 			$error = 'Limit must be 0 (no limit) or greater';
 		if ($error != '')
 		{
-			echo $error;
+			//echo $error;
 			return $trans_list;
 		}
 
@@ -951,9 +959,9 @@ class Transaction
 			"WHERE (a.account_id = $account_id ".
 			"  or a2.account_id = $account_id ".
 			"  or a2.account_parent_id = $account_id ) ".
-			"  and trans_date >= '$start_date_sql' ".
-			"  and trans_date <= '$end_date_sql' \n".
-			"ORDER BY trans_date DESC, t.trans_id DESC \n" ;
+			"  and accounting_date >= '$start_date_sql' ".
+			"  and accounting_date <= '$end_date_sql' \n".
+			"ORDER BY accounting_date DESC, t.trans_id DESC \n" ;
 		if ($limit > 0)
 			$sql .= "limit $limit ";
 
@@ -1035,8 +1043,8 @@ class Transaction
 			"WHERE (a.account_id = $account_id OR ".
 			"  a2.account_id = $account_id OR ".
 			"  a2.account_parent_id = $account_id) ".
-			"  AND (t.accounting_date < '{$this->get_trans_date_sql()}' ".
-			"		OR (t.accounting_date = '{$this->get_trans_date_sql()}' ".
+			"  AND (t.accounting_date < '{$this->get_accounting_date_sql()}' ".
+			"		OR (t.accounting_date = '{$this->get_accounting_date_sql()}' ".
 			"			AND t.trans_id <= $this->m_trans_id ) )";
 		if (!is_null ($min_date))
 		{

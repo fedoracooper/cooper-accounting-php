@@ -1,4 +1,5 @@
 <?
+	$current_page = 'account_breakdown';
 	require('include.php');
 	if (!isset ($_SESSION['login_id']))
 	{
@@ -8,22 +9,45 @@
 
 	$error = '';
 	// set default vars
-	$start_date = date ('m/1/Y');	//first of current month
+	//$start_date = date ('m/1/Y');	//first of current month
 	$dateArr = getdate ();
-	// add 1 month & subtract one day
-	$endTime = mktime (0, 0, 0, $dateArr['mon'] + 1, 0, $dateArr['year']);
-	$end_date = date ('m/d/Y', $endTime);
+	$dateArr['mday'] = 1;
+	$dateArr2 = getdate();
+	$dateArr2['mon'] ++;
+	$dateArr2['mday'] = 0;
+
 	$account_id = $_SESSION['default_summary2'];
 	
-
-	if (isset ($_POST['calc']))
+	if (isset ($_POST['start_date']))
 	{
-		// Verify
-
-		$start_date	= $_POST['start_date'];
-		$end_date	= $_POST['end_date'];
+		$dateArr	= getdate (strtotime ($_POST['start_date']));
+		$dateArr2	= getdate (strtotime ($_POST['end_date']));
 		$account_id	= $_POST['account_id'];
+
+		if (isset ($_POST['prev_month']))
+		{
+			// go back one month
+			$dateArr['mon'] --;
+			$dateArr['mday'] = 1;
+			$dateArr2['mday'] = 0;
+		}
+		elseif (isset ($_POST['next_month']))
+		{
+			// forward one month
+			$dateArr['mon'] ++;
+			$dateArr['mday'] = 1;
+			$dateArr2['mon'] += 2;
+			$dateArr2['mday'] = 0;
+		}
 	}
+	// convert date arrays into date strings
+	$start_time = mktime (0, 0, 0,
+		$dateArr['mon'], $dateArr['mday'], $dateArr['year']);
+	$end_time = mktime (0, 0, 0,
+		$dateArr2['mon'], $dateArr2['mday'], $dateArr2['year']);
+	$start_date	= date ('n/j/Y', $start_time);
+	$end_date	= date ('n/j/Y', $end_time);
+
 
 	// build account dropdowns: include inactive, and only show top 2 tiers
 	$account_list = Account::Get_account_list ($_SESSION['login_id'],
@@ -53,26 +77,9 @@
 
 
 <body onload="bodyLoad()">
-<table>
-	<tr>
-		<td><h3>Account Breakdown</h3>
-		<td style="padding-left: 300px;">
-			<a href="login.php?logout=1">Logout <?= $_SESSION['display_name'] ?></a></td>
-	<?
-		if ($_SESSION['login_admin'] == 1)
-		{ ?>
-		<td style="padding-left: 13px;">
-			<a href="accounts.php">Manage Accounts</a></td>
-	<?	}	//end accounts link	 ?>	
-	</tr>
+<?= $navbar ?>
 
-	<tr>
-		<td></td>
-		<td style="padding-left: 300px;">
-			<a href="index.php">Account Ledger</a></td>
-		<td style="padding-left: 13px;"><a href="account_summary.php">Account Summary</a></td>
-	</tr>
-</table>
+<h3>Account Breakdown</h3>
 
 <span class="error"><?= $error ?></span>
 
@@ -83,7 +90,7 @@
 		<td><input type="text" name="start_date" value="<?= $start_date ?>"></td>
 		<td>To: </td> 
 		<td>&nbsp;&nbsp;<input type="text" name="end_date" value="<?= $end_date ?>"></td>
-		<td>&nbsp;&nbsp;<input type="submit" value="Update" name="calc"></td>	<!-- Month direction arrows -->
+		<td>&nbsp;&nbsp;<input type="submit" value="Update" name="update"></td>	<!-- Month direction arrows -->
 	</tr>
 
 	<tr>

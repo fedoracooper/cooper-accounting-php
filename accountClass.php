@@ -478,8 +478,8 @@ class Account
 		for each Car expense account that has gas_gallons & gas_miles data.
 
 		returns:
-		//	array (account_name, num_records, total_miles, total_gallons,
-				total_dollars)
+		//	array (account_name, accounting_year, num_records, total_miles, 
+		//		total_gallons, total_dollars)
 	*/
 	public static function Get_gas_totals (&$totals)
 	{
@@ -487,7 +487,8 @@ class Account
 		$sql = "SELECT min(a.account_name) as account_name, ".
 			"  count(*) as cnt, sum(gas_miles) as total_miles, ".
 			"  sum(gas_gallons) as total_gallons, ".
-			"  sum(ledger_amount) as total_dollars \n".
+			"  sum(ledger_amount) as total_dollars, ".
+			"  year(accounting_date) as accounting_year \n".
 			"FROM transactions t \n".
 			"INNER JOIN ledgerEntries le ON ".
 			"  le.trans_id = t.trans_id \n".
@@ -495,7 +496,8 @@ class Account
 			"  a.account_id = le.account_id ".
 			"  AND a.account_parent_id = $_SESSION[car_account_id] \n".
 			"WHERE gas_gallons > 0 AND gas_miles > 0 \n".
-			"GROUP BY a.account_id " ;
+			"GROUP BY a.account_id, year(t.accounting_date) \n".
+			"ORDER BY year(accounting_date), a.account_name ";
 		db_connect();
 		$rs = mysql_query ($sql);
 		$error = db_error($rs, $sql);
@@ -504,7 +506,9 @@ class Account
 
 		while ($row = mysql_fetch_array ($rs, MYSQL_ASSOC))
 		{
-			$totals[] = array ($row['account_name'],
+			$totals[] = array (
+				$row['account_name'],
+				$row['accounting_year'],
 				$row['cnt'],
 				$row['total_miles'],
 				$row['total_gallons'],
@@ -543,8 +547,8 @@ class Account
 		$sql = "SELECT sum( ledger_amount ) AS total_amount, ".
 			"  min( ifnull( a2.account_name, a.account_name ) ) as name  \n".
 			"FROM ledgerEntries le \n".
-			"INNER  JOIN transactions t ON t.trans_id = le.trans_id \n".
-			"INNER  JOIN accounts a ON le.account_id = a.account_id \n".
+			"INNER JOIN transactions t ON t.trans_id = le.trans_id \n".
+			"INNER JOIN accounts a ON le.account_id = a.account_id \n".
 			"LEFT  JOIN accounts a2 ON a.account_parent_id = a2.account_id ".
 			"  AND a2.account_id <> $account_id \n".
 			"WHERE ( a.account_parent_id= $account_id ".
@@ -553,6 +557,21 @@ class Account
 			"  AND t.accounting_date <=  '$end_sql' \n".
 			"GROUP BY IFNULL( a2.account_id, a.account_id ) \n".
 			"ORDER BY total_amount DESC " ;
+/*
+		$sql = "SELECT sum( ledger_amount ) AS total_amount, ".
+			"  min( a.account_name ) as name  \n".
+			"FROM ledgerEntries le \n".
+			"INNER JOIN transactions t ON t.trans_id = le.trans_id \n".
+			"INNER JOIN accounts a ON le.account_id = a.account_id \n".
+			"LEFT  JOIN accounts a2 ON a.account_parent_id = a2.account_id ".
+			"  AND a2.account_id <> $account_id \n".
+			"WHERE ( a.account_parent_id= $account_id ".
+			"  OR a2.account_parent_id= $account_id ) \n".
+			"  AND t.accounting_date >=  '$start_sql' ".
+			"  AND t.accounting_date <=  '$end_sql' \n".
+			"GROUP BY a.account_id \n".
+			"ORDER BY total_amount DESC " ;
+*/
 
 		db_connect();
 		$rs = mysql_query ($sql);

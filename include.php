@@ -16,6 +16,45 @@ session_start();
 require ('accountClass.php');
 require ('transactionClass.php');
 
+$login_admin = 0;
+$login_id = -1;
+if (isset ($_SESSION['login_id']))
+{
+	$login_id = $_SESSION['login_id'];
+	$login_admin = $_SESSION['login_admin'];
+}
+
+// define top header
+if (!isset ($current_page))
+	$current_page = '';
+
+$navbar = "<table class=\"navbar\"> \n".
+	"	<tr>\n".
+	"		<td><a href=\"index.php\"";
+if ($current_page == 'index')
+	$navbar .= ' style="font-weight: bold;"';
+$navbar .= ">Account Ledger</a></td> \n".
+	"		<td><a href=\"account_summary.php\"";
+if ($current_page == 'account_summary')
+	$navbar .= ' style="font-weight: bold;"';
+$navbar .=	">Account Summary</a></td> \n".
+	"		<td><a href=\"account_breakdown.php\"";
+if ($current_page == 'account_breakdown')
+	$navbar .= ' style="font-weight: bold;"';
+$navbar .= ">Account Breakdown</a></td> \n";
+if ($login_admin == 1)
+{
+	$navbar .= "		<td><a href=\"accounts.php\"";
+	if ($current_page == 'accounts')
+		$navbar .= ' style="font-weight: bold;"';
+	$navbar .= ">Manage Accounts</a></td> \n";
+}
+if ($login_id > -1)
+	$navbar .= "		<td><a href=\"login.php?logout=1\">Logout ".
+		$_SESSION['display_name']. "</a></td> \n";
+$navbar .= "	</tr>\n".
+	"</table> \n\n";
+
 
 // UTILITY FUNCTIONS
 //------------------------------------------------------------------------------

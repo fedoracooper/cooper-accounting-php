@@ -4,6 +4,7 @@
 	Created 9/27/2004 by Cooper Blake
 	This allows admins to add, update & delete accounts
 */
+	$current_page = 'accounts';
 	require('include.php');
 	if (!isset ($_SESSION['login_id']))
 	{
@@ -159,11 +160,12 @@
 	</script>
 </head>
 <body>
+<?= $navbar ?>
+
 <form method="post" action="accounts.php">
 <input type="hidden" name="account_id" value="<?= $account->get_account_id() ?>">
 <input type="hidden" name="account_parent_id" value="<?= $account->get_account_parent_id() ?>">
 <h3>Accounts Management</h3>
-<a href="index.php">Account Ledger</a>
 <p class="error"><?= $error ?></p>
 <p>Please select your account</p>
 

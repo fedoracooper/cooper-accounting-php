@@ -256,14 +256,16 @@ class Transaction
 				}
 				elseif (!is_numeric ($ledger_data[2]))
 				{
-					return $error = "You must enter a number for the amount";
+					return $error = "You must enter a number for the amount '".
+						$ledger_data[2]. "'";
 				}
 			}
 			elseif (trim ($ledger_data[2]) != ''
 				&& !is_numeric ($ledger_data[2]))
 			{
 				// Existing ledger with non-empty, non-numeric amount
-				return $error = "You must enter a numeric amount or no amount";
+				return $error = "You must enter a numeric amount or no amount: '".
+					$ledger_data[2]. "'";
 			}
 			// Total up amounts multiplied by debit (1 or -1)
 			$accountArr = split (',', $ledger_data[1]);

@@ -1,4 +1,5 @@
 <?
+	$current_page = 'account_summary';
 	require('include.php');
 	if (!isset ($_SESSION['login_id']))
 	{
@@ -40,6 +41,15 @@
 		}
 		$account1_id	= $_POST['account1_id'];
 		$account2_id	= $_POST['account2_id'];
+	}
+
+	// Add or subtract display vars
+	$net_sign = ' &#150 ';	// long dash
+	$net_txt = 'Diff';
+	if ($net_multiplier != -1)
+	{
+		$net_sign = ' + ';
+		$net_txt = 'Sum';
 	}
 
 	// build account dropdowns
@@ -87,27 +97,9 @@
 
 
 <body onload="bodyLoad()">
-<table class="summary-form">
-	<tr>
-		<td><h3>Account Ledger</h3>
-		<td style="padding-left: 300px;">
-			<a href="login.php?logout=1">Logout <?= $_SESSION['display_name'] ?></a></td>
-	<?
-		if ($_SESSION['login_admin'] == 1)
-		{ ?>
-		<td style="padding-left: 13px;">
-			<a href="accounts.php">Manage Accounts</a></td>
-	<?	}	//end accounts link	 ?>	
-	</tr>
+<?= $navbar ?>
 
-	<tr>
-		<td></td>
-		<td style="padding-left: 300px;">
-			<a href="index.php">Account Ledger</a></td>
-		<td style="padding-left: 13px;"><a href="account_breakdown.php">Account Breakdown</a></td>
-	</tr>
-
-</table>
+<h3>Account Summary</h3>
 
 <span class="error"><?= $error ?></span>
 
@@ -122,7 +114,7 @@
 	</tr>
 
 	<tr>
-		<td colspan="2"><?= $account1_dropdown ?> - </td>
+		<td colspan="2"><?= $account1_dropdown. $net_sign ?></td>
 		<td colspan="2"><?= $account2_dropdown ?></td>
 		<td> = Net &nbsp;&nbsp;<input type="submit" name="calc" value="Update"></td>
 	</tr>
@@ -132,7 +124,7 @@
 
 <?
 	// left border for right-most column
-	$td_style = 'style="border-left: 1px solid black; "';
+	$td_style = 'style="border-left: 1px solid black;"';
 	$c_style = 'style="border-left: 2px solid black; "';	// center divider
 ?>
 
@@ -141,10 +133,12 @@
 		<th colspan="2">Period</th>
 		<th>Account 1 </th>
 		<th>Account 2 </th>
-		<th <?= $td_style ?>>Sum </th>
+		<th <?= $td_style. '>'. $net_txt ?></th>
+		<th style="text-align: center;">%</th>
 		<th <?= $c_style ?>>Account 1 YTD </th>
 		<th>Account 2 YTD </th>
 		<th <?= $td_style ?>>Sum YTD </th>
+		<th style="text-align: center;">YTD %</th>
 	</tr>
 
 <?
@@ -163,9 +157,25 @@
 		$account1_sum = $summary_data[2];
 		$account2_sum = $summary_data[3];
 		$account_total = $account1_sum + ($account2_sum * $net_multiplier);
+		$account_pct = 0;
+		if ($account1_sum != 0)
+		{
+			if ($net_multiplier < 0)
+				$account_pct = $account_total / $account1_sum;
+			else
+				$account_pct = $account2_sum / $account1_sum;
+		}
 		$account1_ytd = $summary_data[4];
 		$account2_ytd = $summary_data[5];
 		$ytd_total = $account1_ytd + ($account2_ytd * $net_multiplier);
+		$ytd_pct = 0.0;
+		if ($account1_ytd != 0)
+		{
+			if ($net_multiplier < 0)
+				$ytd_pct = $ytd_total / $account1_ytd;
+			else
+				$ytd_pct = $account2_ytd / $account1_ytd;
+		}
 		if ($account1_ytd == 0.0 && $i > 0 && $period_month != 1)
 		{
 			// grab last non-zero YTD val if it's zero;
@@ -225,7 +235,7 @@
 
 			$hr_html = "	<tr> \n".
 				"		<td style=\"border-top: 1px solid black; border-bottom: 1px solid black;\"".
-				" colspan=\"8\">$descr_txt</td> \n".
+				" colspan=\"10\">$descr_txt</td> \n".
 				"	</tr> \n\n";
 		}
 
@@ -240,12 +250,16 @@
 				"</td> \n".
 			"		<td class=\"currency\" $td_style>".
 				format_currency($account_total). "</td> \n".
+			"		<td class=\"currency\">".
+				number_format ($account_pct*100, 1). "%</td> \n".
 			"		<td class=\"currency\" $c_style>". format_currency($account1_ytd).
 				"</td> \n".
 			"		<td class=\"currency\">". format_currency($account2_ytd).
 				"</td> \n".
 			"		<td class=\"currency\" $td_style>".
 				format_currency($ytd_total). "</td> \n".
+			"		<td class=\"currency\">".
+				number_format ($ytd_pct*100, 1). "%</td> \n".
 			"	</tr> \n\n";
 
 		//echo $hr_html;
@@ -264,40 +278,46 @@
 <table class="summary-list" cellspacing="0" cellpadding="0">
 
 	<tr>
+		<th>Year</th>
 		<th>Account</th>
 		<th>Tanks</th>
 		<th>Total miles</th>
 		<th>Total galls</th>
+		<th>Total $</th>
 		<th>Avg MPG</th>
 		<th>Avg $ / gallon</th>
 		<th>Avg miles / tank</th>
 	</tr>
 
 <?
-	//	array (account_name, num_records, total_miles, total_gallons,
-	//		total_dollars)
+		//	array (account_name, accounting_year, num_records, total_miles, 
+		//		total_gallons, total_dollars)
 	foreach ($fuel_list as $fuel_data)
 	{
-		$total_miles = number_format ($fuel_data[2]);
-		$total_gallons = number_format ($fuel_data[3], 1);
+		$total_miles	= number_format ($fuel_data[3]);
+		$total_gallons	= number_format ($fuel_data[4], 1);
+		$total_dollars	= number_format ($fuel_data[5], 2);
 		$avg_mpg = '0.0';
 		$cost_per_gall = '0.00';
-		if ($fuel_data[3] != 0.0)
+
+		if ($fuel_data[4] != 0.0)
 		{
-			$avg_mpg = sprintf ("%0.1f", $fuel_data[2] / $fuel_data[3]);
-			$cost_per_gall = number_format ($fuel_data[4] / $fuel_data[3], 2);
+			$avg_mpg = sprintf ("%0.1f", $fuel_data[3] / $fuel_data[4]);
+			$cost_per_gall = number_format ($fuel_data[5] / $fuel_data[4], 2);
 		}
 		$avg_miles = '0.0';
 		if ($fuel_data[1] != 0)
 		{
-			$avg_miles = number_format ($fuel_data[2] / $fuel_data[1], 1);
+			$avg_miles = number_format ($fuel_data[3] / $fuel_data[2], 1);
 		}
 
 		echo "	<tr> \n".
+			"		<td>$fuel_data[1]</td> \n".
 			"		<td>$fuel_data[0]</td> \n".
-			"		<td style=\"text-align: right;\">$fuel_data[1]</td> \n".
+			"		<td style=\"text-align: right;\">$fuel_data[2]</td> \n".
 			"		<td style=\"text-align: right;\">$total_miles</td> \n".
 			"		<td style=\"text-align: right;\">$total_gallons</td> \n".
+			"		<td style=\"text-align: right;\">\$$total_dollars</td> \n".
 			"		<td style=\"text-align: right;\">$avg_mpg</td> \n".
 			"		<td style=\"text-align: right;\">\$$cost_per_gall</td> \n".
 			"		<td style=\"text-align: right;\">$avg_miles</td> \n".

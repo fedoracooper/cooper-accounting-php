@@ -1,4 +1,5 @@
 <?
+	$current_page = 'index';
 	require('include.php');
 	if (!isset ($_SESSION['login_id']))
 	{
@@ -12,11 +13,11 @@
 	$sel_account_id = $_SESSION['default_account_id'];	// default account selection
 	// default date range to the whole current month
 	$dateArr = getdate ();
-	// add 1 month & subtract one day
-	$endTime = mktime (0, 0, 0, $dateArr['mon'] + 1, 0, $dateArr['year']);
-	$start_date = "$dateArr[mon]/1/$dateArr[year]";
-	$next_month = ($dateArr['mon'] % 12) + 1;
-	$end_date = date ('n/j/Y', $endTime);
+	$dateArr['mday'] = 1;	// first day of current month
+	$dateArr2 = getdate();
+	$dateArr2['mon'] ++;
+	$dateArr2['mday'] = 0;	// last day of previous month
+
 	$limit = 0;
 	$total_period = 'month';
 	$trans = new Transaction();
@@ -28,31 +29,35 @@
 	{
 		// The form has already been submitted; get filter vars
 		$sel_account_id	= $_POST['sel_account_id'];
-		$start_date		= $_POST['start_date'];
-		$end_date		= $_POST['end_date'];
+		$dateArr	= getdate (strtotime ($_POST['start_date']));
+		$dateArr2	= getdate (strtotime ($_POST['end_date']));
 		$limit			= $_POST['limit'];
 		$total_period	= $_POST['total_period'];
 
-		$month_change = 0;
 		if (isset ($_POST['prev_month']))
 		{
-			// go back one month
-			$month_change = -1;
+			// go to last whole month
+			$dateArr['mon'] --;
+			$dateArr['mday'] = 1;
+			$dateArr2['mday'] = 0;
 		}
 		elseif (isset ($_POST['next_month']))
 		{
-			// forward one month
-			$month_change = 1;
-		}
-		if ($month_change <> 0)
-		{
-			$dateArr = split ('/', $start_date);
-			$start_time = mktime (0, 0, 0, $dateArr[0]+ $month_change, 1, $dateArr[2]);
-			$start_date = date ('n/j/Y', $start_time);
-			$end_time = mktime (0, 0, 0, $dateArr[0]+ $month_change+ 1, 0, $dateArr[2]);
-			$end_date = date ('n/j/Y', $end_time);
+			// next whole month
+			$dateArr['mon'] ++;
+			$dateArr['mday'] = 1;
+			$dateArr2['mon'] += 2;
+			$dateArr2['mday'] = 0;
 		}
 	}
+	// convert date arrays into date strings
+	$start_time = mktime (0, 0, 0,
+		$dateArr['mon'], $dateArr['mday'], $dateArr['year']);
+	$end_time = mktime (0, 0, 0,
+		$dateArr2['mon'], $dateArr2['mday'], $dateArr2['year']);
+	$start_date	= date ('n/j/Y', $start_time);
+	$end_date	= date ('n/j/Y', $end_time);
+
 	if (isset ($_POST['edit']))
 	{
 		// Loading a transaction & ledger entries from database.
@@ -151,6 +156,8 @@
 	// Build the transaction list
 	$trans_list = Transaction::Get_transaction_list ($sel_account_id,
 		$start_date, $end_date, $limit, $total_period, $error);
+	$sel_account = new Account ();
+	$sel_account->Load_account ($sel_account_id);
 	if ($error1 != '')
 		// an error occurred before calling transaction list
 		$error = $error1;
@@ -188,29 +195,19 @@
 
 
 <body onload="bodyLoad()">
-<table>
-	<tr>
-		<td><h3>Account Ledger</h3>
-		<td style="padding-left: 300px;">
-			<a href="login.php?logout=1">Logout <?= $_SESSION['display_name'] ?></a></td>
-	<?
-		if ($_SESSION['login_admin'] == 1)
-		{ ?>
-		<td style="padding-left: 13px;">
-			<a href="accounts.php">Manage Accounts</a></td>
-	<?	}	//end accounts link	 ?>	
-	</tr>
+<?= $navbar ?>
 
+<table style="margin-top: 5px;">
 	<tr>
-		<td></td>
-		<td style="padding-left: 300px;">
-			<a href="account_summary.php">Account Summary</a></td>
-		<td style="padding-left: 13px;"><a href="account_breakdown.php">Account Breakdown</a></td>
+		<td><h3>Account Ledger: <?= $sel_account->get_account_name() ?></h3></td>
+		<td style="padding-left: 30px;"><?= $sel_account->get_account_descr() ?></td>
 	</tr>
-
 </table>
 
-<p class="error"><?= $error ?></p>
+<?
+	if ($error != '')
+		echo	"<p class=\"error\">$error</p> \n";
+?>
 
 <form method="post" action="index.php">
 <input type="hidden" name="editClick" value="<?= $editClick ?>">
@@ -323,7 +320,7 @@
 					"	</tr>\n\n";
 				$new_text = '<td style="padding-left: 10px; '.
 					'padding-right:10px; font-weight: bold; '.
-					'border-top: 1px solid black; border-bottom: 1px solid black;">Dec '.
+					'border-top: 1px solid black; border-bottom: 1px solid black;">'.
 					date ('Y', $time1). '</td>';
 				$td_style = ' style="font-weight: bold; border-right: 1px solid black;"';
 			}

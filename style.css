@@ -1,3 +1,31 @@
+a
+{
+	font-size: 10pt;
+	font-family: Arial, sans-serif;
+	color: #222299;
+	text-decoration: none;
+}
+
+a:active
+{
+	color: #FF2222;
+}
+
+a:hover
+{
+	background-color: #FFFF99;
+}
+
+a:focus
+{
+	color: #FF2222;
+}
+
+h3
+{
+	font-family: Arial, sans-serif;
+}
+
 th
 {
 	color: #5555CC;
@@ -66,4 +94,24 @@ table.transaction
 	border-left: 1px solid black;
 	border-right: 1px solid black;
 	border-top: 1px solid black;
+}
+
+
+table.navbar
+{
+	border-bottom: 1px solid black;
+	/* background-color: #CADDEC; */
+}
+
+table.navbar tr
+{
+
+}
+
+table.navbar td
+{
+	padding-left: 10px;
+	padding-right: 10px;
+/*	font-weight: bold;	*/
+
 }

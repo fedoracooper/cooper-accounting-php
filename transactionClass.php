@@ -247,29 +247,36 @@ class Transaction
 		// 0=ledger_id, 1=account_id/account_debit, 2=amount
 		foreach ($ledger_list as $ledger_data)
 		{
+			if ($ledger_data[1] == '-1' && $ledger_data[2] != '') {
+				// a number without an account has been specified
+				return $error = "You must select an account for your amount";
+			}
 			if ($ledger_data[0] < 0)
 			{
 				// new ledger entry; need full verification
-				if ($ledger_data[1] == '-1')
-				{
-					return $error = "You must select an account for your amount";
-				}
-				elseif (!is_numeric ($ledger_data[2]))
+				if (!is_numeric ($ledger_data[2]))
 				{
 					return $error = "You must enter a number for the amount '".
 						$ledger_data[2]. "'";
 				}
 			}
-			elseif (trim ($ledger_data[2]) != ''
-				&& !is_numeric ($ledger_data[2]))
+			else
 			{
-				// Existing ledger with non-empty, non-numeric amount
-				return $error = "You must enter a numeric amount or no amount: '".
-					$ledger_data[2]. "'";
+				// Existing ledger entry
+				if (trim ($ledger_data[2]) != ''
+					&& !is_numeric ($ledger_data[2]))
+				{
+					// Existing ledger with non-empty, non-numeric amount
+					return $error = "You must enter a numeric amount or no amount: '".
+						$ledger_data[2]. "'";
+				}
 			}
 			// Total up amounts multiplied by debit (1 or -1)
 			$accountArr = split (',', $ledger_data[1]);
-			$ledger_total += ($ledger_data[2] * (float)$accountArr[1]);
+			if (count ($accountArr) == 2) {
+				// when deleting ledger entries, there may be no account
+				$ledger_total += ($ledger_data[2] * (float)$accountArr[1]);
+			}
 		}
 
 		if (abs ($ledger_total) > .001)
@@ -286,8 +293,9 @@ class Transaction
 			$error = 'Accounting Date is invalid';
 			$this->m_accounting_str = $accounting_date;
 		}
-		elseif (count ($ledger_list) < 2)
-			$error = 'You must have at least two ledger entries to save';
+		// 12/4/2004 comment out:  can have just 1 entry with zero value
+		//elseif (count ($ledger_list) < 2)
+		//	$error = 'You must have at least two ledger entries to save';
 
 		return $error;
 	}
@@ -457,7 +465,6 @@ class Transaction
 				$ledger_inserts += mysql_affected_rows();
 			}
 		}
-
 
 		mysql_close();
 		return $error;

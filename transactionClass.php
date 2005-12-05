@@ -304,6 +304,8 @@ class Transaction
 		// 12/4/2004 change:  can have just 1 entry with zero value
 		elseif (count ($ledger_list) < 1)
 			$error = 'You must have at least one ledger entry to save';
+		elseif ($check_number != NULL && !is_numeric ($check_number))
+			$error = 'The check number must be numeric or empty';
 		
 
 		return $error;

@@ -16,6 +16,7 @@ session_start();
 require ('accountClass.php');
 require ('transactionClass.php');
 require ('loginClass.php');
+require ('productAccountClass.php');
 
 $login_admin = 0;
 $login_id = -1;
@@ -43,6 +44,12 @@ $navbar .=	">Monthly Comparisons</a></td> \n".
 if ($current_page == 'account_breakdown')
 	$navbar .= ' style="font-weight: bold;"';
 $navbar .= ">Period Breakdown</a></td> \n";
+
+$navbar .= "		<td><a href=\"product-numbers.php\"";
+if ($current_page == 'products')
+	$navbar .= ' style="font-weight: bold;"';
+$navbar .= ">Product Numbers</a></td> \n";
+
 if ($login_admin >= 1)
 {
 	$navbar .= "		<td><a href=\"accounts.php\"";
@@ -50,8 +57,9 @@ if ($login_admin >= 1)
 		$navbar .= ' style="font-weight: bold;"';
 	$navbar .= ">Accounts</a></td> \n";
 }
-if ($login_admin >= 1)
+if ($login_admin > 1)
 {
+	// top-level admin
 	$navbar .= "		<td><a href=\"logins.php\"";
 	if ($current_page == 'logins')
 		$navbar .= ' style="font-weight: bold;"';

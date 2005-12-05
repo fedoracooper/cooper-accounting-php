@@ -223,8 +223,10 @@
 		*/
 		else
 		{
-			// Get regular name of the month
-			$period_txt = date ('F', mktime (0, 0, 0, $period_month));
+			// Get regular name of first of the month
+			// Note:  must specify day 1 or it defaults to current day
+			// of month.
+			$period_txt = date ('F', mktime (0, 0, 0, $period_month, 1) );
 		}
 
 		$number_span = '';

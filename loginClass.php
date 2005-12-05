@@ -199,7 +199,7 @@ class Login
 		if ($this->m_login_id > -1)
 		{
 			// UPDATE existing login
-			$sql = "UPDATE logins \n".
+			$sql = "UPDATE Logins \n".
 				"SET login_user = '$this->m_login_user', ".
 				" default_account_id = {$this->get_default_account_id(true)}, ".
 				" default_summary1 = {$this->get_default_summary1(true)}, ".
@@ -218,7 +218,7 @@ class Login
 		else
 		{
 			// INSERT new login
-			$sql = "INSERT INTO logins \n".
+			$sql = "INSERT INTO Logins \n".
 				"(login_user, login_password, default_account_id, ".
 				" default_summary1, default_summary2, car_account_id, ".
 				" login_admin, display_name, active) \n".
@@ -287,7 +287,7 @@ class Login
 	public static function Get_login_list()
 	{
 		$sql = "SELECT login_id, login_user, display_name \n".
-			"FROM logins ";
+			"FROM Logins ";
 		$error = '';
 		$login_list = array();
 

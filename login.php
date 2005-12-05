@@ -21,7 +21,8 @@
 		$rs = mysql_query ($sql);
 		if (!$rs)
 		{
-			$error = "Unable to query the database for login.";
+			$error = "Unable to query the database for login: ".
+				mysql_error();
 		}
 		else
 		{

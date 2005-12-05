@@ -93,7 +93,7 @@ class Account
 	// in case of SQL update.
 	public function Load_account($account_id)
 	{
-		$sql = "Select * from accounts where account_id = $account_id";
+		$sql = "Select * from Accounts where account_id = $account_id";
 		$link = db_connect();
 		$rs = mysql_query($sql, $link);
 		$success = false;	//default
@@ -131,7 +131,7 @@ class Account
 		if ($this->m_account_id == -1)
 		{
 			// New account: perform an insert
-			$sql = "INSERT INTO accounts \n".
+			$sql = "INSERT INTO Accounts \n".
 				"(login_id, account_parent_id, ".
 				"account_name, account_descr, ".
 				" account_debit, equation_side, active) \n".
@@ -143,7 +143,7 @@ class Account
 		else
 		{
 			// Existing account; perform an update
-			$sql = "UPDATE accounts \n".
+			$sql = "UPDATE Accounts \n".
 				"SET login_id = $this->m_login_id, ".
 				"  account_parent_id = $account_parent_id, ".
 				"  account_name = '$this->m_account_name', ".
@@ -171,7 +171,7 @@ class Account
 	public function Delete_account()
 	{
 		$error = '';
-		$sql = "DELETE FROM accounts \n".
+		$sql = "DELETE FROM Accounts \n".
 			"WHERE account_id = $this->m_account_id ";
 		db_connect();
 		$rs = mysql_query ($sql);
@@ -338,7 +338,7 @@ class Account
 
 		// Query the normal balance of the selected accounts
 		$sql = "SELECT a.account_id, a.account_debit ".
-			"FROM accounts a \n".
+			"FROM Accounts a \n".
 			"WHERE account_id IN ($account1_id, $account2_id) ";
 		db_connect();
 		$rs = mysql_query ($sql);
@@ -384,10 +384,10 @@ class Account
 			$sql = "SELECT sum(ledger_amount * a.account_debit * $account_debit) ".
 				"  as account_sum, $month_sql".
 				"  year(t.accounting_date) as accounting_year \n".
-				"FROM transactions t \n".
-				"INNER JOIN ledgerEntries le on le.trans_id = t.trans_id \n".
-				"INNER JOIN accounts a on a.account_id = le.account_id \n".
-				"LEFT JOIN accounts a2 on a.account_parent_id = a2.account_id \n".
+				"FROM Transactions t \n".
+				"INNER JOIN LedgerEntries le on le.trans_id = t.trans_id \n".
+				"INNER JOIN Accounts a on a.account_id = le.account_id \n".
+				"LEFT JOIN Accounts a2 on a.account_parent_id = a2.account_id \n".
 				"WHERE (a.account_id = $account_id OR ".
 				"  a2.account_id = $account_id OR ".
 				"  a2.account_parent_id = $account_id) ".
@@ -395,6 +395,7 @@ class Account
 				"  and t.accounting_date <= '$end_date_sql' \n".
 				"GROUP BY $group_sql \n".
 				"ORDER BY year(accounting_date) ASC, month(accounting_date) ASC ";
+
 			$rs = mysql_query ($sql);
 			$error = db_error ($rs, $sql);
 			if ($error != '')
@@ -491,10 +492,10 @@ class Account
 			"  sum(gas_gallons) as total_gallons, ".
 			"  sum(ledger_amount) as total_dollars, ".
 			"  year(accounting_date) as accounting_year \n".
-			"FROM transactions t \n".
-			"INNER JOIN ledgerEntries le ON ".
+			"FROM Transactions t \n".
+			"INNER JOIN LedgerEntries le ON ".
 			"  le.trans_id = t.trans_id \n".
-			"INNER JOIN accounts a ON ".
+			"INNER JOIN Accounts a ON ".
 			"  a.account_id = le.account_id ".
 			"  AND a.account_parent_id = $_SESSION[car_account_id] \n".
 			"WHERE gas_gallons > 0 AND gas_miles > 0 \n".
@@ -548,10 +549,10 @@ class Account
 
 		$sql = "SELECT sum( ledger_amount ) AS total_amount, ".
 			"  min( ifnull( a2.account_name, a.account_name ) ) as name  \n".
-			"FROM ledgerEntries le \n".
-			"INNER JOIN transactions t ON t.trans_id = le.trans_id \n".
-			"INNER JOIN accounts a ON le.account_id = a.account_id \n".
-			"LEFT  JOIN accounts a2 ON a.account_parent_id = a2.account_id ".
+			"FROM LedgerEntries le \n".
+			"INNER JOIN Transactions t ON t.trans_id = le.trans_id \n".
+			"INNER JOIN Accounts a ON le.account_id = a.account_id \n".
+			"LEFT  JOIN Accounts a2 ON a.account_parent_id = a2.account_id ".
 			"  AND a2.account_id <> $account_id \n".
 			"WHERE ( a.account_parent_id= $account_id ".
 			"  OR a2.account_parent_id= $account_id ) \n".
@@ -562,10 +563,10 @@ class Account
 /*
 		$sql = "SELECT sum( ledger_amount ) AS total_amount, ".
 			"  min( a.account_name ) as name  \n".
-			"FROM ledgerEntries le \n".
-			"INNER JOIN transactions t ON t.trans_id = le.trans_id \n".
-			"INNER JOIN accounts a ON le.account_id = a.account_id \n".
-			"LEFT  JOIN accounts a2 ON a.account_parent_id = a2.account_id ".
+			"FROM LedgerEntries le \n".
+			"INNER JOIN Transactions t ON t.trans_id = le.trans_id \n".
+			"INNER JOIN Accounts a ON le.account_id = a.account_id \n".
+			"LEFT  JOIN Accounts a2 ON a.account_parent_id = a2.account_id ".
 			"  AND a2.account_id <> $account_id \n".
 			"WHERE ( a.account_parent_id= $account_id ".
 			"  OR a2.account_parent_id= $account_id ) \n".
@@ -574,7 +575,6 @@ class Account
 			"GROUP BY a.account_id \n".
 			"ORDER BY total_amount DESC " ;
 */
-
 		db_connect();
 		$rs = mysql_query ($sql);
 		$error = db_error ($rs, $sql);

@@ -22,6 +22,7 @@ class Transaction
 	private	$m_check_number		= NULL;
 	private	$m_gas_miles		= NULL;
 	private	$m_gas_gallons		= NULL;
+	private $m_updated_time		= NULL;
 	private $m_trans_status		= 1;	// 0=unpaid (to-do), 1=paid (fulfilled)
 
 	private	$m_account_display	= '';
@@ -119,6 +120,13 @@ class Transaction
 			return '';
 		else
 			return $this->m_gas_gallons;
+	}
+	public function get_updated_time() {
+		if (is_null ($this->m_updated_time))
+			return '';
+		else
+			// Mon D, YYYY H:MM pm
+			return date ('M j, Y g:i a', $this->m_updated_time);
 	}
 	public function get_trans_status() {
 		return $this->m_trans_status;
@@ -293,9 +301,10 @@ class Transaction
 			$error = 'Accounting Date is invalid';
 			$this->m_accounting_str = $accounting_date;
 		}
-		// 12/4/2004 comment out:  can have just 1 entry with zero value
-		//elseif (count ($ledger_list) < 2)
-		//	$error = 'You must have at least two ledger entries to save';
+		// 12/4/2004 change:  can have just 1 entry with zero value
+		elseif (count ($ledger_list) < 1)
+			$error = 'You must have at least one ledger entry to save';
+		
 
 		return $error;
 	}
@@ -317,6 +326,7 @@ class Transaction
 			// convert dates from yyyy-mm-dd to mm/dd/yyyy
 			$this->m_trans_time			= strtotime ($row['trans_date']);
 			$this->m_accounting_time	= strtotime ($row['accounting_date']);
+			$this->m_updated_time		= strtotime ($row['updated_time']);
 			$this->m_trans_vendor		= addslashes ($row['trans_vendor']);
 			if (is_null ($row['trans_comment']))
 				$this->m_trans_comment = NULL;

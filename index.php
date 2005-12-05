@@ -407,7 +407,10 @@
 			else
 				echo "Edit Transaction (". $trans->get_trans_id(). ")";
 			?></a></td>
-		<td colspan="2"><?= $status_dropdown ?></td>
+		<td colspan="3"><?= $status_dropdown ?></td>
+		<td class="info" colspan="5"><?
+			if ($trans->get_trans_id() >= 0)
+				echo "last modified " . $trans->get_updated_time() ?></td>
 	</tr>
 
 	<tr>

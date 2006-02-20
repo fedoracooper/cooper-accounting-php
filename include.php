@@ -220,6 +220,23 @@ function convert_date ($dateStr, $mode)
 	return $newDate;
 }
 
+// Adds specified number of months to UNIX timestamp.
+// The time parameter is passed by reference & modified.
+function add_months (&$time, $num_months)
+{
+	if (!is_int ($time))
+		return 'Invalid timestamp';
+	if (!is_int ($num_months))
+		return 'Invalid # of months';
+
+	$dateArr = getdate ($time);
+
+	$time = mktime (0, 0, 0,
+		$dateArr['mon'] + $num_months, $dateArr['mday'], $dateArr['year']);
+
+	return '';
+}
+
 // Given a number, this will return an HTML-formatted
 // one. Negatives are red, and a dollar sign will be shown
 function format_currency ($amount)

@@ -25,6 +25,7 @@ class Transaction
 	private $m_updated_time		= NULL;
 	private $m_trans_status		= 1;	// 0=unpaid (to-do), 1=paid (fulfilled)
 
+	private $m_repeat_count		= 1;	// # of times to store new transaction
 	private	$m_account_display	= '';
 	private	$m_ledger_amount	= NULL;
 	private $m_ledger_total		= NULL;
@@ -108,7 +109,7 @@ class Transaction
 			return '';
 		else
 		{
-			if ($thousands)
+			if ($thousands && is_numeric ($this->m_gas_miles))
 				// display using thousands separator
 				return number_format ($this->m_gas_miles);
 			else
@@ -130,6 +131,9 @@ class Transaction
 	}
 	public function get_trans_status() {
 		return $this->m_trans_status;
+	}
+	public function get_repeat_count() {
+		return $this->m_repeat_count;
 	}
 	public function get_account_display() {
 		return stripslashes ($this->m_account_display);
@@ -196,6 +200,7 @@ class Transaction
 		$gas_gallons,
 		$trans_status,
 		$trans_id = -1,
+		$repeat_count = 1,
 		$account_display = '',
 		$ledger_amount = NULL,
 		$ledgerL_list = array(),
@@ -241,6 +246,7 @@ class Transaction
 
 		$this->m_trans_status		= $trans_status;
 		$this->m_trans_id			= $trans_id;
+		$this->m_repeat_count		= $repeat_count;
 		$this->m_account_display	= $account_display;
 		$this->m_ledger_amount		= $ledger_amount;
 		$this->m_ledgerL_list		= $ledgerL_list;
@@ -301,11 +307,22 @@ class Transaction
 			$error = 'Accounting Date is invalid';
 			$this->m_accounting_str = $accounting_date;
 		}
+		elseif (!is_numeric ($repeat_count)) {
+			// Any non-numeric value is changed to 1
+			$this->m_repeat_count = 1;
+		}
+		elseif ($check_number != '' && !is_numeric ($check_number)) {
+			$error = 'Check number is not a whole number';
+		}
+		elseif ($gas_miles != '' && !is_numeric ($this->get_gas_miles(false))) {
+			$error = 'Gas mileage is not a number';
+		}
+		elseif ($gas_gallons != '' && !is_numeric ($gas_gallons)) {
+			$error = 'Gallons are not numeric';
+		}
 		// 12/4/2004 change:  can have just 1 entry with zero value
 		elseif (count ($ledger_list) < 1)
 			$error = 'You must have at least one ledger entry to save';
-		elseif ($check_number != NULL && !is_numeric ($check_number))
-			$error = 'The check number must be numeric or empty';
 		
 
 		return $error;
@@ -372,13 +389,55 @@ class Transaction
 		return $error;
 	}
 
+
+	/* Update 2/15/2006:  Externally-accessed function call, which will
+		loop through the internal save function multiple times if necessary.
+		The repeat function can only be used when inserting a new record:
+		it will duplicate the record at a monthly interval.
+	*/
+	public function Save_repeat_transactions()
+	{
+		$repeat = $this->m_repeat_count;
+		if( $this->m_trans_id > -1 )
+		{
+			// Updating an existing record; do not repeat.
+			$repeat = 1;
+		}
+
+		$error = '';
+		for( $i = 0; $i < $repeat; $i++ )
+		{
+			$error = $this->Save_transaction();
+
+			if( $error != '' )
+				return $error;
+
+			
+			if( $i+1 < $repeat )
+			{
+				// There is at least another repetition;
+				// Increment month by 1 (transaction & accounting dates)
+				// and reset the transaction ID to force another INSERT
+				$this->m_trans_id = -1;
+				$error = add_months ($this->m_trans_time, 1);
+				$error = add_months ($this->m_accounting_time, 1);
+				if( $error != '' )
+					return $error;
+			}
+		}
+
+		return $error;
+	}
+
+
 	// Slashes should already be added if needed.
 	// This does an insert or update, depending on trans_id.
 	// Need to convert NULL values into strings, and dates into
 	// SQL-formatted dates.
-	public function Save_transaction()
+	private function Save_transaction()
 	{
 		$error = '';
+
 		// Formatting for save
 		$trans_comment	= $this->m_trans_comment;
 		$check_number	= $this->m_check_number;
@@ -397,6 +456,8 @@ class Transaction
 
 		if ($this->m_trans_id == -1)
 		{
+			// Either this hasn't been inserted, or we are doing repeat
+			// insertions.
 			// INSERT
 			$sql = "INSERT INTO Transactions \n".
 				"(login_id, trans_descr, trans_date, accounting_date, ".
@@ -408,6 +469,7 @@ class Transaction
 				" '$this->m_trans_vendor', $trans_comment, ".
 				"$check_number, $gas_miles, $gas_gallons, ".
 				"$this->m_trans_status ) ";
+
 		}
 		else
 		{
@@ -479,6 +541,7 @@ class Transaction
 		}
 
 		mysql_close();
+
 		return $error;
 	}
 
@@ -517,7 +580,7 @@ class Transaction
 	// A limit of 0 means no limit; otherwise it counts the number of
 	// rows prior to end_date & ignores the start_date
 	public static function Get_transaction_list ($account_id, $start_date,
-		$end_date, $limit, $total_period, &$error)
+		$end_date, $limit, $search_text, $total_period, &$error)
 	{
 		$trans_list = array();
 
@@ -556,6 +619,16 @@ class Transaction
 		$start_date_sql = convert_date ($start_date, 1);
 		$end_date_sql = convert_date ($end_date, 1);
 
+		$search_text_sql = '';
+		if( $search_text != '' )
+		{
+			// Search for a search string across several fields.
+			$search_text_sql = "  and( t.trans_descr like '%$search_text%' ".
+				"   OR t.trans_vendor like '%$search_text%' ".
+				"	OR t.trans_comment like '%$search_text%' )\n";
+
+		}
+
 		/*
 			The ledger amount has to have the correct sign. If the ledger
 			entry is for an account with the same normal balance
@@ -586,6 +659,7 @@ class Transaction
 			"  or a2.account_parent_id = $account_id ) ".
 			"  and accounting_date >= '$start_date_sql' ".
 			"  and accounting_date <= '$end_date_sql' \n".
+			$search_text_sql .
 			"ORDER BY accounting_date DESC, t.trans_id DESC \n" ;
 		if ($limit > 0)
 			$sql .= "limit $limit ";
@@ -624,6 +698,7 @@ class Transaction
 					$row['gas_gallons'],
 					$row['trans_status'],
 					$row['trans_id'],
+					1,		// No repeats by default
 					$account_display,
 					$row['amount']
 				);

@@ -18,6 +18,7 @@
 	$dateArr2['mon'] ++;
 	$dateArr2['mday'] = 0;	// last day of previous month
 
+	$search_text = '';
 	$limit = 0;
 	$total_period = 'month';
 	$trans = new Transaction();
@@ -33,6 +34,7 @@
 		$dateArr2	= getdate (strtotime ($_POST['end_date']));
 		$limit			= $_POST['limit'];
 		$total_period	= $_POST['total_period'];
+		$search_text	= $_POST['search_text'];
 
 		if (isset ($_POST['prev_month']))
 		{
@@ -131,6 +133,7 @@
 			$_POST['gas_gallons'],
 			$_POST['trans_status'],
 			$_POST['trans_id'],
+			$_POST['repeat_count'],
 			'',		//account display
 			NULL,	//ledger amt
 			$ledgerL_list,
@@ -140,7 +143,7 @@
 		if ($error == '')
 		{
 			if ($mode == 'save')
-				$error = $trans->Save_transaction();
+				$error = $trans->Save_repeat_transactions();
 			else
 				$error = $trans->Delete_transaction();
 		}
@@ -155,7 +158,9 @@
 	$error1 = $error;
 	// Build the transaction list
 	$trans_list = Transaction::Get_transaction_list ($sel_account_id,
-		$start_date, $end_date, $limit, $total_period, $error);
+		$start_date, $end_date, $limit, $search_text, $total_period, $error);
+	// Strip slashes from search_text variable
+	$search_text = stripslashes( $search_text );
 	$sel_account = new Account ();
 	$sel_account->Load_account ($sel_account_id);
 	if ($error1 != '')
@@ -219,6 +224,9 @@
 		<td><input type="text" size="10" maxlength="10" name="start_date" value="<?= $start_date ?>"></td>
 		<td>To: </td>
 		<td><input type="text" size="10" maxlength="10" name="end_date" value="<?= $end_date ?>"></td>
+		<td>Search: </td>
+		<td><input type="text" size="10" maxlength="20" name="search_text"
+			value="<?= $search_text ?>"></td>
 		<td style="padding-left: 10px;"><input type="submit" name="filter" value="Filter transactions"></td>
 	</tr>
 	<tr>
@@ -407,8 +415,11 @@
 			else
 				echo "Edit Transaction (". $trans->get_trans_id(). ")";
 			?></a></td>
-		<td colspan="3"><?= $status_dropdown ?></td>
-		<td class="info" colspan="5"><?
+		<td colspan="1"><?= $status_dropdown ?></td>
+		<td colspan="2">Repeat months:</td>
+		<td colspan="2"><input type="text" size="2" maxlength="2" name="repeat_count"
+			value="<?= $trans->get_repeat_count() ?>"></td>
+		<td class="info" colspan="3"><?
 			if ($trans->get_trans_id() >= 0)
 				echo "last modified " . $trans->get_updated_time() ?></td>
 	</tr>

@@ -500,7 +500,7 @@ class Account
 			"  AND a.account_parent_id = $_SESSION[car_account_id] \n".
 			"WHERE gas_gallons > 0 AND gas_miles > 0 \n".
 			"GROUP BY a.account_id, year(t.accounting_date) \n".
-			"ORDER BY year(accounting_date), a.account_name ";
+			"ORDER BY year(accounting_date) DESC, a.account_name ";
 		db_connect();
 		$rs = mysql_query ($sql);
 		$error = db_error($rs, $sql);

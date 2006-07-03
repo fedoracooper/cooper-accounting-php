@@ -142,8 +142,14 @@ if ($error != '')
 	<tr>
 		<td>&nbsp;</td>
 		<td><input type="submit" name="save" value="Save audit record">
-		&nbsp;&nbsp;&nbsp;&nbsp;<input type="submit" name="delete" value="Delete audit record"
-			onClick="return confirmDelete();"></td>
+		&nbsp;&nbsp;&nbsp;&nbsp;<?
+	if ($audit->get_audit_id() > -1)
+	{
+		// This audit record has been stored in DB; allow delete
+		echo '<input type="submit" name="delete" value="Delete audit record"'.
+			' onClick="return confirmDelete();">';
+	}
+	?></td>
 	</tr>
 </table>
 

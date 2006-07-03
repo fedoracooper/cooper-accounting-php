@@ -407,6 +407,8 @@
 		// not based on period.
 		$onclick = '';
 		$totalStyle = '';
+		$auditAnchor = '';
+		$closeAnchor = '';
 		if ($sel_account->get_equation_side() == 'L')
 		{
 			$onclick = "auditAccount( ". $trans_item->get_ledger_id().
@@ -426,14 +428,19 @@
 				$totalStyle += " color: red;";
 			}
 		}
-
+		if ($onclick)
+		{
+			// Need to use an anchor for auditing
+			$auditAnchor = "<a href='#' onclick='$onclick' ".
+				"style='$totalStyle'>";
+			$closeAnchor = "</a>";
+		}
 
 		echo "		<td>". $trans_item->get_account_display(). "</td>\n".
 			"		<td>$other</td> \n".
 			"		<td class=\"currency\">". $trans_item->get_ledger_amount(). "</td>\n".
-			"		<td$td_style class=\"currency\"><a href=\"#\" ".
-			"onClick=\"$onclick\" style=\"$totalStyle\">".
-			$trans_item->get_ledger_total(). "</a></td>\n".
+			"		<td$td_style class=\"currency\">$auditAnchor".
+			$trans_item->get_ledger_total(). "$closeAnchor</td>\n".
 			"		$new_text\n".
 			"	</tr>\n\n";
 

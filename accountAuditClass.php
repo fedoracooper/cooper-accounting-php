@@ -129,14 +129,15 @@ class AccountAudit
 		$error = '';
 
 		// VALIDATE
-		$min_date = strtotime( $this->Get_trans_accounting_date() );
+		$min_date = $this->Get_trans_accounting_date();
+		$min_time = strtotime( $min_date );
 
 		if ($this->m_audit_time == -1)
 		{
 			$error = 'Audit date format is invalid';
 			$this->m_audit_str = $audit_date;
 		}
-		elseif ($min_date > $this->m_audit_time)
+		elseif ($min_time > $this->m_audit_time)
 		{
 			// Make sure the audit date is >= accounting date of the transaction
 			$error = "The audit date must be no less than the transaction ".
@@ -186,7 +187,7 @@ class AccountAudit
 			$row = mysql_fetch_array( $rs, MYSQL_ASSOC );
 			$this->m_audit_id			= $audit_id;
 			$this->m_ledger_id			= $row[ 'ledger_id' ];
-			$this->m_audit_time			= strtotime( $row[ 'audit_date'] );
+			$this->m_audit_time			= strtotime( $row[ 'audit_date' ] );
 			$this->m_account_balance	= $row[ 'account_balance' ];
 			$this->m_audit_comment		= addslashes(
 				$row[ 'audit_comment' ] );
@@ -254,9 +255,16 @@ class AccountAudit
 
 		$sql = "DELETE FROM AccountAudits ".
 			"WHERE audit_id = $this->m_audit_id ";
+		db_connect();
 		$rs = mysql_query( $sql );
 		$error = db_error( $rs, $sql );
 		mysql_close();
+
+		if ($error == '')
+		{
+			// Success; set audit_id to -1
+			$this->m_audit_id = -1;
+		}
 
 		return $error;
 	}

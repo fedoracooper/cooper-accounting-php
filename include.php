@@ -17,6 +17,7 @@ require ('accountClass.php');
 require ('transactionClass.php');
 require ('loginClass.php');
 require ('productAccountClass.php');
+require ('accountAuditClass.php');
 
 $login_admin = 0;
 $login_id = -1;

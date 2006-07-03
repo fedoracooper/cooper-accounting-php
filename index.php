@@ -136,6 +136,9 @@
 			$_POST['repeat_count'],
 			'',		//account display
 			NULL,	//ledger amt
+			-1,		//ledger ID
+			-1,		//audit ID
+			0.0,	//audit balance
 			$ledgerL_list,
 			$ledgerR_list
 		);
@@ -195,6 +198,21 @@
 			}
 		}
 
+		function auditAccount( ledger_id, account_balance )
+		{
+			// Handle a click of an account total; popup a new window
+			window.open( 'audit.php?ledger_id=' + ledger_id
+				+ '&account_total=' + account_balance, 'audit',
+				'toolbar=no,height=250,width=630');
+		}
+
+		function editAudit( audit_id )
+		{
+			// Handle a click of an account total; popup a new window
+			window.open( 'audit.php?audit_id=' + audit_id, 'audit',
+				'toolbar=no,height=250,width=630');
+		}
+
 	</script>
 </head>
 
@@ -243,7 +261,7 @@
 	</tr>	-->
 </table>
 
-<table class="trans-table" cellpadding="0" cellspacing="0">
+<table class="trans-table" cellpadding="0" cellspacing="0" style="">
 	<tr>
 		<th>Edit</th>
 		<th>Date</th>
@@ -368,7 +386,7 @@
 
 		echo "	<tr$tr_style>\n";
 		if ($new_row) {
-			echo '		<td><input type="submit" style="height: 18px; '.
+			echo '		<td style="width: 40px;"><input type="submit" style="height: 18px; '.
 				'font-size: 8pt;" onClick="clickEdit()" name="edit" value="'.
 				$trans_item->get_trans_id(). "\"></td> \n".
 			"		<td style=\"width: 60px;\">".
@@ -382,10 +400,40 @@
 				"		<td></td> \n".
 				"		<td></td> \n";
 		}
+
+		// Onclick handler will open an Audit screen; need to pass
+		// in the ledger ID and account total.  Note that currently only
+		// LHS accounts may be audited, as these totals are always accurate,
+		// not based on period.
+		$onclick = '';
+		$totalStyle = '';
+		if ($sel_account->get_equation_side() == 'L')
+		{
+			$onclick = "auditAccount( ". $trans_item->get_ledger_id().
+				", ". $trans_item->get_ledger_total( true ) . ");";
+		}
+		if ($trans_item->get_audit_balance() > 0.0)
+		{
+			// We have an audited record here.
+			$onclick = "editAudit( ". $trans_item->get_audit_id() . ");";
+
+			$diff = $trans_item->get_audit_balance()
+				- $trans_item->get_ledger_total( true );
+			$totalStyle = "font-weight: bold;";
+			if (abs( $diff ) > .001)
+			{
+				// Audit failed
+				$totalStyle += " color: red;";
+			}
+		}
+
+
 		echo "		<td>". $trans_item->get_account_display(). "</td>\n".
 			"		<td>$other</td> \n".
 			"		<td class=\"currency\">". $trans_item->get_ledger_amount(). "</td>\n".
-			"		<td$td_style class=\"currency\">". $trans_item->get_ledger_total(). "</td>\n".
+			"		<td$td_style class=\"currency\"><a href=\"#\" ".
+			"onClick=\"$onclick\" style=\"$totalStyle\">".
+			$trans_item->get_ledger_total(). "</a></td>\n".
 			"		$new_text\n".
 			"	</tr>\n\n";
 

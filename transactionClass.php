@@ -10,6 +10,8 @@
 class Transaction
 {
 	private	$m_trans_id			= -1;	//hidden form var
+	private $m_ledger_id		= -1;	//For each transaction sub-item
+	private $m_audit_id			= -1;	//If the ledger item was audited
 	private	$m_login_id			= -1;
 
 	private	$m_trans_descr		= '';
@@ -28,6 +30,7 @@ class Transaction
 	private $m_repeat_count		= 1;	// # of times to store new transaction
 	private	$m_account_display	= '';
 	private	$m_ledger_amount	= NULL;
+	private $m_audit_balance	= NULL;
 	private $m_ledger_total		= NULL;
 	private $m_ledgerL_list		= array();	//array of account_id=>ledger_amount
 	private $m_ledgerR_list		= array();
@@ -43,6 +46,12 @@ class Transaction
 	// ACCESSOR methods
 	public function get_trans_id() {
 		return $this->m_trans_id;
+	}
+	public function get_ledger_id() {
+		return $this->m_ledger_id;
+	}
+	public function get_audit_id() {
+		return $this->m_audit_id;
 	}
 	public function get_login_id() {
 		return $this->m_login_id;
@@ -177,6 +186,9 @@ class Transaction
 		if (is_numeric ($total))
 			$this->m_ledger_total = $total;
 	}
+	public function get_audit_balance() {
+		return $this->m_audit_balance;
+	}
 	public function get_ledgerL_list() {
 		return $this->m_ledgerL_list;
 	}
@@ -203,6 +215,9 @@ class Transaction
 		$repeat_count = 1,
 		$account_display = '',
 		$ledger_amount = NULL,
+		$ledger_id = -1,
+		$audit_id = -1,
+		$audit_balance = 0.0,
 		$ledgerL_list = array(),
 		$ledgerR_list = array())
 	{
@@ -249,6 +264,9 @@ class Transaction
 		$this->m_repeat_count		= $repeat_count;
 		$this->m_account_display	= $account_display;
 		$this->m_ledger_amount		= $ledger_amount;
+		$this->m_ledger_id			= $ledger_id;
+		$this->m_audit_id			= $audit_id;
+		$this->m_audit_balance		= $audit_balance;
 		$this->m_ledgerL_list		= $ledgerL_list;
 		$this->m_ledgerR_list		= $ledgerR_list;
 
@@ -643,7 +661,8 @@ class Transaction
 		*/
 		$sql = "SELECT t.trans_id, trans_descr, trans_date, accounting_date, ".
 			" trans_vendor, trans_comment, check_number, gas_miles, ".
-			" gas_gallons, trans_status, a.account_name, ".
+			" gas_gallons, trans_status, a.account_name, le.ledger_id, ".
+			" aa.audit_id, aa.account_balance as audit_balance, ".
 			" a2.account_name as account2_name, ".
 			" a2.account_id as a2_account_id, a.account_id, ".
 			"  (ledger_amount * a.account_debit * $account_debit) as amount \n". 
@@ -654,6 +673,8 @@ class Transaction
 			"	le.account_id = a.account_id ".
 			"left join Accounts a2 on ".	// join the account's parent, if it exists
 			"	a.account_parent_id = a2.account_id \n".
+			"left join AccountAudits aa ON ".
+			"	aa.ledger_id = le.ledger_id \n".
 			"WHERE (a.account_id = $account_id ".
 			"  or a2.account_id = $account_id ".
 			"  or a2.account_parent_id = $account_id ) ".
@@ -700,7 +721,10 @@ class Transaction
 					$row['trans_id'],
 					1,		// No repeats by default
 					$account_display,
-					$row['amount']
+					$row['amount'],
+					$row['ledger_id'],
+					$row['audit_id'],
+					$row['audit_balance']
 				);
 				
 				$trans_list[$i] = $trans;

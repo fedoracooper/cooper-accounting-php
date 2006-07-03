@@ -105,7 +105,7 @@ class AccountAudit
 			return '';
 		}
 
-		return date( 'M j, Y g:i a', $m_updated_time );
+		return date( 'M j, Y g:i a', $this->m_updated_time );
 	}
 
 	
@@ -240,6 +240,10 @@ class AccountAudit
 			// Update the primary key
 			$this->m_audit_id = get_auto_increment();
 		}
+		mysql_close();
+
+		// Reload from DB (will get updated_time)
+		$this->Load_account_audit( $this->m_audit_id );
 
 		return $error;
 	}

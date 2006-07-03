@@ -409,10 +409,12 @@
 		$totalStyle = '';
 		$auditAnchor = '';
 		$closeAnchor = '';
+		$auditTitle = '';
 		if ($sel_account->get_equation_side() == 'L')
 		{
 			$onclick = "auditAccount( ". $trans_item->get_ledger_id().
 				", ". $trans_item->get_ledger_total( true ) . ");";
+			$auditTitle = "Audit this account balance...";
 		}
 		if ($trans_item->get_audit_balance() > 0.0)
 		{
@@ -426,12 +428,19 @@
 			{
 				// Audit failed
 				$totalStyle .= " color: red;";
+				$auditTitle = "Account balance audit failed. ".
+					"Expected $this->get_ledger_total() ";
+			}
+			else
+			{
+				$auditTitle = "This account balance has been audited ".
+					"and is accurate.";
 			}
 		}
 		if ($onclick)
 		{
 			// Need to use an anchor for auditing
-			$auditAnchor = "<a href='#' onclick='$onclick' ".
+			$auditAnchor = "<a href='#' title='$auditTitle' onclick='$onclick' ".
 				"style='$totalStyle'>";
 			$closeAnchor = "</a>";
 		}

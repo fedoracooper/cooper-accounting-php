@@ -123,19 +123,21 @@ if ($error != '')
 
 <table>
 	<tr>
-		<td>Account balance: </td>
+		<td style="padding-right: 10px;">Account balance: </td>
 		<td><?= $audit->get_account_balance() ?></td>
 	</tr>
 
 	<tr>
 		<td>Audit date: </td>
 		<td><input type="text" name="audit_date" maxlength="10"
-			value="<?= $audit->get_audit_date() ?>"></td>
+			value="<?= $audit->get_audit_date() ?>">
+			&nbsp;&nbsp;&nbsp;&nbsp;Updated: <?= $audit->get_updated_time() ?>
+			</td>
 	</tr>
 
 	<tr>
 		<td>Audit comment: </td>
-		<td><textarea name="audit_comment" cols="60" rows="4"><?=
+		<td><textarea name="audit_comment" cols="45" rows="4"><?=
 			$audit->get_audit_comment() ?></textarea></td>
 	</tr>
 

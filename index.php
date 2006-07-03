@@ -425,7 +425,7 @@
 			if (abs( $diff ) > .001)
 			{
 				// Audit failed
-				$totalStyle += " color: red;";
+				$totalStyle .= " color: red;";
 			}
 		}
 		if ($onclick)

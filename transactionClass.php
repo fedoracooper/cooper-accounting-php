@@ -3,12 +3,11 @@
 	Created 10/11/2004 (pulled out of include.php)
 */
 
-
 // TRANSACTION class
 //------------------------------------------------------------------------------
 // As with accounts, maintain all member variables with slashes added.
 class Transaction
-{
+{	
 	private	$m_trans_id			= -1;	//hidden form var
 	private $m_ledger_id		= -1;	//For each transaction sub-item
 	private $m_audit_id			= -1;	//If the ledger item was audited
@@ -64,12 +63,12 @@ class Transaction
 		if ($this->m_trans_time == -1)
 			return $this->m_trans_str;
 		else
-			return date ('m/d/Y', $this->m_trans_time);
+			return date (DISPLAY_DATE, $this->m_trans_time);
 	}
 	public function get_trans_date_sql() {
 		// mySQL-formatted date
 		if ($this->m_trans_time > 0)
-			return date ('Y-m-d', $this->m_trans_time);
+			return date (SQL_DATE, $this->m_trans_time);
 		else
 			return '';
 	}
@@ -90,13 +89,13 @@ class Transaction
 				return date ('m/d/y', $this->m_accounting_time);
 			else
 				// normal date
-				return date ('m/d/Y', $this->m_accounting_time);
+				return date (DISPLAY_DATE, $this->m_accounting_time);
 		}
 	}
 	public function get_accounting_date_sql() {
 		// mySQL-formatted date
 		//return convert_date ($this->m_accounting_date, 1);
-		return date ('Y-m-d', $this->m_accounting_time);
+		return date (SQL_DATE, $this->m_accounting_time);
 	}
 	public function get_trans_vendor() {
 		return stripslashes ($this->m_trans_vendor);
@@ -135,8 +134,7 @@ class Transaction
 		if (is_null ($this->m_updated_time))
 			return '';
 		else
-			// Mon D, YYYY H:MM pm
-			return date ('M j, Y g:i a', $this->m_updated_time);
+			return date (LONG_DATE, $this->m_updated_time);
 	}
 	public function get_trans_status() {
 		return $this->m_trans_status;
@@ -472,6 +470,13 @@ class Transaction
 		if (is_null ($gas_gallons))
 			$gas_gallons = 'NULL';
 
+		// Query the audit table to check for conflicts
+		$error = $this->Check_audits();
+		if ($error != '')
+		{
+			return $error;
+		}
+
 		if ($this->m_trans_id == -1)
 		{
 			// Either this hasn't been inserted, or we are doing repeat
@@ -558,6 +563,62 @@ class Transaction
 			}
 		}
 
+		mysql_close();
+
+		return $error;
+	}
+
+
+	/*	This internal function is used to verify that we won't violate
+		any account audits with a save.
+		A return value of empty string indicates we are okay; otherwise
+		a string will be returned with a reason for the violation.
+	*/
+	private function Check_audits()
+	{
+		// Loop through the ledger entries
+		$accounts = '';
+		$ledger_list = array_merge ($this->m_ledgerL_list,
+			$this->m_ledgerR_list);
+		$error = '';
+
+		foreach ($ledger_list as $ledger_data)
+		{
+			if ($accounts != '')
+			{
+				$accounts .= ", ";
+			}
+
+			// 0=ledger_id, 1=account_id/account_debit, 2=amount
+			$accountArr = split( ',', $ledger_data[ 1 ] );
+			$accounts .= $accountArr[ 0 ];
+		}
+
+		// Look for any audits that touch any accounts being updated, with
+		// an accounting date on or before the audit date
+		$sql = "SELECT aa.audit_date, a.account_name \n".
+			"FROM AccountAudits aa \n".
+			"INNER JOIN LedgerEntries le ON le.ledger_id = aa.ledger_id \n".
+			"INNER JOIN Accounts a ON a.account_id = le.account_id \n".
+			"WHERE le.account_id IN( $accounts ) \n".
+			"	AND aa.audit_date >= '{$this->get_accounting_date_sql()}' ";
+
+		db_connect();
+		$rs = mysql_query( $sql );
+		$error = db_error( $rs, $sql );
+		if ($error == '')
+		{
+			$row = mysql_fetch_array( $rs, MYSQL_ASSOC );
+			if ($row)
+			{
+				$time = strtotime( $row[ 'audit_date' ] );
+				$date = date( DISPLAY_DATE, $time );
+				$error = "This transaction violates a past account audit. ".
+					"The account '{$row[ 'account_name' ]}' was audited up ".
+					"to date $date; please change the transaction accounting ".
+					"date.";
+			}
+		}
 		mysql_close();
 
 		return $error;

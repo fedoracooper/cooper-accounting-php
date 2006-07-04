@@ -13,6 +13,12 @@ echo '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" '.
 
 session_start();
 
+// Define constants here
+define( 'DISPLAY_DATE',	'm/d/Y' );			// MM/DD/YYYY
+define( 'SQL_DATE',		'Y-m-d' );			// YYYY-MM-DD
+define( 'LONG_DATE',	'M j, Y g:i a' );	// Mon D, YYYY H:MM pm
+
+
 require ('accountClass.php');
 require ('transactionClass.php');
 require ('loginClass.php');

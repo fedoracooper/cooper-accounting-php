@@ -70,13 +70,13 @@ class AccountAudit
 			return $this->m_audit_str;
 		}
 
-		return date( 'm/d/Y', $this->m_audit_time );
+		return date( DISPLAY_DATE, $this->m_audit_time );
 	}
 	public function get_audit_date_sql()
 	{
 		if ($this->m_audit_time > 0)
 		{
-			return date( 'Y-m-d', $this->m_audit_time );
+			return date( SQL_DATE, $this->m_audit_time );
 		}
 
 		return '';
@@ -105,7 +105,7 @@ class AccountAudit
 			return '';
 		}
 
-		return date( 'M j, Y g:i a', $this->m_updated_time );
+		return date( LONG_DATE, $this->m_updated_time );
 	}
 
 	
@@ -202,6 +202,9 @@ class AccountAudit
 	public function Save_account_audit()
 	{
 		$sql = '';
+
+		// TODO:  make sure the date doesn't exceed map to another transaction
+		// for this account
 
 		if ($this->m_audit_id > -1)
 		{

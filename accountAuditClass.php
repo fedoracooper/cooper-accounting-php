@@ -127,34 +127,43 @@ class AccountAudit
 		$this->m_audit_id			= $audit_id;
 
 		$error = '';
-
-		// VALIDATE
-		$min_date = $this->Get_trans_accounting_date();
-		$min_time = strtotime( $min_date );
-
 		if ($this->m_audit_time == -1)
 		{
 			$error = 'Audit date format is invalid';
 			$this->m_audit_str = $audit_date;
-		}
-		elseif ($min_time > $this->m_audit_time)
-		{
-			// Make sure the audit date is >= accounting date of the transaction
-			$error = "The audit date must be no less than the transaction ".
-				"accounting date, '$min_date'";
 		}
 
 		return $error;
 	}
 
 	// Retrieve the accounting date for the associated transaction
-	private function Get_trans_accounting_date()
+	// Return the results through function parameters.
+	private function Get_trans_date_range( &$trans_id, &$min_date,
+		&$max_trans_id, &$max_date )
 	{
-		$sql = "SELECT accounting_date ".
+		/*	First, get the transaction tied to this audit record.
+			Second, find the next transaction in this account, by accounting
+			date, with transaction ID being the tie breaker.  Note that because
+			we will typically get a NULL record in each dataset from the LEFT
+			JOIN, we must sort by a non-null value, as NULLs typically appear
+			at the top of the list.  Hence the isnull call in the order by.
+		*/
+		$sql = "SELECT t.accounting_date as min_date, t.trans_id as min_trans_id, ".
+			" t2.accounting_date as max_date, t2.trans_id as max_trans_id ".
 			"FROM Transactions t \n".
 			"INNER JOIN LedgerEntries le ON ".
 			"	t.trans_id = le.trans_id \n".
-			"WHERE le.ledger_id = $this->m_ledger_id ";
+			"LEFT JOIN LedgerEntries le2 ON ".
+			"	le2.account_id = le.account_id ".
+			"	AND le2.ledger_id <> le.ledger_id \n".
+			"LEFT JOIN Transactions t2 ON ".
+			"	t2.trans_id = le2.trans_id ".
+			"	AND( ( t2.accounting_date = t.accounting_date ".
+			"			AND t2.trans_id > t.trans_id ) ".
+			"		OR( t2.accounting_date > t.accounting_date ) ) \n".
+			"WHERE le.ledger_id = $this->m_ledger_id \n".
+			"ORDER BY ifnull( t2.accounting_date, '2999-01-01' ), t2.trans_id \n".
+			"LIMIT 1 ";
 
 		db_connect();
 		$rs = mysql_query( $sql );
@@ -166,10 +175,13 @@ class AccountAudit
 		}
 
 		$row = mysql_fetch_array( $rs, MYSQL_ASSOC );
-		$date = $row[ 'accounting_date' ];
+		$trans_id		= $row[ 'min_trans_id' ];
+		$min_date		= $row[ 'min_date' ];
+		$max_trans_id	= $row[ 'max_trans_id' ];
+		$max_date		= $row[ 'max_date' ];
 		mysql_close();
 
-		return $date;
+		return '';
 	}
 
 	public function Load_account_audit( $audit_id )
@@ -201,6 +213,50 @@ class AccountAudit
 
 	public function Save_account_audit()
 	{
+		$error = '';
+
+		// VALIDATE
+		$error = $this->Get_trans_date_range( $trans_id, $min_date, $max_trans_id,
+			$max_date );
+
+		if ($error != '')
+		{
+			return $error;
+		}
+
+		$min_time = strtotime( $min_date );
+		$max_time = NULL;
+		if ($max_date != NULL)
+		{
+			$max_time = strtotime( $max_date );
+		}
+
+		// Make sure we're the last transaction on this date
+		$date = date( DISPLAY_DATE, $min_time ); 
+		if ($min_date == $max_date && $trans_id < $max_trans_id)
+		{
+			$error = "Transaction $trans_id is not the last transaction ".
+				"for this account on $date; unable to audit.";
+		}
+		// Make sure we're between the min & max dates
+		elseif ($min_time > $this->m_audit_time)
+		{
+			// Make sure the audit date is >= accounting date of the transaction
+			$error = "The audit date must be no less than the transaction ".
+				"accounting date, $date.";
+		}
+		elseif ($max_time != NULL && $max_time <= $this->m_audit_time)
+		{
+			$date = date( DISPLAY_DATE, $max_time );
+			$error = "The audit date must be less than the next transaction ".
+				"date for this account, ID $max_trans_id on $date.";
+		}
+
+		if ($error != '')
+		{
+			return $error;
+		}
+
 		$sql = '';
 
 		// TODO:  make sure the date doesn't exceed map to another transaction

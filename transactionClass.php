@@ -154,7 +154,8 @@ class Transaction
 		else
 		{
 			$numStr = number_format ($this->m_ledger_amount, 2);
-			if ($this->m_ledger_amount < 0)
+			// Make sure that it is a significant negative #
+			if ($this->m_ledger_amount < -0.001)
 			{
 				// Negative number
 				return '<span style="color: red;">$'.
@@ -174,7 +175,7 @@ class Transaction
 		else
 		{
 			$numStr = number_format ($this->m_ledger_total, 2);
-			if ($this->m_ledger_total < 0)
+			if ($this->m_ledger_total < -0.001)
 				return '<span style="color: red;">$'. $numStr. '</span>';
 			else
 				return '$'. $numStr;
@@ -182,7 +183,14 @@ class Transaction
 	}
 	public function set_ledger_total($total) {
 		if (is_numeric ($total))
+		{
+			if (abs( $total ) < 0.001)
+			{
+				// Round to zero to avoid unnecessary negative signs
+				$total = 0.0;
+			}
 			$this->m_ledger_total = $total;
+		}
 	}
 	public function get_audit_balance() {
 		return $this->m_audit_balance;

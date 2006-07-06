@@ -348,7 +348,8 @@
 					'padding-right:10px; font-weight: bold; '.
 					'border-top: 1px solid black; border-bottom: 1px solid black;">'.
 					date ('Y', $time1). '</td>';
-				$td_style = ' style="font-weight: bold; border-right: 1px solid black;"';
+				// End of year total; italicize
+				$td_style = ' style="font-style: italic; border-right: 1px solid black;"';
 			}
 			elseif ($next_trans !== NULL)
 			{
@@ -416,7 +417,7 @@
 				", ". $trans_item->get_ledger_total( true ) . ");";
 			$auditTitle = "Audit this account balance...";
 		}
-		if ($trans_item->get_audit_balance() > 0.0)
+		if ($trans_item->get_audit_id() > -1)
 		{
 			// We have an audited record here.
 			$onclick = "editAudit( ". $trans_item->get_audit_id() . ");";
@@ -440,7 +441,7 @@
 		if ($onclick)
 		{
 			// Need to use an anchor for auditing
-			$auditAnchor = "<a href='#' title='$auditTitle' onclick='$onclick' ".
+			$auditAnchor = "<a title='$auditTitle' onclick='$onclick' ".
 				"style='$totalStyle'>";
 			$closeAnchor = "</a>";
 		}

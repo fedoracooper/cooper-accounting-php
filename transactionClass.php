@@ -743,7 +743,8 @@ class Transaction
 			"left join Accounts a2 on ".	// join the account's parent, if it exists
 			"	a.account_parent_id = a2.account_id \n".
 			"left join AccountAudits aa ON ".
-			"	aa.ledger_id = le.ledger_id \n".
+			"	aa.ledger_id = le.ledger_id ".
+			"	AND a.account_id = $account_id \n".	// audit record must match exact account
 			"WHERE (a.account_id = $account_id ".
 			"  or a2.account_id = $account_id ".
 			"  or a2.account_parent_id = $account_id ) ".

@@ -430,7 +430,7 @@
 				// Audit failed
 				$totalStyle .= " color: red;";
 				$auditTitle = "Account balance audit failed. ".
-					"Expected $this->get_ledger_total() ";
+					"Expected ". $trans_item->get_ledger_total();
 			}
 			else
 			{

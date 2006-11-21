@@ -751,7 +751,7 @@ class Transaction
 			"  and accounting_date >= '$start_date_sql' ".
 			"  and accounting_date <= '$end_date_sql' \n".
 			$search_text_sql .
-			"ORDER BY accounting_date DESC, t.trans_id DESC \n" ;
+			"ORDER BY accounting_date DESC, t.trans_id DESC, le.ledger_id DESC \n" ;
 		if ($limit > 0)
 			$sql .= "limit $limit ";
 
@@ -869,6 +869,10 @@ class Transaction
 	// The dates refer to accounting dates, assuming we are comparing them
 	// to transaction dates.; min_date can be null, in which
 	// case it is ignored and everything up to trans_date will be totalled.
+	// Some transactions have multiple ledger entries for the same account;
+	// this is why we need to be able to total items with the same date
+	// AND trans_id, but for lesser ledger_id's.  All these things
+	// require that the list orders by date, trans_id, then ledger_id.
 	// Assumes an open DB connection.
 	private function Set_trans_balance ($account_id, $account_debit,
 		$min_date)
@@ -887,7 +891,9 @@ class Transaction
 			"  a2.account_parent_id = $account_id) ".
 			"  AND (t.accounting_date < '{$this->get_accounting_date_sql()}' ".
 			"		OR (t.accounting_date = '{$this->get_accounting_date_sql()}' ".
-			"			AND t.trans_id <= $this->m_trans_id ) )";
+			"			AND (t.trans_id < $this->m_trans_id ".
+			"				OR (t.trans_id = $this->m_trans_id ".
+			"					AND le.ledger_id < {$this->get_ledger_id()} ) ) ) )";
 		if (!is_null ($min_date))
 		{
 			// doing a period total, so add a minimum accounting date
@@ -902,7 +908,7 @@ class Transaction
 			// Successful query
 			$row = mysql_fetch_row ($rs);
 			if ($row)
-				$this->m_ledger_total = $row[0];
+				$this->m_ledger_total = $row[0] + $this->get_ledger_amount(true);
 			else
 				$this->m_ledger_total = 0.0;	// no rows found
 		}

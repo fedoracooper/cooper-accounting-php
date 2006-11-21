@@ -899,6 +899,8 @@ class Transaction
 			// doing a period total, so add a minimum accounting date
 			$sql.= "\n	AND t.accounting_date >= '$min_date' ";
 		}
+		// Time the query
+		$time = microtime(true);
 		$rs = mysql_query ($sql);
 		$err = db_error ($rs, $sql);
 		if ($err != '')
@@ -907,6 +909,8 @@ class Transaction
 		{
 			// Successful query
 			$row = mysql_fetch_row ($rs);
+			$elapsed = round( ( microtime(true) - $time) * 1000, 0 );
+			//echo "Select time: $elapsed". "ms";
 			if ($row)
 				$this->m_ledger_total = $row[0] + $this->get_ledger_amount(true);
 			else

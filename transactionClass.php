@@ -632,13 +632,26 @@ class Transaction
 				$oldTrans = new Transaction();
 				$oldTrans->Load_transaction( $this->m_trans_id );
 				$accountId = $row[ 'account_id' ];
+				$oldDate = $oldTrans->get_accounting_date_sql();
+				$newDate = $this->get_accounting_date_sql();
+				$time = strtotime( $row[ 'audit_date' ] );
+				$date = date( DISPLAY_DATE, $time );
+				if ($oldDate != $newDate)
+				{
+					// The conflict is due to a date change
+					$error = "This transaction's accounting date violates ".
+						"an account audit on date $date and account ".
+						$row[ 'account_name' ]. "; please change the ".
+						"accounting date.";
+					mysql_close( $conn );
+					return $error;
+				}
+
 				$oldValue = $oldTrans->Get_ledger_value( $accountId );
 				$newValue = $this->Get_ledger_value( $accountId );
 				if (abs( $oldValue - $newValue ) > 0.001)
 				{
 					// The audited account has changed
-					$time = strtotime( $row[ 'audit_date' ] );
-					$date = date( DISPLAY_DATE, $time );
 					$error = "This transaction violates a past account audit. ".
 						"The account '{$row[ 'account_name' ]}' was audited up ".
 						"to date $date; please change the transaction accounting ".

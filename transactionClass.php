@@ -599,37 +599,85 @@ class Transaction
 
 			// 0=ledger_id, 1=account_id/account_debit, 2=amount
 			$accountArr = split( ',', $ledger_data[ 1 ] );
+			// Store the account ID of every ledger ID in a SQL list
 			$accounts .= $accountArr[ 0 ];
 		}
 
 		// Look for any audits that touch any accounts being updated, with
 		// an accounting date on or before the audit date
-		$sql = "SELECT aa.audit_date, a.account_name \n".
+		$sql = "SELECT aa.audit_date, a.account_name, le.account_id \n".
 			"FROM AccountAudits aa \n".
 			"INNER JOIN LedgerEntries le ON le.ledger_id = aa.ledger_id \n".
 			"INNER JOIN Accounts a ON a.account_id = le.account_id \n".
 			"WHERE le.account_id IN( $accounts ) \n".
 			"	AND aa.audit_date >= '{$this->get_accounting_date_sql()}' ";
 
-		db_connect();
-		$rs = mysql_query( $sql );
+		$conn = db_connect();
+		$rs = mysql_query( $sql, $conn );
 		$error = db_error( $rs, $sql );
-		if ($error == '')
+		if ($error != '')
 		{
-			$row = mysql_fetch_array( $rs, MYSQL_ASSOC );
-			if ($row)
-			{
-				$time = strtotime( $row[ 'audit_date' ] );
-				$date = date( DISPLAY_DATE, $time );
-				$error = "This transaction violates a past account audit. ".
-					"The account '{$row[ 'account_name' ]}' was audited up ".
-					"to date $date; please change the transaction accounting ".
-					"date.";
-			}
+			mysql_close( $conn );
+			return $error;
 		}
-		mysql_close();
+
+		$row = mysql_fetch_array( $rs, MYSQL_ASSOC );
+		if ($row)
+		{
+			if ($this->m_trans_id > -1)
+			{
+				// One of the transaction items has been audited.
+				// Load up the original record and check if the account
+				// ledger value has changed.
+				$oldTrans = new Transaction();
+				$oldTrans->Load_transaction( $this->m_trans_id );
+				$accountId = $row[ 'account_id' ];
+				$oldValue = $oldTrans->Get_ledger_value( $accountId );
+				$newValue = $this->Get_ledger_value( $accountId );
+				if (abs( $oldValue - $newValue ) > 0.001)
+				{
+					// The audited account has changed
+					$time = strtotime( $row[ 'audit_date' ] );
+					$date = date( DISPLAY_DATE, $time );
+					$error = "This transaction violates a past account audit. ".
+						"The account '{$row[ 'account_name' ]}' was audited up ".
+						"to date $date; please change the transaction accounting ".
+						"date.";
+				}
+			}
+
+		}
+		mysql_close( $conn );
 
 		return $error;
+	}
+
+	/*	Lookup the ledger value in this transaction for the given account ID.
+		If no value is found, null will be returned.
+	*/
+	public function Get_ledger_value( $accountId )
+	{
+		if ($accountId === null)
+		{
+			return null;
+		}
+
+		$ledgerList = array_merge ($this->m_ledgerL_list,
+			$this->m_ledgerR_list);
+		foreach ($ledgerList as $ledgerItem)
+		{
+			// 0=ledger_id, 1=account_id/account_debit, 2=amount
+			$accountArr = split( ',', $ledgerItem[ 1 ] );
+			$itemAccountId = $accountArr[ 0 ];
+			if ($itemAccountId == $accountId)
+			{
+				// Return the amount for the matching account ID
+				return $ledgerItem[ 2 ];
+			}
+		}
+
+		// Not found
+		return null;
 	}
 
 

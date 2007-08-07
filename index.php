@@ -12,11 +12,16 @@
 	// Default values
 	$sel_account_id = $_SESSION['default_account_id'];	// default account selection
 	// default date range to the whole current month
-	$dateArr = getdate ();
-	$dateArr['mday'] = 1;	// first day of current month
-	$dateArr2 = getdate();
-	$dateArr2['mon'] ++;
-	$dateArr2['mday'] = 0;	// last day of previous month
+	//$dateArr = getdate ();
+	//$dateArr['mday'] = 1;	// first day of current month
+	//$dateArr2 = getdate();
+	//$dateArr2['mon'] ++;
+	//$dateArr2['mday'] = 0;	// last day of previous month
+
+	// Get last x days + x days forward
+	$days = 5 * 24 * 60 * 60;
+	$dateArr = getdate(time() - $days);
+	$dateArr2 = getdate(time() + $days);
 
 	$search_text = '';
 	$limit = 0;

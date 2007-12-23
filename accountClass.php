@@ -555,7 +555,7 @@ class Account
 			"LEFT  JOIN Accounts a2 ON a.account_parent_id = a2.account_id ".
 			"  AND a2.account_id <> $account_id \n".
 			"WHERE ( a.account_parent_id= $account_id ".
-			"  OR a2.account_parent_id= $account_id ) \n".
+			"  OR a2.account_parent_id= $account_id OR a.account_id = $account_id ) \n".
 			"  AND t.accounting_date >=  '$start_sql' ".
 			"  AND t.accounting_date <=  '$end_sql' \n".
 			"GROUP BY IFNULL( a2.account_id, a.account_id ) \n".

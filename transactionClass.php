@@ -581,14 +581,16 @@ class Transaction
 		any account audits with a save.
 		A return value of empty string indicates we are okay; otherwise
 		a string will be returned with a reason for the violation.
+		check_original:  whether we are assuming this is the original DB data.
 	*/
 	private function Check_audits()
 	{
+		$error = '';
+
 		// Loop through the ledger entries
 		$accounts = '';
 		$ledger_list = array_merge ($this->m_ledgerL_list,
 			$this->m_ledgerR_list);
-		$error = '';
 
 		foreach ($ledger_list as $ledger_data)
 		{
@@ -603,6 +605,20 @@ class Transaction
 			$accounts .= $accountArr[ 0 ];
 		}
 
+		$oldTrans = null;
+		$oldDate = null;
+		$newDate = $this->get_accounting_date_sql();
+		$minDate = $newDate;
+		if ($this->m_trans_id > -1)
+		{
+			// Find out the original record's date
+			$oldTrans = new Transaction();
+			$oldTrans->Load_transaction( $this->m_trans_id );
+			$oldDate = $oldTrans->get_accounting_date_sql();
+			$minDate = min($oldDate, $newDate);
+		}
+
+
 		// Look for any audits that touch any accounts being updated, with
 		// an accounting date on or before the audit date
 		$sql = "SELECT aa.audit_date, a.account_name, le.account_id \n".
@@ -610,7 +626,8 @@ class Transaction
 			"INNER JOIN LedgerEntries le ON le.ledger_id = aa.ledger_id \n".
 			"INNER JOIN Accounts a ON a.account_id = le.account_id \n".
 			"WHERE le.account_id IN( $accounts ) \n".
-			"	AND aa.audit_date >= '{$this->get_accounting_date_sql()}' ";
+			"	AND aa.audit_date >= '$minDate' ".
+			"ORDER BY aa.audit_date DESC ";
 
 		$conn = db_connect();
 		$rs = mysql_query( $sql, $conn );
@@ -621,35 +638,50 @@ class Transaction
 			return $error;
 		}
 
-		$row = mysql_fetch_array( $rs, MYSQL_ASSOC );
-		if ($row)
+		// Loop through all potentially conflicting audit records until
+		// we find an error or we exhaust the list.
+		while ($row = mysql_fetch_array( $rs, MYSQL_ASSOC ))
 		{
-			if ($this->m_trans_id > -1)
+			$time = strtotime( $row[ 'audit_date' ] );
+			$date = date( DISPLAY_DATE, $time );
+
+			if ($this->m_trans_id <= -1)
+			{
+				// New transaction crosses old audit period.
+				$error = "This transaction would affect the account ".
+					"'{$row['account_name']}', which has already been audited ".
+					"up to $date.";
+			} else
 			{
 				// One of the transaction items has been audited.
 				// Load up the original record and check if the account
 				// ledger value has changed.
-				$oldTrans = new Transaction();
-				$oldTrans->Load_transaction( $this->m_trans_id );
 				$accountId = $row[ 'account_id' ];
-				$oldDate = $oldTrans->get_accounting_date_sql();
-				$newDate = $this->get_accounting_date_sql();
-				$time = strtotime( $row[ 'audit_date' ] );
+				$auditDate = $row[ 'audit_date' ];
+				$time = strtotime($auditDate);
 				$date = date( DISPLAY_DATE, $time );
+				$oldTime = strtotime($oldDate);
 				if ($oldDate != $newDate)
 				{
 					// The conflict is due to a date change
-					$error = "This transaction's accounting date violates ".
-						"an account audit on date $date and account ".
-						$row[ 'account_name' ]. "; please change the ".
-						"accounting date.";
-					mysql_close( $conn );
-					return $error;
+					if ($newDate > $auditDate)
+					{
+						$error = "Cannot change the accounting date from ".
+							date(DISPLAY_DATE, $oldTime) . " for this ".
+							"transaction, as the account ". $row['account_name'].
+							" has been audited up to $date.";
+					} else
+					{
+						$error = "This transaction's accounting date cannot ".
+							"change, due to an account audit on date $date and account ".
+							$row[ 'account_name' ]. "; please do not change the ".
+							"accounting date.";
+					}
 				}
 
 				$oldValue = $oldTrans->Get_ledger_value( $accountId );
 				$newValue = $this->Get_ledger_value( $accountId );
-				if (abs( $oldValue - $newValue ) > 0.001)
+				if ($error == '' && abs( $oldValue - $newValue ) > 0.001)
 				{
 					// The audited account has changed
 					$error = "This transaction violates a past account audit. ".
@@ -659,9 +691,14 @@ class Transaction
 				}
 			}
 
-		}
-		mysql_close( $conn );
+			if ($error != '')
+			{
+				// If we found an audit violation, exit now.
+				break;
+			}
+		}	// End while loop through audits
 
+		mysql_close( $conn );
 		return $error;
 	}
 

@@ -19,6 +19,7 @@ class Account
 	private	$m_account_descr		= '';
 	private	$m_account_debit		= 1;	// 1 = debit, -1 = credit
 	private	$m_equation_side		= 'R';	// 'L' or 'R'
+	private $m_monthly_budget		= 0.0;
 	private $m_active				= 1;
 
 
@@ -47,6 +48,9 @@ class Account
 	public function get_equation_side() {
 		return $this->m_equation_side;
 	}
+	public function get_monthly_budget() {
+		return $this->m_monthly_budget;
+	}
 	public function get_active() {
 		return $this->m_active;
 	}
@@ -61,6 +65,7 @@ class Account
 		$account_descr,
 		$account_debit,
 		$equation_side,
+		$monthly_budget,
 		$account_id = -1,
 		$active = 1)
 	{
@@ -68,6 +73,10 @@ class Account
 		$error = '';
 		if (trim ($account_name) == '')
 			$error = 'You must enter an account name';
+		elseif (!is_numeric($monthly_budget))
+			$error = 'The monthly budget must be numeric';
+		elseif (abs($monthly_budget) > 999999.99)
+			$error = 'The monthly budget cannot be more than 6 digits, plus decimal';
 		
 		if ($error == '')
 		{
@@ -82,6 +91,7 @@ class Account
 			$this->m_account_descr		= $account_descr;
 			$this->m_account_debit		= $account_debit;
 			$this->m_equation_side		= $equation_side;
+			$this->m_monthly_budget		= $monthly_budget;
 			$this->m_account_id			= $account_id;
 			$this->m_active				= $active;
 		}
@@ -107,6 +117,7 @@ class Account
 			$this->m_account_descr		= addslashes ($row['account_descr']);
 			$this->m_account_debit		= $row['account_debit'];
 			$this->m_equation_side		= $row['equation_side'];
+			$this->m_monthly_budget		= $row['monthly_budget'];
 			$this->m_active				= $row['active'];
 
 			$success = true;
@@ -134,10 +145,11 @@ class Account
 			$sql = "INSERT INTO Accounts \n".
 				"(login_id, account_parent_id, ".
 				"account_name, account_descr, ".
-				" account_debit, equation_side, active) \n".
+				" account_debit, equation_side, monthly_budget, active) \n".
 				"VALUES ($this->m_login_id, $account_parent_id, ".
 				" '$this->m_account_name', '$this->m_account_descr', ".
 				" $this->m_account_debit, '$this->m_equation_side', ".
+				" $this->m_monthly_budget, ".
 				" $this->m_active) ";
 		}
 		else
@@ -150,6 +162,7 @@ class Account
 				"  account_descr = '$this->m_account_descr', ".
 				"  account_debit = $this->m_account_debit, ".
 				"  equation_side = '$this->m_equation_side', ".
+				"  monthly_budget = $this->m_monthly_budget, ".
 				"  active = $this->m_active \n".
 				"WHERE account_id = $this->m_account_id ";
 		}
@@ -548,7 +561,8 @@ class Account
 			return 'End date is invalid.';
 
 		$sql = "SELECT sum( ledger_amount ) AS total_amount, ".
-			"  min( ifnull( a2.account_name, a.account_name ) ) as name  \n".
+			"  ifnull( a2.account_id, a.account_id ) as account_id, ".
+			"  min( ifnull( a2.account_name, a.account_name ) ) as name ".
 			"FROM LedgerEntries le \n".
 			"INNER JOIN Transactions t ON t.trans_id = le.trans_id \n".
 			"INNER JOIN Accounts a ON le.account_id = a.account_id \n".
@@ -560,31 +574,50 @@ class Account
 			"  AND t.accounting_date <=  '$end_sql' \n".
 			"GROUP BY IFNULL( a2.account_id, a.account_id ) \n".
 			"ORDER BY total_amount DESC " ;
-/*
-		$sql = "SELECT sum( ledger_amount ) AS total_amount, ".
-			"  min( a.account_name ) as name  \n".
-			"FROM LedgerEntries le \n".
-			"INNER JOIN Transactions t ON t.trans_id = le.trans_id \n".
-			"INNER JOIN Accounts a ON le.account_id = a.account_id \n".
-			"LEFT  JOIN Accounts a2 ON a.account_parent_id = a2.account_id ".
-			"  AND a2.account_id <> $account_id \n".
-			"WHERE ( a.account_parent_id= $account_id ".
-			"  OR a2.account_parent_id= $account_id ) \n".
-			"  AND t.accounting_date >=  '$start_sql' ".
-			"  AND t.accounting_date <=  '$end_sql' \n".
-			"GROUP BY a.account_id \n".
-			"ORDER BY total_amount DESC " ;
-*/
+
 		db_connect();
 		$rs = mysql_query ($sql);
 		$error = db_error ($rs, $sql);
 		if ($error != '')
 			return $error;
 
-		// account_list (account_name, account_total)
-		while ($row = mysql_fetch_row($rs))
+		// account_list (account_name, account_total, account_id)
+		while ($row = mysql_fetch_array($rs, MYSQL_ASSOC))
 		{
-			$account_list[] = array ($row[1], $row[0]);
+			$account_list[$row['account_id']] = array ($row['name'], $row['total_amount'],
+				$row['account_id']);
+		}
+		mysql_close();
+
+		return $error;
+	}
+
+	public static function Get_monthly_budget_list ($parent_account_id, &$account_list)
+	{
+		$error = '';
+		$sql = "SELECT ifnull(a2.account_id, a.account_id) as account_id, ".
+			"  sum( a.monthly_budget ) + ".
+			"  min(ifnull(a2.monthly_budget, 0.0)) as monthly_budget \n".
+			"FROM Accounts a \n".
+			"LEFT JOIN Accounts a2 ON a.account_parent_id = a2.account_id ".
+			"  AND a2.account_id <> $parent_account_id \n".
+			"WHERE (a.account_parent_id = $parent_account_id ".
+			"  OR a2.account_parent_id = $parent_account_id ".
+			"  OR a.account_id = $parent_account_id) ".
+			"  AND a.active = 1 ".
+			"GROUP BY ifnull(a2.account_id, a.account_id) \n".
+			"ORDER BY monthly_budget ";
+		
+		db_connect();
+		$rs = mysql_query($sql);
+		$error = db_error($rs, $sql);
+		if ($error != '')
+			return $error;
+
+		// Update map of account_id -> budget
+		while ($row = mysql_fetch_array($rs, MYSQL_ASSOC))
+		{
+			$account_list[ $row['account_id'] ] = $row['monthly_budget'];
 		}
 		mysql_close();
 

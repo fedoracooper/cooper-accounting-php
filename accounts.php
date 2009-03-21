@@ -71,6 +71,7 @@
 			$_POST['account_descr'],
 			$_POST['account_debit'],
 			$_POST['equation_side'],
+			$_POST['monthly_budget'],
 			$_POST['account_id'],
 			$active
 		);
@@ -222,6 +223,13 @@
 		<td></td>
 		<td>Equation side:</td>
 		<td><?= $side_dropdown ?></td>
+	</tr>
+
+	<tr>
+		<td></td>
+		<td>Monthly budget:</td>
+		<td><input type="text" size="50" maxlength="9" name="monthly_budget"
+			value="<?= $account->get_monthly_budget() ?>"></td>
 	</tr>
 
 	<tr>

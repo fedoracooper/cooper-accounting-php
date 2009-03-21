@@ -45,9 +45,12 @@
 		$dateArr['mon'], $dateArr['mday'], $dateArr['year']);
 	$end_time = mktime (0, 0, 0,
 		$dateArr2['mon'], $dateArr2['mday'], $dateArr2['year']);
+	$ytd_start_time = mktime (0, 0, 0, 1, 1, $dateArr['year']);
+	$end_month = $dateArr2['mon'];
+
 	$start_date	= date ('n/j/Y', $start_time);
 	$end_date	= date ('n/j/Y', $end_time);
-
+	$ytd_start_date = date('n/j/Y', $ytd_start_time);
 
 	// build account dropdowns: include inactive, and only show top 2 tiers
 	$account_list = Account::Get_account_list ($_SESSION['login_id'],
@@ -65,6 +68,14 @@
 	{
 		// No error in first query; query the budgets
 		$error = Account::Get_monthly_budget_list($account_id, $budget_list);
+	}
+
+	// Get year-to-date totals
+	$ytd_account_list = array();
+	if ($error == '')
+	{
+		$error = Account::Get_account_breakdown($ytd_start_date, $end_date,
+			$account_id, $ytd_account_list);
 	}
 ?>
 
@@ -116,6 +127,10 @@
 		<th style="text-align: right;">Total %</th>
 		<th style="text-align: right;">Budget</th>
 		<th style="text-align: right;">Diff</th>
+		<th style="text-align: right;">YTD Amount</th>
+		<th style="text-align: right;">YTD Budget</th>
+		<th style="text-align: right;">YTD Diff</th>
+
 	</tr>
 
 <?
@@ -124,26 +139,28 @@
 	$abs_total = 0.0;
 	$budget_total = 0.0;
 	$diff_total = 0.0;
+	$ytd_total = 0.0;
+	$ytd_budget_total = 0.0;
+	$ytd_diff_total = 0.0;
 
+	// Need the abs_total to calculate row percentages
 	foreach ($account_list as $account_data)
 	{
 		// account_list (account_name, account_total, account_id)
 		$grand_total += $account_data[1];
 		$abs_total += abs($account_data[1]);
-		$budget_total += $budget_list[$account_data[2]][1];
 	}
-	$diff_total = $budget_total - $grand_total;
-	$diff_total_str = number_format ($diff_total, 2);
-
-	$grand_str = number_format ($grand_total, 2);
-	$budget_total_str = number_format ($budget_total, 2);
 
 	// Second loop: display data
 //	foreach ($account_list as $account_data)
 	foreach ($budget_list as $account_id => $budget_data)
 	{
-		$account_data = null;
 		$monthly_amt = 0.0;
+		$ytd_amt = 0.0;
+		$budget_total += $budget_data[1];
+		// YTD budget = budget * month
+		$ytd_budget = $budget_data[1] * $end_month;
+		$ytd_budget_total += $ytd_budget;
 
 		if (array_key_exists($account_id, $account_list))
 		{
@@ -151,34 +168,65 @@
 			$account_data = $account_list[$account_id];
 			$monthly_amt = $account_data[1];
 		}
+		if (array_key_exists($account_id, $ytd_account_list))
+		{
+			$ytd_data = $ytd_account_list[$account_id];
+			$ytd_amt = $ytd_data[1];
+			$ytd_total += $ytd_amt;
+		}
 		
 		$monthly_diff = $budget_data[1] - $monthly_amt;
+		$ytd_diff = $ytd_budget - $ytd_amt;
+		$total_pct = $monthly_amt / $abs_total * 100.0;
+
 		$diff_str = '$' . number_format ($monthly_diff, 2);
 		if ($monthly_diff < -0.001)
 			$diff_str = "<span style='color: red;'>$diff_str</span>";
-		$monthly_str = number_format ($monthly_amt, 2);
-		$total_pct = $monthly_amt / $abs_total * 100.0;
-		$pct_str = number_format ($total_pct, 1);
-		$budget_str = number_format( $budget_data[1], 2 );
+		$ytd_diff_str = '$' . number_format ($ytd_diff, 2);
+		if ($ytd_diff < -0.001)
+			$ytd_diff_str = "<span style='color: red;'>$ytd_diff_str</span>";
+
+		$monthly_str = '$' . number_format ($monthly_amt, 2);
+		$pct_str = number_format ($total_pct, 1) . '%';
+		$budget_str = '$' . number_format( $budget_data[1], 2 );
+		$ytd_str = '$' . number_format( $ytd_amt, 2 );
+		$ytd_budget_str = '$' . number_format ($ytd_budget, 2);
 		echo "	<tr> \n".
 			"		<td>$budget_data[0]</td> \n".
-			"		<td style='text-align: right;'>\$$monthly_str</td> \n".
-			"		<td style='text-align: right;'>$pct_str%</td> \n".
-			"		<td style='text-align: right;'>\$$budget_str</td> \n".
+			"		<td style='text-align: right;'>$monthly_str</td> \n".
+			"		<td style='text-align: right;'>$pct_str</td> \n".
+			"		<td style='text-align: right;'>$budget_str</td> \n".
 			"		<td style='text-align: right;'>$diff_str</td> \n".
+			"		<td style='text-align: right;'>$ytd_str</td> \n".
+			"		<td style='text-align: right;'>$ytd_budget_str</td> \n".
+			"		<td style='text-align: right;'>$ytd_diff_str</td> \n".
 			"	</tr> \n\n" ;
-	}
+	}	// End budget loop
+
+	$diff_total = $budget_total - $grand_total;
+	$ytd_diff_total = $ytd_budget_total - $ytd_total;
+
+	$grand_str = '$'. number_format ($grand_total, 2);
+	$budget_total_str = '$'. number_format ($budget_total, 2);
+	$diff_total_str = '$'. number_format ($diff_total, 2);
+
+	$ytd_total_str = '$' . number_format ($ytd_total, 2);
+	$ytd_budget_total_str = '$'. number_format($ytd_budget_total, 2);
+	$ytd_diff_total_str = '$'. number_format($ytd_diff_total, 2);
 
 	echo "	<tr> \n".
 		"		<td style='border-top: 1px solid black; border-bottom: 1px solid black;' ".
-		" colspan=\"5\">&nbsp;</td> \n".
+		" colspan=\"8\">&nbsp;</td> \n".
 		"	</tr> \n\n".
 		"	<tr> \n".
 		"		<td>Period total</td> \n".
-		"		<td style='text-align: right; font-weight: bold;'>\$$grand_str</td> \n".
+		"		<td style='text-align: right; font-weight: bold;'>$grand_str</td> \n".
 		"		<td style='text-align: right; font-weight: bold;'>&nbsp;</td> \n".
-		"		<td style='text-align: right; font-weight: bold;'>\$$budget_total_str</td> \n".
-		"		<td style='text-align: right; font-weight: bold;'>\$$diff_total_str</td> \n".
+		"		<td style='text-align: right; font-weight: bold;'>$budget_total_str</td> \n".
+		"		<td style='text-align: right; font-weight: bold;'>$diff_total_str</td> \n".
+		"		<td style='text-align: right; font-weight: bold;'>$ytd_total_str</td> \n".
+		"		<td style='text-align: right; font-weight: bold;'>$ytd_budget_total_str</td> \n".
+		"		<td style='text-align: right; font-weight: bold;'>$ytd_diff_total_str</td> \n".
 		"	</tr> \n\n" ;
 
 ?>

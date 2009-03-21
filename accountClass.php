@@ -597,7 +597,8 @@ class Account
 		$error = '';
 		$sql = "SELECT ifnull(a2.account_id, a.account_id) as account_id, ".
 			"  sum( a.monthly_budget ) + ".
-			"  min(ifnull(a2.monthly_budget, 0.0)) as monthly_budget \n".
+			"  min(ifnull(a2.monthly_budget, 0.0)) as monthly_budget, \n".
+			"  min( ifnull( a2.account_name, a.account_name ) ) as name \n".
 			"FROM Accounts a \n".
 			"LEFT JOIN Accounts a2 ON a.account_parent_id = a2.account_id ".
 			"  AND a2.account_id <> $parent_account_id \n".
@@ -606,7 +607,7 @@ class Account
 			"  OR a.account_id = $parent_account_id) ".
 			"  AND a.active = 1 ".
 			"GROUP BY ifnull(a2.account_id, a.account_id) \n".
-			"ORDER BY monthly_budget ";
+			"ORDER BY monthly_budget DESC";
 		
 		db_connect();
 		$rs = mysql_query($sql);
@@ -617,7 +618,8 @@ class Account
 		// Update map of account_id -> budget
 		while ($row = mysql_fetch_array($rs, MYSQL_ASSOC))
 		{
-			$account_list[ $row['account_id'] ] = $row['monthly_budget'];
+			// Row:  account_id => (account name, budget amount)
+			$account_list[ $row['account_id'] ] = array($row['name'], $row['monthly_budget']);
 		}
 		mysql_close();
 

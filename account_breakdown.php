@@ -123,13 +123,13 @@
 <table class="summary-list" cellspacing="0" cellpadding="0">
 	<tr>
 		<th>Account</th>
-		<th style="text-align: right;">Amount</th>
-		<th style="text-align: right;">Total %</th>
-		<th style="text-align: right;">Budget</th>
-		<th style="text-align: right;">Diff</th>
-		<th style="text-align: right;">YTD Amount</th>
-		<th style="text-align: right;">YTD Budget</th>
-		<th style="text-align: right;">YTD Diff</th>
+		<th style="text-align: center;">Amount</th>
+		<th style="text-align: center;">Total %</th>
+		<th style="text-align: center;">Budget</th>
+		<th style="text-align: center;">Diff</th>
+		<th style="text-align: center;">YTD Amount</th>
+		<th style="text-align: center;">YTD Budget</th>
+		<th style="text-align: center;">YTD Diff</th>
 
 	</tr>
 

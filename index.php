@@ -31,6 +31,7 @@
 	$transR_ledgers = array();
 	$editClick = 0;
 	
+	// If the filter form was submitted, update session vars
 	if (isset ($_POST['sel_account_id']))
 	{
 		// The form has already been submitted; get filter vars
@@ -56,7 +57,26 @@
 			$dateArr2['mon'] += 2;
 			$dateArr2['mday'] = 0;
 		}
+
+		// Set session vars
+		$_SESSION['sel_account_id'] = $sel_account_id;
+		$_SESSION['dateArr'] = $dateArr;
+		$_SESSION['dateArr2'] = $dateArr2;
+		$_SESSION['limit'] = $limit;
+		$_SESSION['total_period'] = $total_period;
+		$_SESSION['search_text'] = $search_text;
 	}
+	// Otherwise, try to retrieve previous selections from session vars
+	elseif (isset ($_SESSION['sel_account_id']))
+	{
+		$sel_account_id = $_SESSION['sel_account_id'];
+		$dateArr		= $_SESSION['dateArr'];
+		$dateArr2		= $_SESSION['dateArr2'];
+		$limit			= $_SESSION['limit'];
+		$total_period	= $_SESSION['total_period'];
+		$search_text	= $_SESSION['search_text'];
+	}
+
 	// convert date arrays into date strings
 	$start_time = mktime (0, 0, 0,
 		$dateArr['mon'], $dateArr['mday'], $dateArr['year']);
@@ -198,8 +218,8 @@
 		{
 			if (document.forms[0].editClick.value == "1")
 			{
-				document.forms[0].trans_date.focus();
-				document.forms[0].trans_date.select();
+				document.forms[1].trans_date.focus();
+				document.forms[1].trans_date.select();
 			}
 		}
 
@@ -237,7 +257,7 @@
 		echo	"<p class=\"error\">$error</p> \n";
 ?>
 
-<form method="post" action="index.php">
+<form method="post" action="index.php" name="searchForm">
 <input type="hidden" name="editClick" value="<?= $editClick ?>">
 <table>
 
@@ -475,7 +495,10 @@
 	</tr>	-->
 
 </table>
+</form>
 
+
+<form method="post" action="index.php" name="editForm">
 <table class="transaction">
 	<tr>
 		<td colspan="2" style="font-weight: bold;">

@@ -235,7 +235,7 @@
 		{
 			// Handle a click of an account total; popup a new window
 			window.open( 'audit.php?audit_id=' + audit_id, 'audit',
-				'toolbar=no,height=250,width=630');
+				'toolbar=no,height=250,width=700');
 		}
 
 	</script>

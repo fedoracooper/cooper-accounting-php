@@ -228,7 +228,7 @@
 			// Handle a click of an account total; popup a new window
 			window.open( 'audit.php?ledger_id=' + ledger_id
 				+ '&account_total=' + account_balance, 'audit',
-				'toolbar=no,height=250,width=630');
+				'toolbar=no,height=250,width=700');
 		}
 
 		function editAudit( audit_id )

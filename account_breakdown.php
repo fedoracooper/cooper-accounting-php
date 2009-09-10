@@ -47,6 +47,12 @@
 		$dateArr2['mon'], $dateArr2['mday'], $dateArr2['year']);
 	$ytd_start_time = mktime (0, 0, 0, 1, 1, $dateArr['year']);
 	$end_month = $dateArr2['mon'];
+	if ($dateArr2['mday'] == 0)
+	{
+		// When using left/right arrows, the month will be ahead by 1
+		// because we are using day 0 of the following month.
+		$end_month --;
+	}
 
 	$start_date	= date ('n/j/Y', $start_time);
 	$end_date	= date ('n/j/Y', $end_time);

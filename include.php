@@ -18,6 +18,9 @@ define( 'DISPLAY_DATE',	'm/d/Y' );			// MM/DD/YYYY
 define( 'SQL_DATE',		'Y-m-d' );			// YYYY-MM-DD
 define( 'LONG_DATE',	'M j, Y g:i a' );	// Mon D, YYYY H:MM pm
 
+// Setup timezone
+date_default_timezone_set('America/New_York');
+
 
 require ('accountClass.php');
 require ('transactionClass.php');
@@ -148,7 +151,7 @@ function ArrVal ($data, $x, $y = -1)
 // Returns the timestamp value or -1 when invalid
 function parse_date ($date_str)
 {
-	$dateArr = split ('/', $date_str);
+	$dateArr = explode('/', $date_str);
 	if (count ($dateArr) != 3)
 	{
 		return -1;
@@ -205,7 +208,7 @@ function convert_date ($dateStr, $mode)
 	$seperator = '/';
 	if ($mode == 2)
 		$seperator = '-';
-	$dateArr = split ($seperator, $dateStr);
+	$dateArr = explode($seperator, $dateStr);
 	if (count ($dateArr) < 3)
 		return '';
 

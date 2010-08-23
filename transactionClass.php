@@ -310,7 +310,7 @@ class Transaction
 				}
 			}
 			// Total up amounts multiplied by debit (1 or -1)
-			$accountArr = split (',', $ledger_data[1]);
+			$accountArr = explode(',', $ledger_data[1]);
 			if (count ($accountArr) == 2) {
 				// when deleting ledger entries, there may be no account
 				$ledger_total += ($ledger_data[2] * (float)$accountArr[1]);
@@ -538,7 +538,7 @@ class Transaction
 			foreach ($ledger_list as $ledger_data)
 			{
 				// 0=ledger_id, 1=account_id/account_debit, 2=amount
-				$accountArr = split (',', $ledger_data[1]);
+				$accountArr = explode(',', $ledger_data[1]);
 				if ($ledger_data[0] == -1)
 				{
 					// no ledger_id; new record.
@@ -600,7 +600,7 @@ class Transaction
 			}
 
 			// 0=ledger_id, 1=account_id/account_debit, 2=amount
-			$accountArr = split( ',', $ledger_data[ 1 ] );
+			$accountArr = explode( ',', $ledger_data[ 1 ] );
 			// Store the account ID of every ledger ID in a SQL list
 			$accounts .= $accountArr[ 0 ];
 		}
@@ -717,7 +717,7 @@ class Transaction
 		foreach ($ledgerList as $ledgerItem)
 		{
 			// 0=ledger_id, 1=account_id/account_debit, 2=amount
-			$accountArr = split( ',', $ledgerItem[ 1 ] );
+			$accountArr = explode( ',', $ledgerItem[ 1 ] );
 			$itemAccountId = $accountArr[ 0 ];
 			if ($itemAccountId == $accountId)
 			{
@@ -913,7 +913,7 @@ class Transaction
 				{	// Only do period totals for RHS accounts (revenue & expenses)
 					// The min_date for the total depends on each transaction;
 					// It is the first of the month or first of the year of the accounting date.
-					$start_date_arr = split ('/', $trans->get_accounting_date(false));
+					$start_date_arr = explode ('/', $trans->get_accounting_date(false));
 					switch ($total_period)
 					{
 						case 'month':

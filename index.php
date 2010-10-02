@@ -530,8 +530,8 @@
 		<td><input type="text" size="4" maxlength="4" name="check_number"
 			value="<?= $trans->get_check_number() ?>"></td>
 		<td>Miles:</td>
-		<td><input type="text" size="7" maxlength="7" name="gas_miles"
-			value="<?= $trans->get_gas_miles() ?>"></td>
+		<td><input type="text" size="7" maxlength="9" name="gas_miles"
+			value="<?= $trans->get_gas_miles_trimmed() ?>"></td>
 		<td>Gallons:</td>
 		<td><input type="text" size="5" maxlength="5" name="gas_gallons"
 			value="<?= $trans->get_gas_gallons() ?>"></td>

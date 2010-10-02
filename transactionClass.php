@@ -117,12 +117,21 @@ class Transaction
 			return '';
 		else
 		{
-			if ($thousands && is_numeric ($this->m_gas_miles))
+			$raw = $this->m_gas_miles;
+			if ($thousands && is_numeric ($raw))
 				// display using thousands separator
-				return number_format ($this->m_gas_miles);
+				return number_format ($raw, 0);
 			else
-				return $this->m_gas_miles;
+				return $raw;
 		}
+	}
+	public function get_gas_miles_trimmed() {
+		$raw = $this->m_gas_miles;
+		// if this ends in .0, then trim
+		if (strstr($raw, '.0') != false)
+			return substr($raw, 0, strlen($raw) - 2);
+		else
+			return $raw;
 	}
 	public function get_gas_gallons() {
 		if (is_null ($this->m_gas_gallons))

@@ -91,6 +91,34 @@ function db_connect()
 	return $link;
 }
 
+// Build an error message from the PDO object if there is
+// an error code.  Otherwise return an empty string.
+function get_pdo_error($pdo)
+{
+	$errorInfo = $pdo->errorInfo();
+	if ($errorInfo != NULL)
+	{
+		// Get error description
+		return $errorInfo[2];
+	}
+	return '';
+}
+
+// Return new PDO object, or a string error msg on failure.
+function db_connect_pdo()
+{
+	$host = 'localhost';
+	$db = 'accounting';
+	$user = 'accounting_user';
+	$pass = 'accounting';
+	try {
+		$pdo = new PDO("mysql:host=$host;dbname=$db", $user, $pass);
+		return $pdo;
+	} catch (PDOException $ex) {
+		return 'Error connecting to PDO database: ' . $ex->getMessage();
+	}
+}
+
 // return an html-formatted error string for the database, if there
 // is an error.
 function db_error ($rs, $sql)
@@ -176,22 +204,19 @@ function parse_date ($date_str)
 // Returns the last auto_increment value from the current connection.
 // If no value is found, it returns -1.
 // Note: this assumes that a db connection is already open
-function get_auto_increment()
+function get_auto_increment($pdo)
 {
-	if (mysql_affected_rows() < 1)
-		return -1;	// No update has been performed.
-
 	// Find out the auto_increment value that was created
 	$sql = "SELECT last_insert_id() ";
-	$rs = mysql_query ($sql);
-	if ($rs)
+	//$pdo = db_connect_pdo();
+	$ps = $pdo->prepare($sql);
+	$ps->execute();
+	$row = $ps->fetch(); 
+	if ($row != NULL)
 	{
 		// Successful query
-		if ($row = mysql_fetch_row ($rs))
-		{
-			if ($row[0] > 0)
-				return $row[0];
-		}
+		if ($row[0] > 0)
+			return $row[0];
 	}
 
 	return -1;

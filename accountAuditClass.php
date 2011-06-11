@@ -6,7 +6,6 @@
 
 // ACCOUNT AUDIT class
 //------------------------------------------------------------------------------
-// Member variables are stored with slashes added
 class AccountAudit
 {
 	private $m_audit_id			= -1;
@@ -35,22 +34,21 @@ class AccountAudit
 			"FROM Accounts a \n".
 			"INNER JOIN LedgerEntries le ON le.account_id = a.account_id \n".
 			"INNER JOIN Transactions t ON t.trans_id = le.trans_id \n".
-			"WHERE le.ledger_id = $ledger_id ";
-		db_connect();
-		$rs = mysql_query( $sql );
-		$error = db_error( $rs, $sql );
-		if ($error == '')
-		{
-			$row = mysql_fetch_array( $rs, MYSQL_ASSOC );
-			$this->m_account_name	= $row[ 'account_name' ];
-			$this->m_audit_time		= strtotime( $row[ 'accounting_date'] );
+			"WHERE le.ledger_id = :ledger_id ";
+		$pdo = db_connect_pdo();
+		$ps = $pdo->prepare($sql);
+		$ps->bindParam(':ledger_id', $ledger_id);
+		$success = $ps->execute();
+		if (!$success) {
+			$this->m_account_name = get_pdo_error($ps);
+			return;
 		}
-		else
-		{
-			$this->m_account_name = $error;
-		}
+			
+		$row = $ps->fetch(PDO::FETCH_ASSOC);
+		$this->m_account_name	= $row[ 'account_name' ];
+		$this->m_audit_time		= strtotime( $row[ 'accounting_date'] );
 
-		mysql_close();
+		$pdo = null;
 	}
 
 	// ACCESSOR methods
@@ -92,11 +90,11 @@ class AccountAudit
 	}
 	public function get_audit_comment()
 	{
-		return stripslashes( $this->m_audit_comment );
+		return $this->m_audit_comment;
 	}
 	public function get_account_name()
 	{
-		return stripslashes( $this->m_account_name );
+		return $this->m_account_name;
 	}
 	public function get_updated_time()
 	{
@@ -109,7 +107,6 @@ class AccountAudit
 	}
 
 	
-	// Arguments should have had addslashes called already
 	public function Init_account_audit(
 		$ledger_id,
 		$audit_date,
@@ -161,26 +158,25 @@ class AccountAudit
 			"	AND( ( t2.accounting_date = t.accounting_date ".
 			"			AND t2.trans_id > t.trans_id ) ".
 			"		OR( t2.accounting_date > t.accounting_date ) ) \n".
-			"WHERE le.ledger_id = $this->m_ledger_id \n".
+			"WHERE le.ledger_id = :ledger_id ".
 			"ORDER BY ifnull( t2.accounting_date, '2999-01-01' ), t2.trans_id \n".
 			"LIMIT 1 ";
 
-		db_connect();
-		$rs = mysql_query( $sql );
-		$error = db_error( $rs, $sql );
-		if ($error != '')
-		{
-			mysql_close();
-			return $error;
+		$pdo = db_connect_pdo();
+		$ps = $pdo->prepare($sql);
+		$ps->bindParam(':ledger_id', $this->m_ledger_id);
+		$success = $ps->execute();
+		if (!$success) {
+			return get_pdo_error($ps);
 		}
 
-		$row = mysql_fetch_array( $rs, MYSQL_ASSOC );
+		$row = $ps->fetch(PDO::FETCH_ASSOC);
 		$trans_id		= $row[ 'min_trans_id' ];
 		$min_date		= $row[ 'min_date' ];
 		$max_trans_id	= $row[ 'max_trans_id' ];
 		$max_date		= $row[ 'max_date' ];
-		mysql_close();
-
+		
+		$pdo = null;
 		return '';
 	}
 
@@ -189,26 +185,31 @@ class AccountAudit
 		$sql = "SELECT aa.*, a.account_name from AccountAudits aa \n".
 			"INNER JOIN LedgerEntries le ON le.ledger_id = aa.ledger_id \n".
 			"INNER JOIN Accounts a ON a.account_id = le.account_id \n".
-			"WHERE aa.audit_id = $audit_id ";
+			"WHERE aa.audit_id = :audit_id ";
 
-		db_connect();
-		$rs = mysql_query( $sql );
-		$error = db_error( $rs, $sql );
-		if ($error == '')
-		{
-			$row = mysql_fetch_array( $rs, MYSQL_ASSOC );
-			$this->m_audit_id			= $audit_id;
-			$this->m_ledger_id			= $row[ 'ledger_id' ];
-			$this->m_audit_time			= strtotime( $row[ 'audit_date' ] );
-			$this->m_account_balance	= $row[ 'account_balance' ];
-			$this->m_audit_comment		= addslashes(
-				$row[ 'audit_comment' ] );
-			$this->m_account_name		= addslashes( $row[ 'account_name' ] );
-			$this->m_updated_time		= strtotime( $row[ 'updated_time'] );
+		$pdo = db_connect_pdo();
+		$ps = $pdo->prepare($sql);
+		if ($ps == false) {
+			return get_pdo_error($ps);
 		}
-		mysql_close();
+		$ps->bindParam(':audit_id', $audit_id);
+		$success = $ps->execute();
+		if (!$success) {
+			return get_pdo_error($ps);
+		}
+		
+		$row = $ps->fetch(PDO::FETCH_ASSOC );
+		$this->m_audit_id			= $audit_id;
+		$this->m_ledger_id			= $row[ 'ledger_id' ];
+		$this->m_audit_time			= strtotime( $row[ 'audit_date' ] );
+		$this->m_account_balance	= $row[ 'account_balance' ];
+		$this->m_audit_comment		= $row[ 'audit_comment' ];
+		$this->m_account_name		= $row[ 'account_name' ];
+		$this->m_updated_time		= strtotime( $row[ 'updated_time'] );
 
-		return $error;
+		$pdo = null;
+		
+		return '';
 	}
 
 	public function Save_account_audit()
@@ -257,52 +258,59 @@ class AccountAudit
 			return $error;
 		}
 
-		$sql = '';
-
 		// TODO:  make sure the date doesn't exceed map to another transaction
 		// for this account
 
+		$pdo = db_connect_pdo();
+		$pdo->beginTransaction();
+		$ps = NULL;		
 		if ($this->m_audit_id > -1)
 		{
 			// Update an existing record (date & comment)
 			$sql = "UPDATE AccountAudits \n".
-				"SET audit_date = '". $this->get_audit_date_sql() . "', ".
-				"  audit_comment = '$this->m_audit_comment' \n".
-				"WHERE audit_id = $this->m_audit_id ";
+				"SET audit_date = :audit_date, ".
+				"  audit_comment = :audit_comment \n".
+				"WHERE audit_id = :audit_id ";
+			$ps = $pdo->prepare($sql);
+			$ps->bindParam(':audit_date', $this->get_audit_date_sql());
+			$ps->bindParam(':audit_comment', $this->m_audit_comment);
+			$ps->bindParam(':audit_id', $this->m_audit_id);
 		}
 		else
 		{
-			/*	Insert a new record; we are using table WRITE locks in the
-				database to make sure that the account balance is accurate
-				when the insert occurs.  As long as transaction updates &
-				inserts always check for audit records, we should be consistent.
-			*/
-			$sqlLock =
-				"SET AUTOCOMMIT = 0; \n".
-				"LOCK AccountAudits WRITE; \n";
-
 			$sql = 
 				"INSERT INTO AccountAudits \n".
 				"( ledger_id, audit_date, account_balance, audit_comment ) \n".
-				"VALUES( $this->m_ledger_id, '" .
-				$this->get_audit_date_sql() . "', ".
-				$this->get_account_balance( true ) . ", ".
-				"'$this->m_audit_comment' ) ";
+				"VALUES( :ledger_id, :audit_date, :account_balance, ".
+				":audit_comment ) ";
+			$ps = $pdo->prepare($sql);
+			$ps->bindParam(':ledger_id', $this->m_ledger_id);
+			$ps->bindParam(':audit_date', $this->get_audit_date_sql());
+			$ps->bindParam(':account_balance', $this->get_account_balance( true ));
+			$ps->bindParam(':audit_comment', $this->m_audit_comment);
 		}
 
-		db_connect();
-		$rs = mysql_query( $sql );
-		$error = db_error( $rs, $sql );
+		if ($ps == FALSE) {
+			// sql problem
+			return get_pdo_error($ps);
+		}
+		
+		$success = $ps->execute();
+		if (!$success) {
+			return get_pdo_error($ps);
+		}
 
-		if ($error == '' && $this->m_audit_id < 0)
+		if ($this->m_audit_id < 0)
 		{
 			// Update the primary key
-			$this->m_audit_id = get_auto_increment();
+			$this->m_audit_id = get_auto_increment($pdo);
 		}
-		mysql_close();
+		
+		$pdo->commit();
+		$pdo = null;
 
 		// Reload from DB (will get updated_time)
-		$this->Load_account_audit( $this->m_audit_id );
+		$error = $this->Load_account_audit( $this->m_audit_id );
 
 		return $error;
 	}
@@ -317,19 +325,25 @@ class AccountAudit
 		}
 
 		$sql = "DELETE FROM AccountAudits ".
-			"WHERE audit_id = $this->m_audit_id ";
-		db_connect();
-		$rs = mysql_query( $sql );
-		$error = db_error( $rs, $sql );
-		mysql_close();
+			"WHERE audit_id = :audit_id ";
 
-		if ($error == '')
+		$pdo = db_connect_pdo();
+		$ps = $pdo->prepare($sql);
+		$ps->bindParam(':audit_id', $this->m_audit_id);
+		$success = $ps->execute();
+		if (!$success) {
+			return get_pdo_error($ps);
+		}
+		
+		$count = $ps->rowCount(); 
+		if ($count != 1)
 		{
-			// Success; set audit_id to -1
-			$this->m_audit_id = -1;
+			return 'Error: audit delete affected ' . $count . ' rows';
 		}
 
-		return $error;
+		// Success; set audit_id to -1
+		$this->m_audit_id = -1;
+		return '';
 	}
 
 } // End Account Audit class

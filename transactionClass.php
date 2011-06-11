@@ -136,8 +136,10 @@ class Transaction
 	public function get_gas_gallons() {
 		if (is_null ($this->m_gas_gallons))
 			return '';
-		else
-			return $this->m_gas_gallons;
+		else {
+			// trim off extra zeroes; no more than 999.9
+			return substr($this->m_gas_gallons, 0, 5);
+		}
 	}
 	public function get_updated_time() {
 		if (is_null ($this->m_updated_time))
@@ -365,61 +367,72 @@ class Transaction
 	public function Load_transaction ($trans_id)
 	{
 		$sql = "SELECT * from Transactions ".
-			"WHERE trans_id = $trans_id ";
+			"WHERE trans_id = :trans_id ";
 
-		db_connect();
-		$rs = mysql_query ($sql);
-		$error = db_error ($rs, $sql);
-		if ($error == '' && ($row = mysql_fetch_array ($rs, MYSQL_ASSOC)))
-		{
-			$this->m_trans_id			= $trans_id;
-			$this->m_login_id			= $row['login_id'];
-			$this->m_trans_descr		= addslashes ($row['trans_descr']);
-			// convert dates from yyyy-mm-dd to mm/dd/yyyy
-			$this->m_trans_time			= strtotime ($row['trans_date']);
-			$this->m_accounting_time	= strtotime ($row['accounting_date']);
-			$this->m_updated_time		= strtotime ($row['updated_time']);
-			$this->m_trans_vendor		= addslashes ($row['trans_vendor']);
-			if (is_null ($row['trans_comment']))
-				$this->m_trans_comment = NULL;
-			else
-				$this->m_trans_comment	= addslashes ($row['trans_comment']);
-			$this->m_check_number		= $row['check_number'];
-			$this->m_gas_miles			= $row['gas_miles'];
-			$this->m_gas_gallons		= $row['gas_gallons'];
-			$this->m_trans_status		= $row['trans_status'];
+		$pdo = db_connect_pdo();
+		if (!is_object($pdo)) {
+			// return error msg
+			return $pdo;
 		}
-		if ($error == '')
-		{
-			// Load individual ledger entries
-			$sql = "SELECT le.ledger_id, le.account_id, le.ledger_amount, ".
-				" a.equation_side, a.account_debit \n".
-				"FROM LedgerEntries le \n".
-				"INNER JOIN Accounts a ON ".
-				"	a.account_id = le.account_id ".
-				"WHERE le.trans_id= $trans_id ";
-			$rs = mysql_query ($sql);
-			$error = db_error ($rs, $sql);
-			if ($error == '')
-			{
-				$this->m_ledgerL_list = array();
-				$this->m_ledgerR_list = array();
-				// loop for each ledger entry
-				while ($row = mysql_fetch_array ($rs, MYSQL_ASSOC))
-				{
-					$accountStr = $row['account_id']. ','. $row['account_debit'];
-					$subarr = array ($row['ledger_id'], $accountStr,
-						$row['ledger_amount']);
-					if ($row['equation_side'] == 'L')		// LHS ledger account
-						$this->m_ledgerL_list[] = $subarr;
-					else	// RHS ledger account
-						$this->m_ledgerR_list[] = $subarr;
-				}
-			}
-		}
-		mysql_close();
 
-		return $error;
+		$ps = $pdo->prepare($sql);
+		$ps->bindParam(':trans_id', $trans_id, PDO::PARAM_INT);
+		$success = $ps->execute();
+		if (!$success) {
+			return get_pdo_error($ps);
+		}
+
+		$row = $ps->fetch(PDO::FETCH_ASSOC);
+		if ($row === FALSE) {
+			return get_pdo_error($ps);
+		}
+
+		$this->m_trans_id			= $trans_id;
+		$this->m_login_id			= $row['login_id'];
+		$this->m_trans_descr		= addslashes ($row['trans_descr']);
+		// convert dates from yyyy-mm-dd to mm/dd/yyyy
+		$this->m_trans_time			= strtotime ($row['trans_date']);
+		$this->m_accounting_time	= strtotime ($row['accounting_date']);
+		$this->m_updated_time		= strtotime ($row['updated_time']);
+		$this->m_trans_vendor		= addslashes ($row['trans_vendor']);
+		if (is_null ($row['trans_comment']))
+			$this->m_trans_comment = NULL;
+		else
+			$this->m_trans_comment	= addslashes ($row['trans_comment']);
+		$this->m_check_number		= $row['check_number'];
+		$this->m_gas_miles			= $row['gas_miles'];
+		$this->m_gas_gallons		= $row['gas_gallons'];
+		$this->m_trans_status		= $row['trans_status'];
+
+		// Load individual ledger entries
+		$sql = "SELECT le.ledger_id, le.account_id, le.ledger_amount, ".
+			" a.equation_side, a.account_debit \n".
+			"FROM LedgerEntries le \n".
+			"INNER JOIN Accounts a ON ".
+			"	a.account_id = le.account_id ".
+			"WHERE le.trans_id= :trans_id ";
+		$ps = $pdo->prepare($sql);
+		$ps->bindParam(':trans_id', $trans_id, PDO::PARAM_INT);
+		$success = $ps->execute();
+		if (!$success) {
+			return get_pdo_error($ps);
+		}
+
+		$this->m_ledgerL_list = array();
+		$this->m_ledgerR_list = array();
+		// loop for each ledger entry
+		while ($row = $ps->fetch(PDO::FETCH_ASSOC))
+		{
+			$accountStr = $row['account_id']. ','. $row['account_debit'];
+			$subarr = array ($row['ledger_id'], $accountStr,
+				$row['ledger_amount']);
+			if ($row['equation_side'] == 'L')		// LHS ledger account
+				$this->m_ledgerL_list[] = $subarr;
+			else	// RHS ledger account
+				$this->m_ledgerR_list[] = $subarr;
+		}
+
+		$pdo = null;
 	}
 
 
@@ -476,6 +489,9 @@ class Transaction
 		$check_number	= $this->m_check_number;
 		$gas_miles		= $this->m_gas_miles;
 		$gas_gallons	= $this->m_gas_gallons;
+		
+		// no longer need special null handling ?
+		/*
 		if (is_null ($trans_comment))
 			$trans_comment = 'NULL';
 		else
@@ -486,6 +502,7 @@ class Transaction
 			$gas_miles = 'NULL';
 		if (is_null ($gas_gallons))
 			$gas_gallons = 'NULL';
+			*/
 
 		// Query the audit table to check for conflicts
 		$error = $this->Check_audits();
@@ -493,6 +510,14 @@ class Transaction
 		{
 			return $error;
 		}
+		
+		$pdo = db_connect_pdo();
+		$pdo->beginTransaction();
+		
+		if (is_string($pdo)) {
+			return $pdo;
+		}
+		$ps = null;
 
 		if ($this->m_trans_id == -1)
 		{
@@ -503,86 +528,122 @@ class Transaction
 				"(login_id, trans_descr, trans_date, accounting_date, ".
 				" trans_vendor, trans_comment, check_number, gas_miles, ".
 				" gas_gallons, trans_status) \n".
-				"VALUES( $this->m_login_id, '$this->m_trans_descr', ".
-				" '{$this->get_trans_date_sql()}', ".
-				" '{$this->get_accounting_date_sql()}', ".
-				" '$this->m_trans_vendor', $trans_comment, ".
-				"$check_number, $gas_miles, $gas_gallons, ".
-				"$this->m_trans_status ) ";
-
+				"VALUES( :login_id, :descr, :trans_date, " .
+				" :accounting_date, :vendor, :comment, :check_num, " .
+				" :gas_miles, :gas_gallons, :status ) ";
+			$ps = $pdo->prepare($sql);
 		}
 		else
 		{
 			// UPDATE
 			$sql = "UPDATE Transactions \n".
-				"SET login_id = $this->m_login_id, ".
-				" trans_descr = '$this->m_trans_descr', ".
-				" trans_date = '{$this->get_trans_date_sql()}', ".
-				" accounting_date = '{$this->get_accounting_date_sql()}', ".
-				" trans_vendor = '$this->m_trans_vendor', ".
-				" trans_comment = $trans_comment, ".	// single quotes are included in the var
-				" check_number = $check_number, ".
-				" gas_miles = $gas_miles, ".
-				" gas_gallons = $gas_gallons, ".
-				" trans_status = $this->m_trans_status \n".
-				"WHERE trans_id = $this->m_trans_id ";
+				"SET login_id = :login_id, ".
+				" trans_descr = :descr, ".
+				" trans_date = :trans_date, ".
+				" accounting_date = :accounting_date, ".
+				" trans_vendor = :vendor, ".
+				" trans_comment = :comment, ".
+				" check_number = :check_num, ".
+				" gas_miles = :gas_miles, ".
+				" gas_gallons = :gas_gallons, ".
+				" trans_status = :status \n".
+				"WHERE trans_id = :trans_id ";
+			$ps = $pdo->prepare($sql);
+			// the only additional param is the trans id
+			$ps->bindParam(':trans_id', $this->m_trans_id, PDO::PARAM_INT);
 		}
-
-		db_connect();
-		$success = mysql_query ($sql);
-		$error = db_error ($success, $sql);
+		
+		// set all generic params
+		$ps->bindParam(':login_id', $this->m_login_id, PDO::PARAM_INT);
+		$ps->bindParam(':descr', $this->m_trans_descr);
+		$ps->bindParam(':trans_date', $this->get_trans_date_sql());
+		$ps->bindParam(':accounting_date', $this->get_accounting_date_sql());
+		$ps->bindParam(':vendor', $this->m_trans_vendor);
+		$ps->bindParam(':comment', $trans_comment);
+		$ps->bindParam(':check_num', $check_number);
+		$ps->bindParam(':gas_miles', $gas_miles);
+		$ps->bindParam(':gas_gallons', $gas_gallons);
+		$ps->bindParam(':status', $this->m_trans_status, PDO::PARAM_INT);
+		
+		$success = $ps->execute();
+		$error = get_pdo_error($ps);
+		if ($error != '') {
+			return $error;
+		}
+		
 		$ledger_inserts = 0;
 
-		if ($error == '' && $this->m_trans_id == -1)
+		if ($this->m_trans_id == -1)
 		{
 			// get id from the insert
-			$this->m_trans_id = get_auto_increment();
+			$this->m_trans_id = get_auto_increment($pdo);
+			if ($this->m_trans_id < 1) {
+				return 'Invalid auto_increment val: ' . $this->m_trans_id;
+			}
 		}
-		if ($error == '')
+		
+		// prepare all queries
+		$psInsert = $pdo->prepare("INSERT INTO LedgerEntries \n".
+			"(trans_id, account_id, ledger_amount) \n".
+			"VALUES(:trans_id, :account_id, :ledger_amount)");
+		
+		$psDelete = $pdo->prepare("DELETE from LedgerEntries \n".
+			"WHERE ledger_id = :ledger_id");
+		
+		$psUpdate = $pdo->prepare("UPDATE LedgerEntries \n".
+						"SET account_id= :account_id, ".
+						" ledger_amount= :ledger_amount \n".
+						"WHERE ledger_id= :ledger_id ");
+		$ps = NULL;
+
+		// insert the individual ledger entries
+		// Combine the LHS & RHS lists
+		$ledger_list = array_merge ($this->m_ledgerL_list,
+			$this->m_ledgerR_list);
+		foreach ($ledger_list as $ledger_data)
 		{
-			// insert the individual ledger entries
-			// Combine the LHS & RHS lists
-			$ledger_list = array_merge ($this->m_ledgerL_list,
-				$this->m_ledgerR_list);
-			foreach ($ledger_list as $ledger_data)
+			// 0=ledger_id, 1=account_id/account_debit, 2=amount
+			$accountArr = explode(',', $ledger_data[1]);
+			if ($ledger_data[0] == -1)
 			{
-				// 0=ledger_id, 1=account_id/account_debit, 2=amount
-				$accountArr = explode(',', $ledger_data[1]);
-				if ($ledger_data[0] == -1)
+				// no ledger_id; new record.
+				$psInsert->bindParam(':trans_id', $this->m_trans_id, PDO::PARAM_INT);
+				$psInsert->bindParam(':account_id', $accountArr[0], PDO::PARAM_INT);
+				$psInsert->bindParam(':ledger_amount', $ledger_data[2]);
+				$ps = $psInsert;
+			}
+			else
+			{
+				if (trim ($ledger_data[2] == ''))
 				{
-					// no ledger_id; new record.
-					$sql = "INSERT INTO LedgerEntries \n".
-					"(trans_id, account_id, ledger_amount) \n".
-					"VALUES($this->m_trans_id, $accountArr[0], $ledger_data[2]) ";
+					// An existing ledger entry is being deleted
+					$psDelete->bindparam(':ledger_id', $ledger_data[0], PDO::PARAM_INT);
+					$ps = $psDelete;
 				}
 				else
 				{
-					if (trim ($ledger_data[2] == ''))
-					{
-						// An existing ledger entry is being deleted
-						$sql = "DELETE from LedgerEntries \n".
-							"WHERE ledger_id = $ledger_data[0] ";
-					}
-					else
-					{
-						// UPDATE an existing ledger entry
-						$sql = "UPDATE LedgerEntries \n".
-							"SET account_id= $accountArr[0], ".
-							" ledger_amount= $ledger_data[2] \n".
-							"WHERE ledger_id= $ledger_data[0] ";
-					}
+					// UPDATE an existing ledger entry
+					$psUpdate->bindParam(':account_id', $accountArr[0], PDO::PARAM_INT);
+					$psUpdate->bindParam(':ledger_amount', $ledger_data[2]);
+					$psUpdate->bindParam(':ledger_id', $ledger_data[0], PDO::PARAM_INT);
+					$ps = $psUpdate;
 				}
-				$rs = mysql_query ($sql);
-				$error = db_error ($rs, $sql);
-				if ($error != '')
-					break;
-				$ledger_inserts += mysql_affected_rows();
 			}
+			
+			$success = $ps->execute();
+			if (!$success) {
+				return get_pdo_error($ps);
+			}
+
+			$ledger_inserts += $ps->rowCount();
+		}
+		
+		$success = $pdo->commit();
+		if (!$success) {
+			return get_pdo_error($pdo);
 		}
 
-		mysql_close();
-
-		return $error;
+		$pdo = null;
 	}
 
 

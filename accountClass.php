@@ -5,9 +5,6 @@
 
 // ACCOUNT CLASS
 //------------------------------------------------------------------------------
-// The Account string fields should all have their quotation marks escaped.
-// This way database updates will work seamlessly.  The accessor methods
-// remove the slashes for display on forms.
 
 class Account
 {
@@ -37,10 +34,10 @@ class Account
 			return $this->m_account_parent_id;
 	}
 	public function get_account_name() {
-		return stripslashes ($this->m_account_name);
+		return $this->m_account_name;
 	}
 	public function get_account_descr() {
-		return stripslashes ($this->m_account_descr);
+		return $this->m_account_descr;
 	}
 	public function get_account_debit() {
 		return $this->m_account_debit;
@@ -99,36 +96,36 @@ class Account
 		return $error;
 	}
 
-	// When loading the account from the database, slashes need to be added
-	// in case of SQL update.
 	public function Load_account($account_id)
 	{
-		$sql = "Select * from Accounts where account_id = $account_id";
-		$link = db_connect();
-		$rs = mysql_query($sql, $link);
-		$success = false;	//default
-
-		if ($row = mysql_fetch_array($rs, MYSQL_ASSOC))
-		{
-			$this->m_account_id			= $account_id;
-			$this->m_login_id			= $row['login_id'];
-			$this->m_account_parent_id	= $row['account_parent_id'];
-			$this->m_account_name		= addslashes ($row['account_name']);
-			$this->m_account_descr		= addslashes ($row['account_descr']);
-			$this->m_account_debit		= $row['account_debit'];
-			$this->m_equation_side		= $row['equation_side'];
-			$this->m_monthly_budget		= $row['monthly_budget'];
-			$this->m_active				= $row['active'];
-
-			$success = true;
+		$sql = "Select * from Accounts where account_id = :account_id";
+		$pdo = db_connect_pdo();
+		$ps = $pdo->prepare($sql);
+		$ps->bindParam(':account_id', $account_id);
+		$success = $ps->execute();
+		if (!$success) {
+			return get_pdo_error($ps);
+		}
+		
+		$row = $ps->fetch(PDO::FETCH_ASSOC);
+		if ($row == FALSE) {
+			return 'No account record found';
 		}
 
-		mysql_close($link);
-		return $success;	//indicates that no records were found
+		$this->m_account_id			= $account_id;
+		$this->m_login_id			= $row['login_id'];
+		$this->m_account_parent_id	= $row['account_parent_id'];
+		$this->m_account_name		= $row['account_name'];
+		$this->m_account_descr		= $row['account_descr'];
+		$this->m_account_debit		= $row['account_debit'];
+		$this->m_equation_side		= $row['equation_side'];
+		$this->m_monthly_budget		= $row['monthly_budget'];
+		$this->m_active				= $row['active'];
+
+		$pdo = null;
+		return '';
 	}
 
-	// Slashes have already been added to the member variables, so all
-	// the inserts should be okay.
 	public function Save_account()
 	{
 		$error = '';
@@ -139,6 +136,10 @@ class Account
 			$account_parent_id = 'NULL';
 		}
 
+		$pdo = db_connect_pdo();
+		$pdo->beginTransaction();
+		$ps = null;
+		
 		if ($this->m_account_id == -1)
 		{
 			// New account: perform an insert
@@ -146,38 +147,54 @@ class Account
 				"(login_id, account_parent_id, ".
 				"account_name, account_descr, ".
 				" account_debit, equation_side, monthly_budget, active) \n".
-				"VALUES ($this->m_login_id, $account_parent_id, ".
-				" '$this->m_account_name', '$this->m_account_descr', ".
-				" $this->m_account_debit, '$this->m_equation_side', ".
-				" $this->m_monthly_budget, ".
-				" $this->m_active) ";
+				"VALUES (:login_id, :parent_id, ".
+				" :account_name, :account_descr, :account_debit, :equation_side, ".
+				" :monthly_budget, :active) ";
+			$ps = $pdo->prepare($sql);
 		}
 		else
 		{
 			// Existing account; perform an update
 			$sql = "UPDATE Accounts \n".
-				"SET login_id = $this->m_login_id, ".
-				"  account_parent_id = $account_parent_id, ".
-				"  account_name = '$this->m_account_name', ".
-				"  account_descr = '$this->m_account_descr', ".
-				"  account_debit = $this->m_account_debit, ".
-				"  equation_side = '$this->m_equation_side', ".
-				"  monthly_budget = $this->m_monthly_budget, ".
-				"  active = $this->m_active \n".
-				"WHERE account_id = $this->m_account_id ";
+				"SET login_id = :login_id, ".
+				"  account_parent_id = :parent_id, ".
+				"  account_name = :account_name, ".
+				"  account_descr = :account_descr, ".
+				"  account_debit = :account_debit, ".
+				"  equation_side = :equation_side, ".
+				"  monthly_budget = :monthly_budget, ".
+				"  active = :active \n".
+				"WHERE account_id = :account_id ";
+			$ps = $pdo->prepare($sql);
+			// add param specific to UPDATE
+			$ps->bindParam(':account_id', $this->m_account_id);
 		}
-
-		db_connect();
-		$rs = mysql_query($sql);
-		$error = db_error ($rs, $sql);
-		if ($error == '' && $this->m_account_id == -1)
+		
+		// bind all params
+		$ps->bindParam(':login_id', $this->m_login_id);
+		$ps->bindParam(':parent_id', $account_parent_id);
+		$ps->bindParam(':account_name', $this->m_account_name);
+		$ps->bindParam(':account_descr', $this->m_account_descr);
+		$ps->bindParam(':account_debit', $this->m_account_debit);
+		$ps->bindParam(':equation_side', $this->m_equation_side);
+		$ps->bindParam(':monthly_budget', $this->m_monthly_budget);
+		$ps->bindParam(':active', $this->m_active);
+		
+		$success = $ps->execute();
+		if (!$success) {
+			return get_pdo_error($ps);
+		}
+		
+		if ($this->m_account_id == -1)
 		{
 			// find the id just created in the insert
-			$this->m_account_id = get_auto_increment();
+			$this->m_account_id = get_auto_increment($pdo);
 		}
 
-		mysql_close();
-		return $error;
+		$pdo->commit();
+		$pdo = null;
+		
+		return '';
 	}
 
 	// Delete the current account
@@ -185,13 +202,25 @@ class Account
 	{
 		$error = '';
 		$sql = "DELETE FROM Accounts \n".
-			"WHERE account_id = $this->m_account_id ";
-		db_connect();
-		$rs = mysql_query ($sql);
-		$error = db_error ($rs, $sql);
+			"WHERE account_id = :account_id ";
+		$pdo = db_connect_pdo();
+		$pdo->beginTransaction();
+		$ps = $pdo->prepare($sql);
+		$ps->bindParam(':account_id', $this->m_account_id);
+		$success = $ps->execute();
+		
+		if (!$success) {
+			return get_pdo_error($ps);
+		}
+		
+		$count = $ps->rowCount();
+		if ($count != 1) {
+			return 'Error: account delete affected ' . $count . ' row(s)';
+		}
 
-		mysql_close();
-		return $error;
+		$pdo->commit();
+		$pdo = null;
+		return '';
 	}
 
 

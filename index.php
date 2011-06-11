@@ -88,7 +88,7 @@
 	if (isset ($_POST['edit']))
 	{
 		// Loading a transaction & ledger entries from database.
-		$trans->Load_transaction($_POST['edit']);
+		$error = $trans->Load_transaction($_POST['edit']);
 		$editClick = 1;		// used to set a form var for javascript
 	}
 

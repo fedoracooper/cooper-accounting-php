@@ -93,11 +93,11 @@
 	{
 		// Load an existing account
 		if ($ter_account_id != -1)
-			$account->Load_account ($ter_account_id);
+			$error = $account->Load_account ($ter_account_id);
 		elseif ($sec_account_id != -1)
-			$account->Load_account ($sec_account_id);
+			$error = $account->Load_account ($sec_account_id);
 		elseif ($top_account_id != -1)
-			$account->Load_account ($top_account_id);
+			$error = $account->Load_account ($top_account_id);
 		else
 			$error = 'Please select an account to edit';
 	}

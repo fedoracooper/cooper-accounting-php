@@ -133,7 +133,7 @@
 		<th colspan="2">Period</th>
 		<th>Account 1 </th>
 		<th>Account 2 </th>
-		<th <?= $td_style. '>'. $net_txt ?></th>
+		<th <?= $td_style ?>><?php $net_txt ?></th>
 		<th style="text-align: center;">%</th>
 		<th <?= $c_style ?>>Account 1 YTD </th>
 		<th>Account 2 YTD </th>

@@ -99,7 +99,12 @@ function get_pdo_error($pdo)
 	if ($errorInfo != NULL)
 	{
 		// Get error description
-		return $errorInfo[2];
+		// ErrorInfo:  SQLSTATE, driver error code, driver msg
+		$error = $errorInfo[2];
+		if ($error == '') {
+			$error = 'SQL error code: ' . $errorInfo[0];
+		}
+		return $error;
 	}
 	return '';
 }

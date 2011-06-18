@@ -96,7 +96,7 @@ function db_connect()
 function get_pdo_error($pdo)
 {
 	$errorInfo = $pdo->errorInfo();
-	if ($errorInfo != NULL)
+	if ($errorInfo != NULL && count($errorInfo) > 0 && $errorInfo[0] != '00000')
 	{
 		// Get error description
 		// ErrorInfo:  SQLSTATE, driver error code, driver msg

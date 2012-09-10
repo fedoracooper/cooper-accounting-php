@@ -272,7 +272,8 @@ class AccountAudit
 				"  audit_comment = :audit_comment \n".
 				"WHERE audit_id = :audit_id ";
 			$ps = $pdo->prepare($sql);
-			$ps->bindParam(':audit_date', $this->get_audit_date_sql());
+			$auditDate = $this->get_audit_date_sql();
+			$ps->bindParam(':audit_date', $auditDate); 
 			$ps->bindParam(':audit_comment', $this->m_audit_comment);
 			$ps->bindParam(':audit_id', $this->m_audit_id);
 		}
@@ -285,8 +286,10 @@ class AccountAudit
 				":audit_comment ) ";
 			$ps = $pdo->prepare($sql);
 			$ps->bindParam(':ledger_id', $this->m_ledger_id);
-			$ps->bindParam(':audit_date', $this->get_audit_date_sql());
-			$ps->bindParam(':account_balance', $this->get_account_balance( true ));
+			$auditDate = $this->get_audit_date_sql();
+			$ps->bindParam(':audit_date', $auditDate);
+			$accBalance = $this->get_account_balance( true );
+			$ps->bindParam(':account_balance', $accBalance); 
 			$ps->bindParam(':audit_comment', $this->m_audit_comment);
 		}
 

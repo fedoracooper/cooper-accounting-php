@@ -542,7 +542,7 @@ class Transaction
 				" trans_date = :trans_date, ".
 				" accounting_date = :accounting_date, ".
 				" trans_vendor = :vendor, ".
-				" trans_comment = :comment, ".
+				" trans_comment = :comment, ".	// single quotes are included in the var
 				" check_number = :check_num, ".
 				" gas_miles = :gas_miles, ".
 				" gas_gallons = :gas_gallons, ".
@@ -556,8 +556,10 @@ class Transaction
 		// set all generic params
 		$ps->bindParam(':login_id', $this->m_login_id, PDO::PARAM_INT);
 		$ps->bindParam(':descr', $this->m_trans_descr);
-		$ps->bindParam(':trans_date', $this->get_trans_date_sql());
-		$ps->bindParam(':accounting_date', $this->get_accounting_date_sql());
+		$transDate = $this->get_trans_date_sql();
+                $ps->bindParam(':trans_date', $transDate);
+                $accDate = $this->get_accounting_date_sql();
+                $ps->bindParam(':accounting_date', $accDate);
 		$ps->bindParam(':vendor', $this->m_trans_vendor);
 		$ps->bindParam(':comment', $trans_comment);
 		$ps->bindParam(':check_num', $check_number);

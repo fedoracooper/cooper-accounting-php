@@ -698,21 +698,20 @@ class Transaction
 			"INNER JOIN LedgerEntries le ON le.ledger_id = aa.ledger_id \n".
 			"INNER JOIN Accounts a ON a.account_id = le.account_id \n".
 			"WHERE le.account_id IN( $accounts ) \n".
-			"	AND aa.audit_date >= '$minDate' ".
+			"	AND aa.audit_date >= :minDate ".
 			"ORDER BY aa.audit_date DESC ";
 
-		$conn = db_connect();
-		$rs = mysql_query( $sql, $conn );
-		$error = db_error( $rs, $sql );
-		if ($error != '')
-		{
-			mysql_close( $conn );
-			return $error;
+		$pdo = db_connect_pdo();
+		$ps = $pdo->prepare($sql);
+		$ps->bindParam(':minDate', $minDate);
+		$success = $ps->execute();
+		if (!$success) {
+			return get_pdo_error($ps);
 		}
 
 		// Loop through all potentially conflicting audit records until
 		// we find an error or we exhaust the list.
-		while ($row = mysql_fetch_array( $rs, MYSQL_ASSOC ))
+		while ($row = $ps->fetch(PDO::FETCH_ASSOC))
 		{
 			$time = strtotime( $row[ 'audit_date' ] );
 			$date = date( DISPLAY_DATE, $time );
@@ -770,7 +769,7 @@ class Transaction
 			}
 		}	// End while loop through audits
 
-		mysql_close( $conn );
+		$pdo = null;
 		return $error;
 	}
 
@@ -813,21 +812,30 @@ class Transaction
 		{
 			// Delete the ledger entries, then the transactions
 			$sql = "DELETE FROM LedgerEntries \n".
-				"WHERE trans_id = $this->m_trans_id ";
-			db_connect();
-			$rs = mysql_query ($sql);
-			$error = db_error ($rs, $sql);
-			if ($error == '')
-			{
-				// Delete transactions
-				$sql = "DELETE FROM Transactions \n".
-					"WHERE trans_id = $this->m_trans_id ";
-				$rs = mysql_query ($sql);
-				$error = db_error ($rs, $sql);
+				"WHERE trans_id = :trans_id ";
+			$pdo = db_connect_pdo();
+			$ps = $pdo->prepare($sql);
+			$ps->bindParam(':trans_id', $this->m_trans_id);
+			$success = $ps->execute();
+		
+			if (!$success) {
+				return get_pdo_error($ps);
 			}
+			
+			// Delete transactions
+			$sql = "DELETE FROM Transactions \n".
+				"WHERE trans_id = :trans_id ";
+			$ps = $pdo->prepare($sql);
+			$ps->bindParam(':trans_id', $this->m_trans_id);
+			$success = $ps->execute();
+		
+			if (!$success) {
+				return get_pdo_error($ps);
+			}
+			
+			$pdo = null;
 		}
 
-		mysql_close();
 		return $error;
 	}
 
@@ -859,15 +867,23 @@ class Transaction
 
 
 		$sql = "SELECT account_debit, equation_side \n".
-			"FROM Accounts WHERE account_id = $account_id";
+			"FROM Accounts WHERE account_id = :account_id";
 		$account_debit = '';
 		$equation_side = '';
-		db_connect();
-		$rs = mysql_query ($sql);
-		if ($rs && $row = mysql_fetch_row ($rs))
+		$pdo = db_connect_pdo();
+		$ps = $pdo->prepare($sql);
+		$ps->bindParam(':account_id', $account_id);
+		$success = $ps->execute();
+		
+		if (!$success) {
+			echo get_pdo_error($ps);
+			return;
+		}
+		
+		if ($row = $ps->fetch(PDO::FETCH_ASSOC))
 		{
-			$account_debit = $row[0];
-			$equation_side = $row[1];
+			$account_debit = $row['account_debit'];
+			$equation_side = $row['equation_side'];
 		}
 		else
 			return $trans_list;	//empty list
@@ -904,7 +920,7 @@ class Transaction
 			" aa.audit_id, aa.account_balance as audit_balance, ".
 			" a2.account_name as account2_name, ".
 			" a2.account_id as a2_account_id, a.account_id, ".
-			"  (ledger_amount * a.account_debit * $account_debit) as amount \n". 
+			"  (ledger_amount * a.account_debit * :account_debit) as amount \n". 
 			"FROM Transactions t \n".
 			"inner join LedgerEntries le on ".
 			"	le.trans_id = t.trans_id ".
@@ -914,122 +930,127 @@ class Transaction
 			"	a.account_parent_id = a2.account_id \n".
 			"left join AccountAudits aa ON ".
 			"	aa.ledger_id = le.ledger_id ".
-			"	AND a.account_id = $account_id \n".	// audit record must match exact account
-			"WHERE (a.account_id = $account_id ".
-			"  or a2.account_id = $account_id ".
-			"  or a2.account_parent_id = $account_id ) ".
-			"  and accounting_date >= '$start_date_sql' ".
-			"  and accounting_date <= '$end_date_sql' \n".
+			"	AND a.account_id = :account_id \n".	// audit record must match exact account
+			"WHERE (a.account_id = :account_id ".
+			"  or a2.account_id = :account_id ".
+			"  or a2.account_parent_id = :account_id ) ".
+			"  and accounting_date >= :start_date_sql ".
+			"  and accounting_date <= :end_date_sql \n".
 			$search_text_sql .
 			"ORDER BY accounting_date DESC, t.trans_id DESC, le.ledger_id DESC \n" ;
 		if ($limit > 0)
 			$sql .= "limit $limit ";
 
-		$rs = mysql_query ($sql);
-		$err = db_error ($rs, $sql);
-		if ($err != '')
-			echo $err;
-		else
-		{
-			// Iterate through all the transactions
-			$i = 0;
-			while ($row = mysql_fetch_array ($rs, MYSQL_ASSOC))
-			{
-				$account_display = $row['account_name'];
-				if (!is_null ($row['account2_name'])
-					&& $row['a2_account_id'] != $account_id
-					&& $row['account_id'] != $account_id)
-				{
-					// there is a parent account which is not
-					// the currently selected one; display it.
-					$account_display = $row['account2_name']. ':'.
-						$account_display;
-				}
+		$ps = $pdo->prepare($sql);
+		$ps->bindParam(':account_debit', $account_debit);
+		$ps->bindParam(':account_id', $account_id);
+		$ps->bindParam(':start_date_sql', $start_date_sql);
+		$ps->bindParam(':end_date_sql', $end_date_sql);
+		$success = $ps->execute();
+		
+		if (!$success) {
+			echo get_pdo_error($ps);
+			return;
+		}
 
-				$trans = new Transaction();
-				$trans->Init_transaction (
-					$_SESSION['login_id'],
-					$row['trans_descr'],
-					convert_date ($row['trans_date'], 2),
-					convert_date ($row['accounting_date'], 2),
-					$row['trans_vendor'],
-					$row['trans_comment'],
-					$row['check_number'],
-					$row['gas_miles'],
-					$row['gas_gallons'],
-					$row['trans_status'],
-					$row['trans_id'],
-					1,		// No repeats by default
-					$account_display,
-					$row['amount'],
-					$row['ledger_id'],
-					$row['audit_id'],
-					$row['audit_balance']
-				);
-				
-				$trans_list[$i] = $trans;
-				$i++;
+		// Iterate through all the transactions
+		$i = 0;
+		while ($row = $ps->fetch(PDO::FETCH_ASSOC))
+		{
+			$account_display = $row['account_name'];
+			if (!is_null ($row['account2_name'])
+				&& $row['a2_account_id'] != $account_id
+				&& $row['account_id'] != $account_id)
+			{
+				// there is a parent account which is not
+				// the currently selected one; display it.
+				$account_display = $row['account2_name']. ':'.
+					$account_display;
 			}
 
-			// The array order must be reversed (by the array key)
-			krsort ($trans_list);
+			$trans = new Transaction();
+			$trans->Init_transaction (
+				$_SESSION['login_id'],
+				$row['trans_descr'],
+				convert_date ($row['trans_date'], 2),
+				convert_date ($row['accounting_date'], 2),
+				$row['trans_vendor'],
+				$row['trans_comment'],
+				$row['check_number'],
+				$row['gas_miles'],
+				$row['gas_gallons'],
+				$row['trans_status'],
+				$row['trans_id'],
+				1,		// No repeats by default
+				$account_display,
+				$row['amount'],
+				$row['ledger_id'],
+				$row['audit_id'],
+				$row['audit_balance']
+			);
+			
+			$trans_list[$i] = $trans;
+			$i++;
+		}
 
-			// Loop through the transactions & calculate the totals
-			$running_total = 0.0;
-			$i = 0;
-			$last_date = NULL;
-			foreach ($trans_list as $trans)
-			{
-				$start_date_total = NULL;
-				if ($equation_side == 'R')
-				{	// Only do period totals for RHS accounts (revenue & expenses)
-					// The min_date for the total depends on each transaction;
-					// It is the first of the month or first of the year of the accounting date.
-					$start_date_arr = explode ('/', $trans->get_accounting_date(false));
-					switch ($total_period)
-					{
-						case 'month':
-							// total starting from 1st of start_date month
-							$start_date_total = $start_date_arr[2]. '-'. $start_date_arr[0].
-								'-01';
-							break;
-						case 'year':
-							$start_date_total = $start_date_arr[2]. '-01-01';
-							break;
-						case 'visible':
-							// filter by visible dates
-							$start_date_total = $start_date_sql;
-					}
-				}
+		// The array order must be reversed (by the array key)
+		krsort ($trans_list);
 
-				// Only query the account total for the first balance
-				if ($i == 0)
+		// Loop through the transactions & calculate the totals
+		$running_total = 0.0;
+		$i = 0;
+		$last_date = NULL;
+		foreach ($trans_list as $trans)
+		{
+			$start_date_total = NULL;
+			if ($equation_side == 'R')
+			{	// Only do period totals for RHS accounts (revenue & expenses)
+				// The min_date for the total depends on each transaction;
+				// It is the first of the month or first of the year of the accounting date.
+				$start_date_arr = explode ('/', $trans->get_accounting_date(false));
+				switch ($total_period)
 				{
-					$trans->Set_trans_balance ($account_id, $account_debit,
-						$start_date_total);
-					$running_total = $trans->get_ledger_total(true);
+					case 'month':
+						// total starting from 1st of start_date month
+						$start_date_total = $start_date_arr[2]. '-'. $start_date_arr[0].
+							'-01';
+						break;
+					case 'year':
+						$start_date_total = $start_date_arr[2]. '-01-01';
+						break;
+					case 'visible':
+						// filter by visible dates
+						$start_date_total = $start_date_sql;
+				}
+			}
+
+			// Only query the account total for the first balance
+			if ($i == 0)
+			{
+				$trans->Set_trans_balance ($account_id, $account_debit,
+					$start_date_total);
+				$running_total = $trans->get_ledger_total(true);
+			}
+			else
+			{
+				if ($last_date != $start_date_total)
+				{
+					// new period of data; reset the running total
+					$running_total = $trans->get_ledger_amount(true);
 				}
 				else
 				{
-					if ($last_date != $start_date_total)
-					{
-						// new period of data; reset the running total
-						$running_total = $trans->get_ledger_amount(true);
-					}
-					else
-					{
-						// add to previous total
-						$running_total += $trans->get_ledger_amount(true);
-					}
-					$trans->set_ledger_total ($running_total);
+					// add to previous total
+					$running_total += $trans->get_ledger_amount(true);
 				}
-
-				$i++;
-				$last_date = $start_date_total;
+				$trans->set_ledger_total ($running_total);
 			}
+
+			$i++;
+			$last_date = $start_date_total;
 		}
 
-		mysql_close();
+		$pdo = null;
 		return $trans_list;
 	}
 
@@ -1056,14 +1077,14 @@ class Transaction
 			"	le.account_id = a.account_id ".
 			"LEFT JOIN Accounts a2 on ".
 			"	a.account_parent_id = a2.account_id \n".
-			"WHERE (a.account_id = $account_id OR ".
-			"  a2.account_id = $account_id OR ".
-			"  a2.account_parent_id = $account_id) ".
-			"  AND (t.accounting_date < '{$this->get_accounting_date_sql()}' ".
-			"		OR (t.accounting_date = '{$this->get_accounting_date_sql()}' ".
-			"			AND (t.trans_id < $this->m_trans_id ".
-			"				OR (t.trans_id = $this->m_trans_id ".
-			"					AND le.ledger_id < {$this->get_ledger_id()} ) ) ) )";
+			"WHERE (a.account_id = :account_id OR ".
+			"  a2.account_id = :account_id OR ".
+			"  a2.account_parent_id = :account_id) ".
+			"  AND (t.accounting_date < :accounting_date ".
+			"		OR (t.accounting_date = :accounting_date ".
+			"			AND (t.trans_id < :trans_id ".
+			"				OR (t.trans_id = :trans_id ".
+			"					AND le.ledger_id < :ledger_id ) ) ) )";
 		if (!is_null ($min_date))
 		{
 			// doing a period total, so add a minimum accounting date
@@ -1071,21 +1092,29 @@ class Transaction
 		}
 		// Time the query
 		$time = microtime(true);
-		$rs = mysql_query ($sql);
-		$err = db_error ($rs, $sql);
-		if ($err != '')
-			echo $err;
-		else
-		{
-			// Successful query
-			$row = mysql_fetch_row ($rs);
-			$elapsed = round( ( microtime(true) - $time) * 1000, 0 );
-			//echo "Select time: $elapsed". "ms";
-			if ($row)
-				$this->m_ledger_total = $row[0] + $this->get_ledger_amount(true);
-			else
-				$this->m_ledger_total = 0.0;	// no rows found
+		$pdo = db_connect_pdo();
+		$ps = $pdo->prepare($sql);
+		$ps->bindParam(':account_id', $account_id);
+		$accounting_date_val = $this->get_accounting_date_sql();
+		$ps->bindParam(':accounting_date', $accounting_date_val);
+		$ps->bindParam(':trans_id', $this->m_trans_id);
+		$ledger_id_val = $this->get_ledger_id();
+		$ps->bindParam(':ledger_id', $ledger_id_val);
+		$success = $ps->execute();
+		
+		if (!$success) {
+			echo get_pdo_error($ps);
+			return;
 		}
+		
+		// Successful query
+		$row = $ps->fetch(PDO::FETCH_NUM);
+		$elapsed = round( ( microtime(true) - $time) * 1000, 0 );
+		//echo "Select time: $elapsed". "ms";
+		if ($row)
+			$this->m_ledger_total = $row[0] + $this->get_ledger_amount(true);
+		else
+			$this->m_ledger_total = 0.0;	// no rows found
 	}
 
 

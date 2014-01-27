@@ -597,7 +597,7 @@ class ProductCategory
 	}
 
 	// Generates a key-> value data list
-	public function Get_product_category_list ($active = 1)
+	public static function Get_product_category_list ($active = 1)
 	{
 		$error = '';
 		$category_list = array();

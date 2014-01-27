@@ -268,6 +268,7 @@ class Account
 		if ($login_id < 0)
 			return $account_list;	// empty list
 
+		$use_parent = false;
 		if ($account_parent_id < 0 && !$force_parent)
 		{
 			// query all layers of accounts
@@ -282,7 +283,7 @@ class Account
 				"  a.account_parent_id = a2.account_id \n".
 				"LEFT JOIN Accounts a3 on ".
 				"  a2.account_parent_id = a3.account_id \n".
-				"WHERE a.login_id = $login_id ";
+				"WHERE a.login_id = :login_id ";
 			if ($equation_side <> '')
 			{
 				$sql .= "and a.equation_side = '$equation_side' ";
@@ -306,10 +307,11 @@ class Account
 			$sql = "SELECT a.account_id, a.account_name as account_display, ".
 				"  a.account_debit, a.active \n".
 				"FROM Accounts a \n".
-				"WHERE login_id = $login_id ";
+				"WHERE login_id = :login_id ";
 			if ($account_parent_id > -1 || $force_parent)
 			{
-				$sql.= "  AND account_parent_id = $account_parent_id ";
+				$sql.= "  AND account_parent_id = :account_parent_id ";
+				$use_parent = true;
 			}
 			else
 			{
@@ -318,29 +320,33 @@ class Account
 			$sql.= "\n ORDER BY a.account_name ";
 		}
 
-		db_connect();
-		$rs = mysql_query($sql);
-		$err = db_error ($rs, $sql);
-		if ($err != '')
-			echo $err;
-		else
-		{
-			// loop through each account id and display name
-			while ($row = mysql_fetch_array($rs, MYSQL_ASSOC))
-			{
-				$active = $row['active'];
-				if ($show_debit)
-					$key = $row['account_id']. ','. $row['account_debit'];
-				else
-					$key = $row['account_id'];
-				$account_display = $row['account_display'];
-				if ($active == 0)
-					$account_display.= ' (inactive)';
-
-				$account_list[$key] = $account_display;
-			}
+		$pdo = db_connect_pdo();
+		$ps = $pdo->prepare($sql);
+		$ps->bindParam(':login_id', $login_id);
+		if ($use_parent) {
+			$ps->bindParam(':account_parent_id', $account_parent_id);
 		}
-		mysql_close();
+		$success = $ps->execute();
+		if (!$success) {
+			echo get_pdo_error($ps);
+			return;
+		}
+
+		// loop through each account id and display name
+		while ($row = $ps->fetch(PDO::FETCH_ASSOC))
+		{
+			$active = $row['active'];
+			if ($show_debit)
+				$key = $row['account_id']. ','. $row['account_debit'];
+			else
+				$key = $row['account_id'];
+			$account_display = $row['account_display'];
+			if ($active == 0)
+				$account_display.= ' (inactive)';
+
+			$account_list[$key] = $account_display;
+		}
+		$pdo = null;
 
 		return $account_list;
 	}
@@ -381,18 +387,20 @@ class Account
 		// Query the normal balance of the selected accounts
 		$sql = "SELECT a.account_id, a.account_debit ".
 			"FROM Accounts a \n".
-			"WHERE account_id IN ($account1_id, $account2_id) ";
-		db_connect();
-		$rs = mysql_query ($sql);
-		$error = db_error ($rs, $sql);
-		if ($error != '')
+			"WHERE account_id IN (:account1_id, :account2_id) ";
+		$pdo = db_connect_pdo();
+		$ps = $pdo->prepare($sql);
+		$ps->bindParam(':account1_id', $account1_id);
+		$ps->bindParam(':account2_id', $account2_id);
+		$success = $ps->execute();
+		if (!$success)
 		{
-			mysql_close();
-			return $error;
+			return get_pdo_error($ps);
 		}
+		
 		$account1_debit = 1;
 		$account2_debit = 1;
-		while ($row = mysql_fetch_array ($rs, MYSQL_ASSOC))
+		while ($row = $ps->fetch(PDO::FETCH_ASSOC))
 		{
 			if ($row['account_id'] == $account1_id)
 				$account1_debit = $row['account_debit'];
@@ -423,34 +431,39 @@ class Account
 				$month_sql = "13 as accounting_month, ";
 			}
 
-			$sql = "SELECT sum(ledger_amount * a.account_debit * $account_debit) ".
-				"  as account_sum, $month_sql".
+			$sql = "SELECT sum(ledger_amount * a.account_debit * :account_debit) ".
+				"  as account_sum, $month_sql ".
 				"  year(t.accounting_date) as accounting_year \n".
 				"FROM Transactions t \n".
 				"INNER JOIN LedgerEntries le on le.trans_id = t.trans_id \n".
 				"INNER JOIN Accounts a on a.account_id = le.account_id \n".
 				"LEFT JOIN Accounts a2 on a.account_parent_id = a2.account_id \n".
-				"WHERE (a.account_id = $account_id OR ".
-				"  a2.account_id = $account_id OR ".
-				"  a2.account_parent_id = $account_id) ".
-				"  and t.accounting_date >= '$start_date_sql' ".
-				"  and t.accounting_date <= '$end_date_sql' \n".
-				"GROUP BY $group_sql \n".
+				"WHERE (a.account_id = :account_id OR ".
+				"  a2.account_id = :account_id OR ".
+				"  a2.account_parent_id = :account_id) ".
+				"  and t.accounting_date >= ':start_date_sql' ".
+				"  and t.accounting_date <= ':end_date_sql' \n".
+				"GROUP BY :group_sql \n".
 				"ORDER BY year(accounting_date) ASC, month(accounting_date) ASC ";
 
-			$rs = mysql_query ($sql);
-			$error = db_error ($rs, $sql);
-			if ($error != '')
+			$ps = $pdo->prepare($sql);
+			$ps->bindParam(':account_debit', $account_debit);
+			$ps->bindParam(':account_id', $account_id);
+			$ps->bindParam(':start_date_sql', $start_date_sql);
+			$ps->bindParam(':end_date_sql', $end_date_sql);
+			$ps->bindParam(':group_sql', $group_sql);
+			$success = $ps->execute();			
+			
+			if (!$success)
 			{
-				mysql_close();
-				return $error;
+				return get_pdo_error($ps);
 			}
 
 			$ytd_total = 0;
 			$last_key = '';
 			$last_year = 0;
 			// (YYYY-MM) => (month, year, account1_sum, account2_sum)
-			while ($row = mysql_fetch_array ($rs, MYSQL_ASSOC))
+			while ($row = $ps->fetch(PDO::FETCH_ASSOC))
 			{
 				$summary_year = $row['accounting_year'];
 				if ($summary_year != $last_year)
@@ -510,7 +523,7 @@ class Account
 			}	// row loop
 		}	// account loop
 
-		mysql_close();
+		$pdo = null;
 		// re-sort by the key in descending order
 		ksort ($summary_list);
 
@@ -539,17 +552,19 @@ class Account
 			"  le.trans_id = t.trans_id \n".
 			"INNER JOIN Accounts a ON ".
 			"  a.account_id = le.account_id ".
-			"  AND a.account_parent_id = $_SESSION[car_account_id] \n".
+			"  AND a.account_parent_id = :parent_id \n".
 			"WHERE gas_gallons > 0 AND gas_miles > 0 \n".
 			"GROUP BY a.account_id, year(t.accounting_date) \n".
 			"ORDER BY year(accounting_date) DESC, a.account_name ";
-		db_connect();
-		$rs = mysql_query ($sql);
-		$error = db_error($rs, $sql);
-		if ($error != '')
-			return $error;
+		$pdo = db_connect_pdo();
+		$ps = $pdo->prepare($sql);
+		$ps->bindParam(':parent_id', $_SESSION['car_account_id']);
+		$success = $ps->execute();
+		if (!$success) {
+			return get_pdo_error($ps);
+		}
 
-		while ($row = mysql_fetch_array ($rs, MYSQL_ASSOC))
+		while ($row = $ps->fetch(PDO::FETCH_ASSOC))
 		{
 			$totals[] = array (
 				$row['account_name'],
@@ -560,9 +575,9 @@ class Account
 				$row['total_dollars']
 			);
 		}
-		mysql_close();
+		$pdo = null;
 
-		return $error;
+		return null;
 	}	// End Gas totals
 
 
@@ -596,27 +611,32 @@ class Account
 			"INNER JOIN Transactions t ON t.trans_id = le.trans_id \n".
 			"INNER JOIN Accounts a ON le.account_id = a.account_id \n".
 			"LEFT  JOIN Accounts a2 ON a.account_parent_id = a2.account_id ".
-			"  AND a2.account_id <> $account_id \n".
-			"WHERE ( a.account_parent_id= $account_id ".
-			"  OR a2.account_parent_id= $account_id OR a.account_id = $account_id ) \n".
-			"  AND t.accounting_date >=  '$start_sql' ".
-			"  AND t.accounting_date <=  '$end_sql' \n".
+			"  AND a2.account_id <> :account_id \n".
+			"WHERE ( a.account_parent_id= :account_id ".
+			"  OR a2.account_parent_id= :account_id OR a.account_id = :account_id ) \n".
+			"  AND t.accounting_date >=  :start_sql ".
+			"  AND t.accounting_date <=  :end_sql \n".
 			"GROUP BY IFNULL( a2.account_id, a.account_id ) \n".
 			"ORDER BY total_amount DESC " ;
 
-		db_connect();
-		$rs = mysql_query ($sql);
-		$error = db_error ($rs, $sql);
-		if ($error != '')
-			return $error;
+		$pdo = db_connect_pdo();
+		$ps = $pdo->prepare($sql);
+		$ps->bindParam(':account_id', $account_id);
+		$ps->bindParam(':start_sql', $start_sql);
+		$ps->bindParam(':end_sql', $end_sql);
+		$success = $ps->execute();
+		
+		if (!$success) {
+			return get_pdo_error($ps);
+		}
 
 		// account_list (account_name, account_total, account_id)
-		while ($row = mysql_fetch_array($rs, MYSQL_ASSOC))
+		while ($row = $ps->fetch(PDO::FETCH_ASSOC))
 		{
 			$account_list[$row['account_id']] = array ($row['name'], $row['total_amount'],
 				$row['account_id']);
 		}
-		mysql_close();
+		$pdo = null;
 
 		return $error;
 	}
@@ -630,27 +650,30 @@ class Account
 			"  min( ifnull( a2.account_name, a.account_name ) ) as name \n".
 			"FROM Accounts a \n".
 			"LEFT JOIN Accounts a2 ON a.account_parent_id = a2.account_id ".
-			"  AND a2.account_id <> $parent_account_id \n".
-			"WHERE (a.account_parent_id = $parent_account_id ".
-			"  OR a2.account_parent_id = $parent_account_id ".
-			"  OR a.account_id = $parent_account_id) ".
+			"  AND a2.account_id <> :parent_account_id \n".
+			"WHERE (a.account_parent_id = :parent_account_id ".
+			"  OR a2.account_parent_id = :parent_account_id ".
+			"  OR a.account_id = :parent_account_id) ".
 			"  AND a.active = 1 ".
 			"GROUP BY ifnull(a2.account_id, a.account_id) \n".
 			"ORDER BY monthly_budget DESC";
 		
-		db_connect();
-		$rs = mysql_query($sql);
-		$error = db_error($rs, $sql);
-		if ($error != '')
-			return $error;
+		$pdo = db_connect_pdo();
+		$ps = $pdo->prepare($sql);
+		$ps->bindParam(':parent_account_id', $parent_account_id);
+		$success = $ps->execute();
+		
+		if (!$success) {
+			return get_pdo_error($ps);
+		}
 
 		// Update map of account_id -> budget
-		while ($row = mysql_fetch_array($rs, MYSQL_ASSOC))
+		while ($row = $ps->fetch(PDO::FETCH_ASSOC))
 		{
 			// Row:  account_id => (account name, budget amount)
 			$account_list[ $row['account_id'] ] = array($row['name'], $row['monthly_budget']);
 		}
-		mysql_close();
+		$pdo = null;
 
 		return $error;
 	}

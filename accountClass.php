@@ -441,9 +441,9 @@ class Account
 				"WHERE (a.account_id = :account_id OR ".
 				"  a2.account_id = :account_id OR ".
 				"  a2.account_parent_id = :account_id) ".
-				"  and t.accounting_date >= ':start_date_sql' ".
-				"  and t.accounting_date <= ':end_date_sql' \n".
-				"GROUP BY :group_sql \n".
+				"  and t.accounting_date >= :start_date_sql ".
+				"  and t.accounting_date <= :end_date_sql \n".
+				"GROUP BY $group_sql \n".
 				"ORDER BY year(accounting_date) ASC, month(accounting_date) ASC ";
 
 			$ps = $pdo->prepare($sql);
@@ -451,7 +451,6 @@ class Account
 			$ps->bindParam(':account_id', $account_id);
 			$ps->bindParam(':start_date_sql', $start_date_sql);
 			$ps->bindParam(':end_date_sql', $end_date_sql);
-			$ps->bindParam(':group_sql', $group_sql);
 			$success = $ps->execute();			
 			
 			if (!$success)

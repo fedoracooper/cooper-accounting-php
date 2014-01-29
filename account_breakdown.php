@@ -45,6 +45,11 @@
 		$dateArr['mon'], $dateArr['mday'], $dateArr['year']);
 	$end_time = mktime (0, 0, 0,
 		$dateArr2['mon'], $dateArr2['mday'], $dateArr2['year']);
+		
+	if ($dateArr['mon'] == 0) {
+		// We adjusted into last year
+		$dateArr['year'] = ($dateArr['year'] - 1);
+	}
 	$ytd_start_time = mktime (0, 0, 0, 1, 1, $dateArr['year']);
 	$end_month = $dateArr2['mon'];
 	if ($dateArr2['mday'] == 0)
@@ -52,6 +57,10 @@
 		// When using left/right arrows, the month will be ahead by 1
 		// because we are using day 0 of the following month.
 		$end_month --;
+		if ($end_month == 0) {
+			// rollover to December
+			$end_month = 12;
+		}
 	}
 
 	$start_date	= date ('n/j/Y', $start_time);

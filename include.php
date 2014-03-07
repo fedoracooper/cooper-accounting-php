@@ -27,6 +27,7 @@ require ('transactionClass.php');
 require ('loginClass.php');
 require ('productAccountClass.php');
 require ('accountAuditClass.php');
+require ('budgetClass.php');
 
 $login_admin = 0;
 $login_id = -1;
@@ -55,10 +56,10 @@ if ($current_page == 'account_breakdown')
 	$navbar .= ' style="font-weight: bold;"';
 $navbar .= ">Period Breakdown</a></td> \n";
 
-$navbar .= "		<td><a href=\"product-numbers.php\"";
-if ($current_page == 'products')
+$navbar .= "		<td><a href=\"edit_budgets.php\"";
+if ($current_page == 'edit_budgets')
 	$navbar .= ' style="font-weight: bold;"';
-$navbar .= ">Product Numbers</a></td> \n";
+$navbar .= ">Budget</a></td> \n";
 
 if ($login_admin >= 1)
 {
@@ -293,6 +294,15 @@ function format_currency ($amount)
 	}
 
 	return $txt;
+}
+
+// Given a number, format to 2 decimal places
+function format_amount($amount)
+{
+	if ($amount == null) {
+		return null;
+	}
+	return sprintf('%.2f', $amount);
 }
 
 ?>

@@ -1,4 +1,4 @@
-9/22/2004
+3/6/2014
 Cooper Blake
 Accounting Software database design
 
@@ -20,6 +20,9 @@ Transactions
 	check_number		null	smallint
 	gas_miles		null	decimal(4, 0)
 	gas_gallons		null	decimal(4, 2)
+	import_id		null	smallint
+	updated_time	timestamp  default current_timestamp
+	trans_status	tinyint default 1
 
 LedgerEntries
 	ledger_id		PK	int
@@ -36,8 +39,35 @@ Accounts
 	account_descr			varchar(50)
 	account_debit			tinyint (1 = debit, -1 = credit)
 	equation_side			enum ('L', 'R')	left vs. right side of the equation
+	monthly_budget_default	decimal(6,2) (default 0)
+	active					tinyint (default 1)
+	
+Budget
+	budget_id	PK	int
+	account_id	FK	smallint
+	budget_month	date
+	budget_amount	decimal(6,2)
+	updated_time	timestamp
+	
+	
+create table Budget (
+	budget_id int not null auto_increment primary key,
+	account_id smallint not null,
+	budget_month date not null,
+	budget_amount decimal(8,2) not null,
+	updated_time timestamp not null default current_timestamp on update current_timestamp,
+	constraint unique index budget_uk (account_id, budget_month) 
+);
 
+select a.account_id, a.account_name, a.monthly_budget, b.*,
+case a.account_id when 24 then 1 else 0 end as is_parent
+from Accounts a
+left join Budget b on b.account_id = a.account_id
+where a.active = 1
+and (a.account_id = 24 or a.account_parent_id = 24)
+order by is_parent DESC, account_name;
 
+SELECT a.account_id, a.account_name, a.monthly_budget, b.budget_amount, case a.account_id when 14 then 1 else 0 end as is_parent FROM Accounts a LEFT JOIN Budget b on b.account_id = a.account_id AND b.budget_month = '2014-03-01' WHERE a.active = 1 and (a.account_id = 14 or a.account_parent_id = 14) ORDER BY is_parent DESC, account_name;
 
 PAGES
 

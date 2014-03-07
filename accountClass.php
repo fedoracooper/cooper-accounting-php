@@ -639,6 +639,39 @@ class Account
 
 		return $error;
 	}
+	
+	public static function Get_account_budgets($budget_date,
+		$account_id, &$account_list) {
+		
+		$sql = 'SELECT a.account_id, a.account_name, a.monthly_budget, '
+			. '  b.budget_amount, b.budget_id, '
+			. '  case a.account_id when :account_id then 1 else 0 end as is_parent '
+			. 'FROM Accounts a '
+			. 'LEFT JOIN Budget b on b.account_id = a.account_id '
+			. '  AND b.budget_month = :budget_month '
+			. 'WHERE a.active = 1 '
+			. '  and (a.account_id = :account_id or a.account_parent_id = :account_id) '
+			. 'ORDER BY is_parent DESC, account_name';
+		
+		$pdo = db_connect_pdo();
+		$ps = $pdo->prepare($sql);
+		$ps->bindParam(':account_id', $account_id);
+		$ps->bindParam(':budget_month', $budget_date);
+		$success = $ps->execute();
+		if (!$success) {
+			return get_pdo_error($ps);
+		}
+		
+		while ($row = $ps->fetch(PDO::FETCH_ASSOC)) {
+			$account_list[$row['account_id']] = array(
+					$row['account_name'],
+					$row['monthly_budget'],
+					$row['budget_amount'],
+					$row['budget_id']);
+		}
+		
+		return '';
+	}
 
 	public static function Get_monthly_budget_list ($parent_account_id, &$account_list)
 	{

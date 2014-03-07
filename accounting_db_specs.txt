@@ -90,8 +90,44 @@ WHERE (a.account_parent_id = 14
   OR a.account_id = 14) 
   AND a.active = 1 
 GROUP BY ifnull(a2.account_id, a.account_id) 
-ORDER BY monthly_budget DESC
+ORDER BY monthly_budget DESC, name
 
+select parent.account_id,
+parent.monthly_budget_default +
+sum(ifnull(child.monthly_budget_default, 0.0)) as budget,
+  parent.account_name
+from Accounts parent
+left join Accounts child ON child.account_parent_id = parent.account_id
+	and child.active = 1
+	and child.account_parent_id <> 14
+where (parent.account_parent_id = 14 OR parent.account_id = 14) and parent.active = 1
+group by parent.account_id, parent.account_name, parent.monthly_budget_default
+order by budget DESC, account_name;
+
+select account_id, budget, account_name from (
+select parent.account_id,
+pb.budget_amount +
+sum(ifnull(cb.budget_amount, 0.0)) as budget,
+  parent.account_name, 0 as is_parent
+from Accounts parent
+inner join Budget pb ON pb.account_id = parent.account_id
+	AND pb.budget_month = '2014-03-01'
+left join Accounts child ON child.account_parent_id = parent.account_id
+	and child.active = 1
+left join Budget cb ON cb.account_id = child.account_id
+	AND cb.budget_month = '2014-03-01'
+where (parent.account_parent_id = 14) and parent.active = 1
+group by parent.account_id, parent.account_name, pb.budget_amount
+
+UNION ALL
+
+select a.account_id, b.budget_amount as budget, 
+concat(account_name, ' (top)') as account_name, 1 as is_parent
+from Accounts a
+inner join Budget b ON b.account_id = a.account_id
+	AND b.budget_month = '2014-03-01'
+where a.account_id = 14) query
+order by is_parent DESC, budget DESC, account_name;
 
 PAGES
 

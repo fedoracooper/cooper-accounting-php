@@ -704,26 +704,38 @@ class Account
 		return '';
 	}
 
-	public static function Get_monthly_budget_list ($parent_account_id, &$account_list)
+	public static function Get_monthly_budget_list ($parent_account_id,
+			$budget_month, &$account_list)
 	{
 		$error = '';
-		$sql = "SELECT ifnull(a2.account_id, a.account_id) as account_id, ".
-			"  sum( a.monthly_budget_default ) + ".
-			"  min(ifnull(a2.monthly_budget_default, 0.0)) as monthly_budget, \n".
-			"  min( ifnull( a2.account_name, a.account_name ) ) as name \n".
-			"FROM Accounts a \n".
-			"LEFT JOIN Accounts a2 ON a.account_parent_id = a2.account_id ".
-			"  AND a2.account_id <> :parent_account_id \n".
-			"WHERE (a.account_parent_id = :parent_account_id ".
-			"  OR a2.account_parent_id = :parent_account_id ".
-			"  OR a.account_id = :parent_account_id) ".
-			"  AND a.active = 1 ".
-			"GROUP BY ifnull(a2.account_id, a.account_id) \n".
-			"ORDER BY monthly_budget DESC";
+		$sql = 'select account_id, budget, account_name from ('.
+			'SELECT parent.account_id, pb.budget_amount + '.
+			'  sum(ifnull(cb.budget_amount, 0.0)) as budget, '.
+			'  parent.account_name, 0 as is_parent '.
+			'FROM Accounts parent ' .
+			'inner join Budget pb ON pb.account_id = parent.account_id '.
+			'  AND pb.budget_month = :budget_month '.
+			'left join Accounts child ON child.account_parent_id = parent.account_id '.
+			'  and child.active = 1 '.
+			'left join Budget cb ON cb.account_id = child.account_id '.
+			'  AND cb.budget_month = :budget_month '.
+			'where (parent.account_parent_id = :root_account_id) and parent.active = 1 '.
+			'group by parent.account_id, parent.account_name, pb.budget_amount '.
+			
+			'UNION ALL '.
+			
+			'select a.account_id, b.budget_amount as budget, '.
+			'concat(account_name, \' (top)\') as account_name, 1 as is_parent '.
+			'from Accounts a '.
+			'inner join Budget b ON b.account_id = a.account_id '.
+			'  AND b.budget_month = :budget_month '.
+			'where a.account_id = :root_account_id) query '.
+			'ORDER BY is_parent DESC, budget DESC, account_name;';
 		
 		$pdo = db_connect_pdo();
 		$ps = $pdo->prepare($sql);
-		$ps->bindParam(':parent_account_id', $parent_account_id);
+		$ps->bindParam(':root_account_id', $parent_account_id);
+		$ps->bindParam(':budget_month', $budget_month);
 		$success = $ps->execute();
 		
 		if (!$success) {
@@ -734,7 +746,9 @@ class Account
 		while ($row = $ps->fetch(PDO::FETCH_ASSOC))
 		{
 			// Row:  account_id => (account name, budget amount)
-			$account_list[ $row['account_id'] ] = array($row['name'], $row['monthly_budget']);
+			$account_list[ $row['account_id'] ] = array(
+					$row['account_name'],
+					$row['budget']);
 		}
 		$pdo = null;
 

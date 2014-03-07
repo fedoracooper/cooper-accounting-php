@@ -64,6 +64,7 @@
 	}
 
 	$start_date	= date ('n/j/Y', $start_time);
+	$budget_date = date('Y-m-d', $start_time);
 	$end_date	= date ('n/j/Y', $end_time);
 	$ytd_start_date = date('n/j/Y', $ytd_start_time);
 
@@ -82,7 +83,7 @@
 	if ($error == '')
 	{
 		// No error in first query; query the budgets
-		$error = Account::Get_monthly_budget_list($account_id, $budget_list);
+		$error = Account::Get_monthly_budget_list($account_id, $budget_date, $budget_list);
 	}
 
 	// Get year-to-date totals

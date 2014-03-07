@@ -16,7 +16,7 @@ class Account
 	private	$m_account_descr		= '';
 	private	$m_account_debit		= 1;	// 1 = debit, -1 = credit
 	private	$m_equation_side		= 'R';	// 'L' or 'R'
-	private $m_monthly_budget		= 0.0;
+	private $m_budget_default		= 0.0;
 	private $m_active				= 1;
 
 
@@ -45,8 +45,8 @@ class Account
 	public function get_equation_side() {
 		return $this->m_equation_side;
 	}
-	public function get_monthly_budget() {
-		return $this->m_monthly_budget;
+	public function get_budget_default() {
+		return $this->m_budget_default;
 	}
 	public function get_active() {
 		return $this->m_active;
@@ -62,7 +62,7 @@ class Account
 		$account_descr,
 		$account_debit,
 		$equation_side,
-		$monthly_budget,
+		$budget_default,
 		$account_id = -1,
 		$active = 1)
 	{
@@ -70,9 +70,9 @@ class Account
 		$error = '';
 		if (trim ($account_name) == '')
 			$error = 'You must enter an account name';
-		elseif (!is_numeric($monthly_budget))
+		elseif (!is_numeric($budget_default))
 			$error = 'The monthly budget must be numeric';
-		elseif (abs($monthly_budget) > 999999.99)
+		elseif (abs($budget_default) > 999999.99)
 			$error = 'The monthly budget cannot be more than 6 digits, plus decimal';
 		
 		if ($error == '')
@@ -88,12 +88,21 @@ class Account
 			$this->m_account_descr		= $account_descr;
 			$this->m_account_debit		= $account_debit;
 			$this->m_equation_side		= $equation_side;
-			$this->m_monthly_budget		= $monthly_budget;
+			$this->m_budget_default		= $budget_default;
 			$this->m_account_id			= $account_id;
 			$this->m_active				= $active;
 		}
 
 		return $error;
+	}
+	
+	// Bare minimum initialization for the purposes of updating
+	// the default budget value.
+	public function Init_for_budget_update(
+		$account_id, $budget_default) {
+		
+		$this->m_account_id = $account_id;
+		$this->m_budget_default = $budget_default;
 	}
 
 	public function Load_account($account_id)
@@ -119,10 +128,32 @@ class Account
 		$this->m_account_descr		= $row['account_descr'];
 		$this->m_account_debit		= $row['account_debit'];
 		$this->m_equation_side		= $row['equation_side'];
-		$this->m_monthly_budget		= $row['monthly_budget'];
+		$this->m_budget_default	 	= $row['monthly_budget_default'];
 		$this->m_active				= $row['active'];
 
 		$pdo = null;
+		return '';
+	}
+	
+	public function Update_budget_default() {
+		if ($this->m_account_id< 1) {
+			return 'Cannot update budget default without account ID';
+		}
+		
+		// Only update when the budget has changed
+		$sql = 'UPDATE Accounts '.
+				'SET monthly_budget_default = :budget_default '.
+				'WHERE account_id = :account_id '.
+				'  AND monthly_budget_default <> :budget_default';
+		$pdo = db_connect_pdo();
+		$ps = $pdo->prepare($sql);
+		$ps->bindParam(':account_id', $this->m_account_id);
+		$ps->bindParam(':budget_default', $this->m_budget_default);
+		$success = $ps->execute();
+		if (!$success) {
+			return get_pdo_error($ps);
+		}
+		
 		return '';
 	}
 
@@ -146,10 +177,10 @@ class Account
 			$sql = "INSERT INTO Accounts \n".
 				"(login_id, account_parent_id, ".
 				"account_name, account_descr, ".
-				" account_debit, equation_side, monthly_budget, active) \n".
+				" account_debit, equation_side, monthly_budget_default, active) \n".
 				"VALUES (:login_id, :parent_id, ".
 				" :account_name, :account_descr, :account_debit, :equation_side, ".
-				" :monthly_budget, :active) ";
+				" :budget_default, :active) ";
 			$ps = $pdo->prepare($sql);
 		}
 		else
@@ -162,7 +193,7 @@ class Account
 				"  account_descr = :account_descr, ".
 				"  account_debit = :account_debit, ".
 				"  equation_side = :equation_side, ".
-				"  monthly_budget = :monthly_budget, ".
+				"  monthly_budget_default = :budget_default, ".
 				"  active = :active \n".
 				"WHERE account_id = :account_id ";
 			$ps = $pdo->prepare($sql);
@@ -177,7 +208,7 @@ class Account
 		$ps->bindParam(':account_descr', $this->m_account_descr);
 		$ps->bindParam(':account_debit', $this->m_account_debit);
 		$ps->bindParam(':equation_side', $this->m_equation_side);
-		$ps->bindParam(':monthly_budget', $this->m_monthly_budget);
+		$ps->bindParam(':budget_default', $this->m_budget_default);
 		$ps->bindParam(':active', $this->m_active);
 		
 		$success = $ps->execute();
@@ -643,7 +674,7 @@ class Account
 	public static function Get_account_budgets($budget_date,
 		$account_id, &$account_list) {
 		
-		$sql = 'SELECT a.account_id, a.account_name, a.monthly_budget, '
+		$sql = 'SELECT a.account_id, a.account_name, a.monthly_budget_default, '
 			. '  b.budget_amount, b.budget_id, '
 			. '  case a.account_id when :account_id then 1 else 0 end as is_parent '
 			. 'FROM Accounts a '
@@ -665,7 +696,7 @@ class Account
 		while ($row = $ps->fetch(PDO::FETCH_ASSOC)) {
 			$account_list[$row['account_id']] = array(
 					$row['account_name'],
-					$row['monthly_budget'],
+					$row['monthly_budget_default'],
 					$row['budget_amount'],
 					$row['budget_id']);
 		}
@@ -677,8 +708,8 @@ class Account
 	{
 		$error = '';
 		$sql = "SELECT ifnull(a2.account_id, a.account_id) as account_id, ".
-			"  sum( a.monthly_budget ) + ".
-			"  min(ifnull(a2.monthly_budget, 0.0)) as monthly_budget, \n".
+			"  sum( a.monthly_budget_default ) + ".
+			"  min(ifnull(a2.monthly_budget_default, 0.0)) as monthly_budget, \n".
 			"  min( ifnull( a2.account_name, a.account_name ) ) as name \n".
 			"FROM Accounts a \n".
 			"LEFT JOIN Accounts a2 ON a.account_parent_id = a2.account_id ".

@@ -68,6 +68,7 @@ class Budget {
 			return get_pdo_error($ps);
 		}
 		
+		return '';
 	}
 }
 ?>

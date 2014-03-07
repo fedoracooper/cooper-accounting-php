@@ -63,26 +63,38 @@
 		$newBudgets = $_POST['budgetAmounts'];
 		$accountIds = $_POST['accountIds'];
 		$budgetIds  = $_POST['budgetIds'];
+		$defaultBudgets = $_POST['defaultBudgets'];
 		
 		for ($i = 0; $i < count($accountIds); $i++) {
 			$accountId = $accountIds[$i];
 			$newBudget = $newBudgets[$i];
 			$budgetId = $budgetIds[$i];
+			$defaultBudget = $defaultBudgets[$i];
 			if (empty($budgetId)) {
 				// not editing, so set to -1
 				$budgetId = -1;
 			}
+			
+			// update budget
 			$budget = new Budget();
 			$budget->Init_budget($accountId, $budgetDate, $newBudget, $budgetId);
 			$error = $budget->Save();
 			if ($error != '') {
 				break;
 			}
+			
+			// update default budget
+			$account = new Account();
+			$account->Init_for_budget_update($accountId, $defaultBudget);
+			$error = $account->Update_budget_default();
+			if ($error != '') {
+				break;
+			}
 		}
 		
-		if ($error = '') {
+		if ($error == '') {
 			$message = 'Successfully saved ' . count($accountIds).
-			' budget records';
+			' budget record(s)';
 		}
 	}
 

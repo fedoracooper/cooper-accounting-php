@@ -39,14 +39,15 @@ Accounts
 	account_descr			varchar(50)
 	account_debit			tinyint (1 = debit, -1 = credit)
 	equation_side			enum ('L', 'R')	left vs. right side of the equation
-	monthly_budget_default	decimal(6,2) (default 0)
+	monthly_budget_default	decimal(8,2) (default 0)
 	active					tinyint (default 1)
+	updated_time	timestamp
 	
 Budget
 	budget_id	PK	int
 	account_id	FK	smallint
 	budget_month	date
-	budget_amount	decimal(6,2)
+	budget_amount	decimal(8,2)
 	updated_time	timestamp
 	
 	
@@ -59,6 +60,12 @@ create table Budget (
 	constraint unique index budget_uk (account_id, budget_month) 
 );
 
+alter table Accounts
+add updated_time timestamp on update current_timestamp; 
+
+alter table Accounts
+modify monthly_budget_default decimal(8,2) not null default 0;
+
 select a.account_id, a.account_name, a.monthly_budget, b.*,
 case a.account_id when 24 then 1 else 0 end as is_parent
 from Accounts a
@@ -68,6 +75,23 @@ and (a.account_id = 24 or a.account_parent_id = 24)
 order by is_parent DESC, account_name;
 
 SELECT a.account_id, a.account_name, a.monthly_budget, b.budget_amount, case a.account_id when 14 then 1 else 0 end as is_parent FROM Accounts a LEFT JOIN Budget b on b.account_id = a.account_id AND b.budget_month = '2014-03-01' WHERE a.active = 1 and (a.account_id = 14 or a.account_parent_id = 14) ORDER BY is_parent DESC, account_name;
+
+
+
+SELECT ifnull(a2.account_id, a.account_id) as account_id, 
+  sum( a.monthly_budget_default ) + 
+ min(ifnull(a2.monthly_budget_default, 0.0)) as monthly_budget, 
+ min( ifnull( a2.account_name, a.account_name ) ) as name 
+FROM Accounts a 
+LEFT JOIN Accounts a2 ON a.account_parent_id = a2.account_id 
+ AND a2.account_id <> 14
+WHERE (a.account_parent_id = 14
+  OR a2.account_parent_id = 14
+  OR a.account_id = 14) 
+  AND a.active = 1 
+GROUP BY ifnull(a2.account_id, a.account_id) 
+ORDER BY monthly_budget DESC
+
 
 PAGES
 

@@ -163,9 +163,9 @@
 <body>
 <?= $navbar ?>
 
-<form method="post" action="accounts.php">
-<input type="hidden" name="account_id" value="<?= $account->get_account_id() ?>">
-<input type="hidden" name="account_parent_id" value="<?= $account->get_account_parent_id() ?>">
+<form id="search_form" method="post" action="accounts.php">
+<input type="hidden" name="account_id" value="<?= $account->get_account_id() ?>" />
+<input type="hidden" name="account_parent_id" value="<?= $account->get_account_parent_id() ?>"/>
 <h3>Accounts Management</h3>
 <p class="error"><?= $error ?></p>
 <p>Please select your account</p>
@@ -188,6 +188,16 @@
 		<td colspan="4"><hr></td>
 	</tr>
 </table>
+</form>
+
+
+<form id="data_form" method="post" action="accounts.php" >
+<input type="hidden" name="account_id" value="<?= $account->get_account_id() ?>"/>
+<input type="hidden" name="account_parent_id" value="<?= $account->get_account_parent_id() ?>" />
+<input type="hidden" name="top_account_id" value="<?= $top_account_id ?>" />
+<input type="hidden" name="sec_account_id" value="<?= $sec_account_id ?>" />
+<input type="hidden" name="ter_account_id" value="<?= $ter_account_id ?>" />
+
 
 <table>
 	<tr>
@@ -229,7 +239,7 @@
 		<td></td>
 		<td>Monthly budget:</td>
 		<td><input type="text" size="50" maxlength="9" name="monthly_budget"
-			value="<?= $account->get_monthly_budget() ?>"></td>
+			value="<?= $account->get_budget_default() ?>"></td>
 	</tr>
 
 	<tr>

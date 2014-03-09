@@ -56,6 +56,11 @@ if ($current_page == 'account_breakdown')
 	$navbar .= ' style="font-weight: bold;"';
 $navbar .= ">Period Breakdown</a></td> \n";
 
+$navbar .= "		<td><a href=\"account_details.php\"";
+if ($current_page == 'account_details')
+	$navbar .= ' style="font-weight: bold;"';
+$navbar .= ">Account Details</a></td> \n";
+
 $navbar .= "		<td><a href=\"edit_budgets.php\"";
 if ($current_page == 'edit_budgets')
 	$navbar .= ' style="font-weight: bold;"';
@@ -94,7 +99,7 @@ function db_connect()
 
 // Build an error message from the PDO object if there is
 // an error code.  Otherwise return an empty string.
-function get_pdo_error($pdo)
+function get_pdo_error(PDOStatement $pdo)
 {
 	$errorInfo = $pdo->errorInfo();
 	if ($errorInfo != NULL && count($errorInfo) > 0 && $errorInfo[0] != '00000')
@@ -261,6 +266,11 @@ function convert_date ($dateStr, $mode)
 	return $newDate;
 }
 
+// Convert a DateTime object into a SQL String
+function dateTimeToSQL(DateTime $dateTime) {
+	return $dateTime->format('Y-m-d');
+}
+
 // Adds specified number of months to UNIX timestamp.
 // The time parameter is passed by reference & modified.
 function add_months (&$time, $num_months)
@@ -294,6 +304,14 @@ function format_currency ($amount)
 	}
 
 	return $txt;
+}
+
+function format_percent($amount, $digits) {
+	if (is_numeric($amount)) {
+		return number_format ($amount, 0) . '%';
+	} else {
+		return '';
+	}
 }
 
 // Given a number, format to 2 decimal places

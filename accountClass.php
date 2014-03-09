@@ -255,25 +255,17 @@ class Account
 	}
 
 
-	/*
-		This method builds a list of account descriptions for use in building
-		a dropdown menu. When called with
-		only the login_id, all accounts are loaded; this is used when loading
-		the account list for selection on the ledger page.
+	
+	/**
+	  *	<p>This method builds a list of account descriptions for use in building
+	  *	a dropdown menu. When called with
+	  *	only the login_id, all accounts are loaded; this is used when loading
+	  *	the account list for selection on the ledger page.</p>
 
-		The equation side filters for left or right side, but still displays
+		<p>The equation side filters for left or right side, but still displays
 		the full account path. When filtering by account_parent_id, no parent
 		account names are displayed. force_parent forces the query to filter
-		by parent_account_id, even if it is -1.
-
-		Params:
-			login_id	User's login id; will always filter by this
-			equation_side	Can be 'L' or 'R' to only show accounts from 1 side
-			account_parent_id	Can specify a list of accounts with this parent
-			force_parent
-			show_debit		Include the debit value in the list key (account_id, debit)
-			show_inactive	Show accounts that have a Active = 0 or 1
-			top2_tiers		Do not show third-tier accounts
+		by parent_account_id, even if it is -1.</p>
 
 		All Accounts: parent = -1, force = false
 		Top accounts: parent = NULL, force = false
@@ -289,8 +281,16 @@ class Account
 
 		top2_tiers: when true, this will retrieve a list of the top 2 tiers 
 		of accounts.
-
-	*/
+		
+	 * @param int $login_id User's login id; will always filter by this
+	 * @param string $equation_side Can be 'L' or 'R' to only show accounts from 1 side
+	 * @param int $account_parent_id Can specify a list of accounts with this parent
+	 * @param string $force_parent
+	 * @param string $show_debit Include the debit value in the list key (account_id, debit)
+	 * @param string $show_inactive Show accounts that have a Active = 0 or 1
+	 * @param string $top2_tiers Do not show third-tier accounts
+	 * @return void|multitype:|multitype:string
+	 */
 	public static function Get_account_list ($login_id, $equation_side = '',
 		$account_parent_id = -1, $force_parent = false, $show_debit = false,
 		$show_inactive = false, $top2_tiers = false)
@@ -671,8 +671,15 @@ class Account
 		return $error;
 	}
 	
-	public static function Get_account_budgets($budget_date,
-		$account_id, &$account_list) {
+	/**
+	 * Get a list of budgets to edit
+	 * @param DateTime $budget_date Month we are editing
+	 * @param int $account_id Parent account ID
+	 * @param array $account_list array to fetch into
+	 * @return string Error string
+	 */
+	public static function Get_account_budgets(DateTime $budget_date,
+		$account_id, array &$account_list) {
 		
 		$sql = 'SELECT a.account_id, a.account_name, a.monthly_budget_default, '
 			. '  b.budget_amount, b.budget_id, '
@@ -687,7 +694,8 @@ class Account
 		$pdo = db_connect_pdo();
 		$ps = $pdo->prepare($sql);
 		$ps->bindParam(':account_id', $account_id);
-		$ps->bindParam(':budget_month', $budget_date);
+		$monthString = dateTimeToSQL($budget_date);
+		$ps->bindParam(':budget_month', $monthString);
 		$success = $ps->execute();
 		if (!$success) {
 			return get_pdo_error($ps);
@@ -704,8 +712,15 @@ class Account
 		return '';
 	}
 
+	/**
+	 * Get a list of budgets for the given parent account ID.
+	 * @param int $parent_account_id
+	 * @param string $budget_month (
+	 * @param array $account_list
+	 * @return string
+	 */
 	public static function Get_monthly_budget_list ($parent_account_id,
-			$budget_month, &$account_list)
+			$budget_month, array &$account_list)
 	{
 		$error = '';
 		$sql = 'select account_id, budget, account_name from ('.
@@ -753,6 +768,109 @@ class Account
 		$pdo = null;
 
 		return $error;
+	}
+	
+	
+	/**
+	 * Query from the database to get the top-level Assets
+	 * account_id for the current user.
+	 * @param int $login_id
+	 * @return account_id, or error message on error
+	 */
+	public static function Get_top_asset_account_id($login_id) {
+		$error = '';
+		$sql = 'SELECT account_id FROM Accounts '.
+				'WHERE account_parent_id is NULL '.
+				'  and login_id = :login_id and account_debit = 1 '.
+				'  and equation_side = \'L\' ';
+		
+		$pdo = db_connect_pdo();
+		$ps = $pdo->prepare($sql);
+		$ps->bindParam(':login_id', $login_id);
+		$success = $ps->execute();
+		
+		if (!$success) {
+			return get_pdo_error($ps);
+		}
+		
+		// Update map of account_id -> budget
+		$row = $ps->fetch(PDO::FETCH_ASSOC);
+		return $row['account_id'];
+	}
+	
+	
+
+	/**
+	 * 	Get details about all children accounts.  This does not attempt
+	 * to roll up any sub-accounts.  It will get a total balance,
+	 * relevant for assets + liabilities, as well as the budget and
+	 * transaction sum within the specified date range.
+	 * 
+	 * <p>Note that min_date is the minimum date for all transactions,
+	 * which should be '0000-00-00' when looking at Assets + Liabilities.</p>
+	 * @param int $parent_account_id
+	 * @param DateTime $start_date
+	 * @param DateTime $end_date
+	 * @param DateTime $min_date
+	 * @param array $account_list
+	 * @return string Error message or empty string
+	 */
+	public static function Get_account_details($parent_account_id,
+			DateTime $start_date, DateTime $end_date, DateTime $min_date,
+			$activeOnly,
+			array &$account_list) {
+		
+		$error = '';
+		$activeFlag = $activeOnly ? 1 : 0;
+		$sql = 'SELECT sum(ifnull(ledger_amount, 0.0)) as balance, '.
+			'  sum(case when accounting_date >= :start_date then '.
+			'    ifnull(ledger_amount, 0.0) else 0.0 end) as transaction_sum, '.
+			'  a.account_id, '.
+			'  case when parent.account_id is null then a.account_name else '.
+	 		'  concat(parent.account_name, \':\', a.account_name) end as account_name, '.
+			'  min(b.budget_amount) as budget '.
+			'FROM Accounts a '.
+			'LEFT JOIN LedgerEntries le ON le.account_id = a.account_id '.
+			'LEFT JOIN Budget b on b.account_id = a.account_id '.
+	 		'  and budget_month = :start_date '.
+			'LEFT JOIN Accounts parent on a.account_parent_id = parent.account_id '.
+	  		'  and parent.account_id <> :account_id '.
+			'LEFT JOIN Transactions t ON t.trans_id = le.trans_id '.
+	  		'  and accounting_date >= :min_date '.
+	  		'  and accounting_date <= :max_date '.
+			'WHERE (a.account_parent_id = :account_id or '.
+			'  parent.account_parent_id = :account_id) and a.active = :active '.
+			'GROUP BY a.account_id, a.account_name '.
+			'ORDER BY ifnull(parent.account_name, a.account_name), a.account_name';
+		
+		$pdo = db_connect_pdo();
+		$ps = $pdo->prepare($sql);
+		$startDateString = dateTimeToSQL($start_date);
+		$endDateString = dateTimeToSQL($end_date);
+		$minDateString = dateTimeToSQL($min_date);
+		
+		$ps->bindParam(':start_date', $startDateString);
+		$ps->bindParam(':max_date', $endDateString);
+		$ps->bindParam(':min_date', $minDateString);
+		$ps->bindParam(':active', $activeFlag);
+		$ps->bindParam(':account_id', $parent_account_id);
+		$success = $ps->execute();
+		
+		if (!$success) {
+			return get_pdo_error($ps);
+		}
+		
+		while ($row = $ps->fetch(PDO::FETCH_ASSOC))
+		{
+			// Row:  account_id => (account name, budget amount)
+			$account_list[ $row['account_id'] ] = array(
+					$row['account_name'],
+					$row['balance'],
+					$row['budget'],
+					$row['transaction_sum']);
+		}
+		
+		return '';
 	}
 
 

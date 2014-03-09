@@ -99,7 +99,6 @@
 	}
 
 	$budgetDateText = $budgetDate->format('m/Y');
-	$budgetDateSql = $budgetDate->format('Y-m-d');
 
 	// build account dropdowns: include inactive, and only show top 2 tiers
 	$account_list = Account::Get_account_list ($_SESSION['login_id'],
@@ -110,7 +109,7 @@
 	// Build main data list
 	$budget_list = array();	// pass by reference
 	if ($error == '') {
-		$error = Account::Get_account_budgets($budgetDateSql,
+		$error = Account::Get_account_budgets($budgetDate,
 			$account_id, $budget_list);
 	}
 	

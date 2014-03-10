@@ -840,6 +840,7 @@ class Account
 	  		'  and accounting_date <= :max_date '.
 			'WHERE (a.account_parent_id = :account_id or '.
 			'  parent.account_parent_id = :account_id) and a.active = :active '.
+			'  and (le.account_id is null OR t.trans_id > 0) '.
 			'GROUP BY a.account_id, a.account_name '.
 			'ORDER BY ifnull(parent.account_name, a.account_name), a.account_name';
 		

@@ -145,8 +145,8 @@
 <table class="budget-list" cellspacing="0" cellpadding="0">
 	<tr>
 		<th>Account</th>
-		<?= $balanceHeader ?>
 		<th>Transactions</th>
+		<?= $balanceHeader ?>
 		<th>Monthly Budget</th>
 		<th>Surplus</th>
 		<th>Budget %</th>
@@ -182,12 +182,12 @@
 		$surplusTotal += $surplus;
 		
 		echo "	<tr> \n".
-			"		<td>$accountName</td> \n";
+			"		<td>$accountName</td> \n".
+			"		<td style='text-align: right;'>". format_currency($transactions) . "</td> \n";
 		if ($showBalance) {
 			echo "		<td style='text-align: right;'>". format_currency($balance) . "</td> \n";
 		}
-		echo "		<td style='text-align: right;'>". format_currency($transactions) . "</td> \n".
-			"		<td style='text-align: right;'>". format_currency($budget) . "</td> \n".
+		echo "		<td style='text-align: right;'>". format_currency($budget) . "</td> \n".
 			"		<td style='text-align: right;'>". format_currency($surplus) . "</td> \n".
 			"		<td style='text-align: right;'>". format_percent($budgetPercent, 0) . "</td> \n".
 			"	</tr> \n";

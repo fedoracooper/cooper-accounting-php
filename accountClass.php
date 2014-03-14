@@ -822,7 +822,7 @@ class Account
 		
 		$error = '';
 		$activeFlag = $activeOnly ? 1 : 0;
-		$sql = 'SELECT sum(ifnull(ledger_amount, 0.0)) as balance, '.
+		$sql = 'SELECT sum(case when t.trans_id > 0 then ledger_amount else 0.0 end) as balance, '.
 			'  sum(case when accounting_date >= :start_date then '.
 			'    ifnull(ledger_amount, 0.0) else 0.0 end) as transaction_sum, '.
 			'  a.account_id, '.
@@ -840,7 +840,6 @@ class Account
 	  		'  and accounting_date <= :max_date '.
 			'WHERE (a.account_parent_id = :account_id or '.
 			'  parent.account_parent_id = :account_id) and a.active = :active '.
-			'  and (le.account_id is null OR t.trans_id > 0) '.
 			'GROUP BY a.account_id, a.account_name '.
 			'ORDER BY ifnull(parent.account_name, a.account_name), a.account_name';
 		

@@ -203,12 +203,12 @@
 		" colspan=\"6\">&nbsp;</td> \n".
 		"	</tr> \n\n".
 		"	<tr> \n".
-		"		<td>Total</td> \n";
+		"		<td>Total</td> \n".
+		"		<td style='text-align: right; font-weight: bold;'>$transactionTotalString</td> \n";
 	if ($showBalance) {
 		echo "		<td style='text-align: right; font-weight: bold;'>$balanceTotalString</td> \n";
 	}
 	echo "		<td style='text-align: right; font-weight: bold;'>$budgetTotalString</td> \n".
-		"		<td style='text-align: right; font-weight: bold;'>$transactionTotalString</td> \n".
 		"		<td style='text-align: right; font-weight: bold;'>$surplusTotalString</td> \n".
 		"	</tr> \n\n" ;
 

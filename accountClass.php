@@ -681,16 +681,23 @@ class Account
 	public static function Get_account_budgets(DateTime $budget_date,
 		$account_id, array &$account_list) {
 		
-		$sql = 'SELECT a.account_id, a.account_name, a.monthly_budget_default, '
+			$sql = 'SELECT a.account_id, case when parent.account_id is null then '
+			. '  a.account_name else '
+			. '  concat(parent.account_name, \':\', a.account_name) end as account_name, '
+			. '  a.monthly_budget_default, '
 			. '  b.budget_amount, b.budget_id, '
 			. '  case a.account_id when :account_id then 1 else 0 end as is_parent '
 			. 'FROM Accounts a '
+			. 'LEFT JOIN Accounts parent ON parent.account_id = a.account_parent_id '
+			. '  and parent.account_id <> :account_id '
 			. 'LEFT JOIN Budget b on b.account_id = a.account_id '
 			. '  AND b.budget_month = :budget_month '
 			. 'WHERE a.active = 1 '
-			. '  and (a.account_id = :account_id or a.account_parent_id = :account_id) '
-			. 'ORDER BY is_parent DESC, account_name';
-		
+			. '  and (a.account_id = :account_id or a.account_parent_id = :account_id '
+			. '  or parent.account_parent_id = :account_id) '
+			. 'ORDER BY is_parent DESC, ifnull(parent.account_name, a.account_name), '
+			. '  if(parent.account_name is null, \'\', a.account_name) ';
+	
 		$pdo = db_connect_pdo();
 		$ps = $pdo->prepare($sql);
 		$ps->bindParam(':account_id', $account_id);
@@ -841,7 +848,8 @@ class Account
 			'WHERE (a.account_parent_id = :account_id or '.
 			'  parent.account_parent_id = :account_id) and a.active = :active '.
 			'GROUP BY a.account_id, a.account_name '.
-			'ORDER BY ifnull(parent.account_name, a.account_name), a.account_name';
+			'ORDER BY ifnull(parent.account_name, a.account_name), '.
+			'  if(parent.account_name is null, \'\', a.account_name) ';
 		
 		$pdo = db_connect_pdo();
 		$ps = $pdo->prepare($sql);

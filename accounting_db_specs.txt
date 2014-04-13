@@ -2,6 +2,58 @@
 Cooper Blake
 Accounting Software database design
 
+Budgets
+
+Database changes
+	- Account new fields:
+		budget_date DATE NOT NULL - used to back-date sinking transactions to prior month
+			- defaults to accounting_date
+		savings_account SMALLINT - FK to Account used for savings
+		is_savings TINYINT:  0 or 1. 1 means it can be used for sinking
+	- Transaction new field:
+		exclude_from_budget TINYINT:  0 or 1
+
+Income - Sinking Withrawals = Expenses + Sinking Contributions
+	Sinking:  from Checking -> Checking subaccounts
+		or from Checking -> ETrade Savings subaccounts
+	- exclude other asset transfers (brokerage -> cash, etc.)
+	- examine account database flag for sinking accounts
+		- currently only subaccounts under checking/ savings
+	- question:  what if we sink money from another account like brokerage?
+		- it would be treated as an expense
+	- how to budget the difference between expense and sink? could be either one.
+		- Should have same budget amount for both
+		- each sink account should have associated expense account
+		- budget totals could use expense accounts and ignore sink budgets
+		- therefore, budgets would indicate "expense" for all long term savings
+		- actual expenses will be much less
+			- remainders can be calculated in a report for sinking @ end of month
+	- monthly budget statistics:
+		Budget vs. Actual:
+		+ income
+		+ sinking draw
+		- expenses
+		- short term sinking
+			- Actual only:  expense budget - expense actual (floor of 0)
+		- long term sinking
+			- Actual only:  expense budget - expense actual (floor of 0)
+		
+		= unspent
+			- for Budget, this must be allocated until 0
+			- for Actual:  discretionary surplus
+			- this should *never* be negative!
+			- at end of month, this can be manually allocated to another fund
+		close of month sinking
+			- will usually be a few days after end of prior month
+			
+		prior month sinking / withdrawals
+			- how to prevent showing up for next month stats?
+			- checkbox for "prior budget month"?
+			- date field for budget date?
+				- should never be more than a month behind
+		
+
+
 Login
 	login_id		PK	tinyint
 	login_user			varchar(25)
@@ -42,6 +94,9 @@ Accounts
 	monthly_budget_default	decimal(8,2) (default 0)
 	active					tinyint (default 1)
 	updated_time	timestamp
+	budget_date			date - Used to back-date transactions for budgeting
+	savings_account	FK	smallint Savings linked to an Expense account
+	is_savings			tinyint - 0 or 1; defaults to 0
 	
 Budget
 	budget_id	PK	int

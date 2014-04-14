@@ -910,7 +910,7 @@ class Account
 			'FROM Accounts a '.
 			'INNER JOIN Accounts parent ON '.
 			'  parent.account_id = a.account_parent_id '. 
-			'WHERE is_savings = 1 AND login_id = :login_id '.
+			'WHERE a.is_savings = 1 AND a.login_id = :login_id '.
 			'ORDER BY concat(parent.account_name, \':\', a.account_name) ';
 		$pdo = db_connect_pdo();
 		$ps = $pdo->prepare($sql);

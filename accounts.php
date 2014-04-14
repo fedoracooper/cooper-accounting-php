@@ -155,7 +155,7 @@
 	if ($account->get_is_savings() == 1) {
 		$is_savings_txt = ' CHECKED';
 	} else {
-		$is_svaings_txt = '';
+		$is_savings_txt = '';
 	}
 ?>
 

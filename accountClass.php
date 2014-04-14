@@ -10,7 +10,7 @@ class Account
 {
 	private	$m_account_id			= -1;
 	private	$m_login_id			= -1;
-	private $m_savings_account_id		= -1;
+	private $m_savings_account_id		= NULL;
 
 	private	$m_account_parent_id	= NULL;
 	private	$m_account_name			= '';
@@ -94,14 +94,18 @@ class Account
 				$this->m_account_parent_id = NULL;
 			else
 				$this->m_account_parent_id	= $account_parent_id;
+			if ($savings_account_id == '-1') {
+				$this->m_savings_account_id = NULL;
+			} else {
+				$this->m_savings_account_id	= $savings_account_id;
+			}
 			$this->m_account_name		= $account_name;
 			$this->m_account_descr		= $account_descr;
 			$this->m_account_debit		= $account_debit;
 			$this->m_equation_side		= $equation_side;
 			$this->m_budget_default		= $budget_default;
-			$this->m_account_id			= $account_id;
-			$this->m_active				= $active;
-			$this->m_savings_account_id	= $savings_account_id;
+			$this->m_account_id		= $account_id;
+			$this->m_active			= $active;
 			$this->m_is_savings		= $is_savings;
 		}
 

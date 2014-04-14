@@ -143,6 +143,7 @@
 	// Savings account dropdown
 	$savings_list = array();
 	$error = Account::Get_savings_accounts($_SESSION['login_id'], $savings_list);
+	$savings_list = array('-1' => '--Select--') + $savings_list;
 	$savings_dropdown = Build_dropdown ($savings_list, 'savings_account_id',
 		$account->get_savings_account_id());
 	

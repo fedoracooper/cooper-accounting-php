@@ -9,7 +9,8 @@
 class Account
 {
 	private	$m_account_id			= -1;
-	private	$m_login_id				= -1;
+	private	$m_login_id			= -1;
+	private $m_savings_account_id		= -1;
 
 	private	$m_account_parent_id	= NULL;
 	private	$m_account_name			= '';
@@ -17,7 +18,8 @@ class Account
 	private	$m_account_debit		= 1;	// 1 = debit, -1 = credit
 	private	$m_equation_side		= 'R';	// 'L' or 'R'
 	private $m_budget_default		= 0.0;
-	private $m_active				= 1;
+	private $m_is_savings			= 0;
+	private $m_active			= 1;
 
 
 	// ACCESSOR methods: called typically after load from DB
@@ -32,6 +34,9 @@ class Account
 			return '-1';
 		else
 			return $this->m_account_parent_id;
+	}
+	public function get_savings_account_id() {
+		return $this->m_savings_account_id;
 	}
 	public function get_account_name() {
 		return $this->m_account_name;
@@ -48,6 +53,9 @@ class Account
 	public function get_budget_default() {
 		return $this->m_budget_default;
 	}
+	public function get_is_savings() {
+		return $this->m_is_savings;
+	}
 	public function get_active() {
 		return $this->m_active;
 	}
@@ -63,6 +71,8 @@ class Account
 		$account_debit,
 		$equation_side,
 		$budget_default,
+		$savings_account_id,
+		$is_savings,
 		$account_id = -1,
 		$active = 1)
 	{
@@ -91,6 +101,8 @@ class Account
 			$this->m_budget_default		= $budget_default;
 			$this->m_account_id			= $account_id;
 			$this->m_active				= $active;
+			$this->m_savings_account_id	= $savings_account_id;
+			$this->m_is_savings		= $is_savings;
 		}
 
 		return $error;
@@ -122,6 +134,7 @@ class Account
 		}
 
 		$this->m_account_id			= $account_id;
+		$this->m_savings_account_id		= $row['savings_account_id'];
 		$this->m_login_id			= $row['login_id'];
 		$this->m_account_parent_id	= $row['account_parent_id'];
 		$this->m_account_name		= $row['account_name'];
@@ -129,6 +142,7 @@ class Account
 		$this->m_account_debit		= $row['account_debit'];
 		$this->m_equation_side		= $row['equation_side'];
 		$this->m_budget_default	 	= $row['monthly_budget_default'];
+		$this->m_is_savings		= $row['is_savings'];
 		$this->m_active				= $row['active'];
 
 		$pdo = null;
@@ -166,6 +180,10 @@ class Account
 		{
 			$account_parent_id = 'NULL';
 		}
+		$savings_account_id = $this->m_savings_account_id;
+		if ($savings_account_id === NULL) {
+			$savings_account_id = 'NULL';
+		}
 
 		$pdo = db_connect_pdo();
 		$pdo->beginTransaction();
@@ -175,11 +193,12 @@ class Account
 		{
 			// New account: perform an insert
 			$sql = "INSERT INTO Accounts \n".
-				"(login_id, account_parent_id, ".
-				"account_name, account_descr, ".
+				"(login_id, account_parent_id, savings_account_id, ".
+				"account_name, account_descr, is_savings, ".
 				" account_debit, equation_side, monthly_budget_default, active) \n".
-				"VALUES (:login_id, :parent_id, ".
-				" :account_name, :account_descr, :account_debit, :equation_side, ".
+				"VALUES (:login_id, :parent_id, :savings_account_id, ".
+				" :account_name, :account_descr, :is_savings, ".
+				" :account_debit, :equation_side, ".
 				" :budget_default, :active) ";
 			$ps = $pdo->prepare($sql);
 		}
@@ -188,12 +207,14 @@ class Account
 			// Existing account; perform an update
 			$sql = "UPDATE Accounts \n".
 				"SET login_id = :login_id, ".
+				"  savings_account_id = :savings_account_id, ".
 				"  account_parent_id = :parent_id, ".
 				"  account_name = :account_name, ".
 				"  account_descr = :account_descr, ".
 				"  account_debit = :account_debit, ".
 				"  equation_side = :equation_side, ".
 				"  monthly_budget_default = :budget_default, ".
+				"  is_savings = :is_savings, ".
 				"  active = :active \n".
 				"WHERE account_id = :account_id ";
 			$ps = $pdo->prepare($sql);
@@ -203,12 +224,14 @@ class Account
 		
 		// bind all params
 		$ps->bindParam(':login_id', $this->m_login_id);
+		$ps->bindParam(':savings_account_id', $this->m_savings_account_id);
 		$ps->bindParam(':parent_id', $account_parent_id);
 		$ps->bindParam(':account_name', $this->m_account_name);
 		$ps->bindParam(':account_descr', $this->m_account_descr);
 		$ps->bindParam(':account_debit', $this->m_account_debit);
 		$ps->bindParam(':equation_side', $this->m_equation_side);
 		$ps->bindParam(':budget_default', $this->m_budget_default);
+		$ps->bindParam(':is_savings', $this->m_is_savings);
 		$ps->bindParam(':active', $this->m_active);
 		
 		$success = $ps->execute();
@@ -881,7 +904,31 @@ class Account
 		return '';
 	}
 
+	public static function Get_savings_accounts($login_id, array &$account_list) {
+		$sql = 'SELECT a.account_id, concat(parent.account_name, \':\', a.account_name) '.
+			'as account_name '.
+			'FROM Accounts a '.
+			'INNER JOIN Accounts parent ON '.
+			'  parent.account_id = a.account_parent_id '. 
+			'WHERE is_savings = 1 AND login_id = :login_id '.
+			'ORDER BY concat(parent.account_name, \':\', a.account_name) ';
+		$pdo = db_connect_pdo();
+		$ps = $pdo->prepare($sql);
+		$ps->bindParam(':login_id', $login_id);
+		$success = $ps->execute();
 
+		if (!$success) {
+			return get_pdo_error($ps);
+		}
+		
+		while ($row = $ps->fetch(PDO::FETCH_ASSOC))
+		{
+			$account_list[$row['account_id']] = $row['account_name'];
+		}
+		
+		return '';
+	}
+		
 }	//End Account class
 
 ?>

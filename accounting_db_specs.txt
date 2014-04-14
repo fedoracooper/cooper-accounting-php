@@ -5,13 +5,37 @@ Accounting Software database design
 Budgets
 
 Database changes
-	- Account new fields:
+	- Accounts new fields:
+		savings_account_id SMALLINT - FK to Account used for savings
+		is_savings TINYINT:  0 or 1. 1 means it can be used for sinking
+	- Transactions new field:
 		budget_date DATE NOT NULL - used to back-date sinking transactions to prior month
 			- defaults to accounting_date
-		savings_account SMALLINT - FK to Account used for savings
-		is_savings TINYINT:  0 or 1. 1 means it can be used for sinking
-	- Transaction new field:
 		exclude_from_budget TINYINT:  0 or 1
+		- used for depreciation of assets, asset transfers:
+			- Legacy depreciation
+			- Buying / selling stocks in retirement or savings
+			- Retirement investments
+	- Budget new field:
+		budget_comment varchar(500) - track unusual budget items
+
+Query changes
+	Insert / update Accounts - support savings_account_id, is_savings flags
+	Account Details - add fields:
+		Saved (DB), To Savings (calc), Unspent (calc)
+		New query:  sum transactions going into savings-flagged accounts
+		Updated query:  filter on budget_date instead of accounting_date
+	Budget:  add Comments field
+
+	select a.accouexpense_account_id, savings_account_id,
+	sum(ledger_amount) as savings_total
+	FROM Accounts a
+	INNER JOIN Accounts ex ON ex.savings_account_id = a.account_id
+	INNER JOIN LedgerEntries le ON le.account_id = a.account_id
+	INNER JOIN Transactions t ON t.trans_id = le.trans_id
+		and budget_date >= :min_date
+		and budget_date <= :max_date
+	GROUP BY a.account_id
 
 Income - Sinking Withrawals = Expenses + Sinking Contributions
 	Sinking:  from Checking -> Checking subaccounts
@@ -51,7 +75,18 @@ Income - Sinking Withrawals = Expenses + Sinking Contributions
 			- checkbox for "prior budget month"?
 			- date field for budget date?
 				- should never be more than a month behind
-		
+		Examples:
+			Budget $100, expense $20, saved $20, to save: $60, unspent = $0
+			Budget $50, expense $100, saved $0, to save:  $0, unspent = -$50
+				- over budget; may be able to compensate by draw from savings
+			Budget $50, expense $100, saved -$50, to save:  0,  unspent = $0
+				- over budget, drew from savings to compensate
+			Budget $100, expense $130, saved $0, to save $0, unspent = -$30
+				- over budget, net loss to budget
+
+		Aggregate statistics (budget vs. actual):
+			Total income + Total savings draw
+			- Total expenses - Total sinking - should be $0 
 
 
 Login
@@ -75,6 +110,7 @@ Transactions
 	import_id		null	smallint
 	updated_time	timestamp  default current_timestamp
 	trans_status	tinyint default 1
+	budget_date			date - Used to back-date transactions for budgeting
 
 LedgerEntries
 	ledger_id		PK	int
@@ -94,8 +130,7 @@ Accounts
 	monthly_budget_default	decimal(8,2) (default 0)
 	active					tinyint (default 1)
 	updated_time	timestamp
-	budget_date			date - Used to back-date transactions for budgeting
-	savings_account	FK	smallint Savings linked to an Expense account
+	savings_account_id	FK	smallint Savings linked to an Expense account
 	is_savings			tinyint - 0 or 1; defaults to 0
 	
 Budget
@@ -104,6 +139,7 @@ Budget
 	budget_month	date
 	budget_amount	decimal(8,2)
 	updated_time	timestamp
+	budget_comment	varchar(500)
 	
 	
 create table Budget (

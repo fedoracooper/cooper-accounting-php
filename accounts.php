@@ -64,6 +64,10 @@
 			// active flag is set
 			$active = 1;
 		}
+		$is_savings = 0;
+		if (isset ($_POST['is_savings'])) {
+			$is_savings = 1;
+		}
 
 		$error = $account->Init_account (
 			$account_parent_id,
@@ -72,6 +76,8 @@
 			$_POST['account_debit'],
 			$_POST['equation_side'],
 			$_POST['monthly_budget'],
+			$_POST['savings_account_id'],
+			$is_savings,
 			$_POST['account_id'],
 			$active
 		);
@@ -133,12 +139,24 @@
 	$side_list = array ('L' => 'LHS (assets)', 'R' => 'RHS (revenue)');
 	$side_dropdown = Build_dropdown ($side_list, 'equation_side',
 		$account->get_equation_side());
+
+	// Savings account dropdown
+	$savings_list = array();
+	$error = Account::Get_savings_accounts($_SESSION['login_id'], $savings_list);
+	$savings_dropdown = Build_dropdown ($savings_list, 'savings_account_id',
+		$account->get_savings_account_id());
 	
 	// Active checkbox
 	if ($account->get_active() == 1)
 		$active_txt = ' CHECKED';
 	else
 		$active_txt = '';
+
+	if ($account->get_is_savings() == 1) {
+		$is_savings_txt = ' CHECKED';
+	} else {
+		$is_svaings_txt = '';
+	}
 ?>
 
 
@@ -240,6 +258,18 @@
 		<td>Monthly budget:</td>
 		<td><input type="text" size="50" maxlength="9" name="monthly_budget"
 			value="<?= $account->get_budget_default() ?>"></td>
+	</tr>
+
+	<tr>
+		<td></td>
+		<td>Is Savings Account:</td>
+		<td><input type="checkbox" name="is_savings" value="1"<?= $is_savings_txt ?>></td>
+	</tr>
+
+	<tr>
+		<td></td>
+		<td title="Sinking account linked to this expense account">Linked Savings Account:</td>
+		<td><?= $savings_dropdown ?></td>
 	</tr>
 
 	<tr>

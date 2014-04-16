@@ -8,6 +8,7 @@
 		// redirect to login if they have not logged in
 		header ("Location: login.php");
 	}
+	$login_id = $_SESSION['login_id'];
 	
 	function getStartDate() {
 		// First, check for post variable
@@ -50,7 +51,7 @@
 	$endDate = getEndDate();
 	
 	// default account comes from DB
-	$account_id = Account::Get_top_asset_account_id($_SESSION['login_id']);
+	$account_id = Account::Get_top_asset_account_id($login_id);
 	$activeOnly = true;
 	
 	if (!is_numeric($account_id)) {
@@ -70,8 +71,12 @@
 	$account->Load_account($account_id);
 	$showBalance = ($account->get_equation_side() == 'L');
 	$balanceHeader = '';
+	$savingsHeader = '';
 	if ($showBalance) {
 		$balanceHeader = '<th>Balance</th>';
+	} else {
+		$savingsHeader = "<th>Saved</th> \n".
+		"		<th>To Save</th>";
 	}
 	
 	$activeOnlyChecked = $activeOnly ? 'checked="checked"' : '';
@@ -80,7 +85,7 @@
 	$endDateText = $endDate->format('m/d/Y');
 
 	// build account dropdowns: include inactive, and only show top 2 tiers
-	$account_list = Account::Get_account_list($_SESSION['login_id'],
+	$account_list = Account::Get_account_list($login_id,
 		'', -1, false, false, true, true);
 	$account_dropdown = Build_dropdown ($account_list, 'account_id',
 		$account_id);
@@ -96,6 +101,12 @@
 	if ($error == '') {
 		$error = Account::Get_account_details($account_id, $startDate,
 				$endDate, $minDate, $activeOnly, $account_list);
+	}
+
+	$savings_list = array();
+	if ($error == '') {
+		$error = Account::Get_expense_savings($login_id, $startDate,
+			$endDate, $savings_list);
 	}
 	
 ?>
@@ -148,7 +159,8 @@
 		<th>Transactions</th>
 		<?= $balanceHeader ?>
 		<th>Monthly Budget</th>
-		<th>Surplus</th>
+		<?= $savingsHeader ?>
+		<th>Unspent</th>
 		<th>Budget %</th>
 	</tr>
 
@@ -157,7 +169,9 @@
 	$balanceTotal = 0.0;
 	$budgetTotal = 0.0;
 	$transactionTotal = 0.0;
-	$surplusTotal = 0.0;
+	$unspentTotal = 0.0;
+	$savedTotal = 0.0;
+	$toSaveTotal = 0.0;
 
 
 	// Second loop: display data
@@ -167,10 +181,31 @@
 		$balance = $account_data[1];
 		$budget = $account_data[2];
 		$transactions = $account_data[3];
-		$surplus = null;
-		$budgetPercent = null;
-		if (is_numeric($budget)) {
-			$surplus = $budget - $transactions;
+		$savingsId = $account_data[4];
+
+		$saved = 0.0;
+		$toSave = 0.0;
+		$budgetPercent = 0.0;
+		$savingsName = '';
+
+		if ($savingsId > 0) {
+			// check for savings record for this account
+			$savingsData = null;
+			if (isset($savings_list[$account_id])) {
+				$savingsData = $savings_list[$account_id];
+			}
+			// This is an expense account with a sinking / savings
+			// account associated.
+			if ($savingsData != null) {
+				$saved = $savingsData[0];
+				$savingsName = 'Account ' . $savingsData[1];
+			}
+			// max(0, Budget - expenses - savings) = toSave
+			$toSave = max(0.0, $budget - $transactions - $saved);
+			$unspent = 0.0;  // any unspent money gets saved
+		} else {
+			// no savings
+			$unspent = $budget - $transactions;
 			if ($budget != 0.0) {
 				$budgetPercent = $transactions / $budget * 100.0;
 			}
@@ -179,16 +214,23 @@
 		$balanceTotal += $balance;
 		$budgetTotal += $budget;
 		$transactionTotal += $transactions;
-		$surplusTotal += $surplus;
+		$unspentTotal += $unspent;
+		$savedTotal += $saved;
+		$toSaveTotal += $toSave;
 		
 		echo "	<tr> \n".
-			"		<td>$accountName</td> \n".
+			"		<td >$accountName</td> \n".
 			"		<td style='text-align: right;'>". format_currency($transactions) . "</td> \n";
 		if ($showBalance) {
 			echo "		<td style='text-align: right;'>". format_currency($balance) . "</td> \n";
 		}
-		echo "		<td style='text-align: right;'>". format_currency($budget) . "</td> \n".
-			"		<td style='text-align: right;'>". format_currency($surplus) . "</td> \n".
+		echo "		<td style='text-align: right;'>". format_currency($budget) . "</td> \n";
+		if (!$showBalance) {
+			// RHS / expenses
+			echo "		<td title='$savingsName' style='text-align: right;'>". format_currency($saved) . "</td> \n".
+			"		<td style='text-align: right;'>". format_currency($toSave) . "</td> \n";
+		}
+		echo	"		<td style='text-align: right;'>". format_currency($unspent) . "</td> \n".
 			"		<td style='text-align: right;'>". format_percent($budgetPercent, 0) . "</td> \n".
 			"	</tr> \n";
 	}	// End budget loop
@@ -196,11 +238,13 @@
 	$balanceTotalString = format_currency($balanceTotal);
 	$budgetTotalString = format_currency($budgetTotal);
 	$transactionTotalString = format_currency($transactionTotal);
-	$surplusTotalString = format_currency($surplusTotal);
+	$unspentTotalString = format_currency($unspentTotal);
+	$savedTotalString = format_currency($savedTotal);
+	$toSaveTotalString = format_currency($toSaveTotal);
 	
 	echo "	<tr> \n".
 		"		<td style='border-top: 1px solid black; border-bottom: 1px solid black;' ".
-		" colspan=\"6\">&nbsp;</td> \n".
+		" colspan=\"7\">&nbsp;</td> \n".
 		"	</tr> \n\n".
 		"	<tr> \n".
 		"		<td>Total</td> \n".
@@ -208,8 +252,12 @@
 	if ($showBalance) {
 		echo "		<td style='text-align: right; font-weight: bold;'>$balanceTotalString</td> \n";
 	}
-	echo "		<td style='text-align: right; font-weight: bold;'>$budgetTotalString</td> \n".
-		"		<td style='text-align: right; font-weight: bold;'>$surplusTotalString</td> \n".
+	echo "		<td style='text-align: right; font-weight: bold;'>$budgetTotalString</td> \n";
+	if (!$showBalance) {
+		echo "		<td style='text-align: right; font-weight: bold;'>$savedTotalString</td> \n".
+		"		<td style='text-align: right; font-weight: bold;'>$toSaveTotalString</td> \n";
+	}
+	echo "		<td style='text-align: right; font-weight: bold;'>$unspentTotalString</td> \n".
 		"	</tr> \n\n" ;
 
 ?>

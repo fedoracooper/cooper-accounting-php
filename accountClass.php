@@ -859,7 +859,7 @@ class Account
 		$sql = 'SELECT sum(case when t.trans_id > 0 then ledger_amount else 0.0 end) as balance, '.
 			'  sum(case when budget_date >= :start_date then '.
 			'    ifnull(ledger_amount, 0.0) else 0.0 end) as transaction_sum, '.
-			'  a.account_id, '.
+			'  a.account_id, a.savings_account_id, '.
 			'  case when parent.account_id is null then a.account_name else '.
 	 		'  concat(parent.account_name, \':\', a.account_name) end as account_name, '.
 			'  min(b.budget_amount) as budget '.
@@ -902,9 +902,53 @@ class Account
 					$row['account_name'],
 					$row['balance'],
 					$row['budget'],
-					$row['transaction_sum']);
+					$row['transaction_sum'],
+					$row['savings_account_id']);
 		}
 		
+		return '';
+	}
+
+	// Populate $account_list with a map of Savings account totals
+	// which are tied to expense accounts.
+	// Map:  expense account_id => [amount total, savings account name, savings account_id]
+	// Returns error message on error, or empty string.
+	public static function Get_expense_savings($login_id, DateTime $start_date,
+	DateTime $end_date, array &$account_list) {
+
+		$sql = 'select a.account_id, ex.account_id as expense_account_id, '.
+		' a.account_name as savings_account_name, '.
+		' sum(ledger_amount * a.account_debit) as savings_total '.
+		'FROM Accounts a '.
+		'INNER JOIN Accounts ex ON ex.savings_account_id = a.account_id '.
+		'INNER JOIN LedgerEntries le ON le.account_id = a.account_id '.
+		'INNER JOIN Transactions t ON t.trans_id = le.trans_id '.
+		'WHERE budget_date >= :min_date '.
+		'  and budget_date <= :max_date and a.login_id = :login_id  '.
+		'GROUP BY a.account_id, a.account_name, ex.account_id ';
+		
+		$pdo = db_connect_pdo();
+		$ps = $pdo->prepare($sql);
+		$startDateString = dateTimeToSQL($start_date);
+		$endDateString = dateTimeToSQL($end_date);
+		
+		$ps->bindParam(':min_date', $startDateString);
+		$ps->bindParam(':max_date', $endDateString);
+		$ps->bindParam(':login_id', $login_id);
+		$success = $ps->execute();
+		
+		if (!$success) {
+			return get_pdo_error($ps);
+		}
+		
+		while ($row = $ps->fetch(PDO::FETCH_ASSOC))
+		{
+			$account_list[$row['expense_account_id']] = array(
+				$row['savings_total'],
+				$row['savings_account_name'],
+				$row['account_id']);
+		}
+
 		return '';
 	}
 

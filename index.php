@@ -85,11 +85,15 @@
 	$start_date	= date ('n/j/Y', $start_time);
 	$end_date	= date ('n/j/Y', $end_time);
 
+	$excludeBudgetCheck = '';
+	$priorMonthCheck = '';
 	if (isset ($_POST['edit']))
 	{
 		// Loading a transaction & ledger entries from database.
 		$error = $trans->Load_transaction($_POST['edit']);
 		$editClick = 1;		// used to set a form var for javascript
+		$excludeBudgetCheck = get_checked($trans->get_exclude_budget());
+		$priorMonthCheck = get_checked($trans->get_prior_month());
 	}
 
 	// Build the account list dropdown
@@ -146,6 +150,14 @@
 		}
 		//nl2br (print_r ($ledgerL_list));
 		//nl2br (print_r ($ledgerR_list));
+		$excludeBudget = 0;
+		$priorMonth = 0;
+		if (isset($_POST['prior_month'])) {
+			$priorMonth = 1;
+		}
+		if (isset($_POST['exclude_budget'])) {
+			$excludeBudget = 1;
+		}
 		$error = $trans->Init_transaction (
 			$_SESSION['login_id'],
 			$_POST['trans_descr'],
@@ -157,6 +169,8 @@
 			$_POST['gas_miles'],
 			$_POST['gas_gallons'],
 			$_POST['trans_status'],
+			$priorMonth,
+			$excludeBudget,
 			$_POST['trans_id'],
 			$_POST['repeat_count'],
 			'',		//account display
@@ -509,8 +523,8 @@
 				echo "Edit Transaction (". $trans->get_trans_id(). ")";
 			?></a></td>
 		<td colspan="1"><?= $status_dropdown ?></td>
-		<td colspan="2">Repeat months:</td>
-		<td colspan="2"><input type="text" size="2" maxlength="2" name="repeat_count"
+		<td colspan="1">Repeat months:</td>
+		<td colspan="1"><input type="text" size="2" maxlength="2" name="repeat_count"
 			value="<?= $trans->get_repeat_count() ?>"></td>
 		<td class="info" colspan="3"><?
 			if ($trans->get_trans_id() >= 0)
@@ -526,7 +540,7 @@
 		<td>Accounting date:</td>
 		<td><input type="text" size="10" maxlength="10" name="accounting_date"
 			value="<?= $trans->get_accounting_date() ?>"></td>
-		<td>Check #:</td>
+		<td style="width: 90px;">Check #:</td>
 		<td><input type="text" size="4" maxlength="4" name="check_number"
 			value="<?= $trans->get_check_number() ?>"></td>
 		<td>Miles:</td>
@@ -548,8 +562,12 @@
 
 	<tr>
 		<td>Comment:</td>
-		<td colspan="9"><textarea name="trans_comment" rows="2" cols="80"
+		<td colspan="3"><textarea name="trans_comment" rows="2" cols="50"
 			><?= $trans->get_trans_comment() ?></textarea></td>
+		<td colspan="2">Budget for prior month: <br/>
+			Exclude from budget: </td>
+		<td><input type="checkbox" name="prior_month" value="1" <?= $priorMonthCheck ?>/><br />
+			<input type="checkbox" name="exclude_budget" value="1" <?= $excludeBudgetCheck ?>/> </td>
 	</tr>
 </table>
 

@@ -323,4 +323,13 @@ function format_amount($amount)
 	return sprintf('%.2f', $amount);
 }
 
+// Get HTML "checked" value if a value is set
+function get_checked($value) {
+	if ($value != null && $value != 0) {
+		return " CHECKED";
+	} else {
+		return "";
+	}
+}
+
 ?>

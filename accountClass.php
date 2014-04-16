@@ -857,7 +857,7 @@ class Account
 		$error = '';
 		$activeFlag = $activeOnly ? 1 : 0;
 		$sql = 'SELECT sum(case when t.trans_id > 0 then ledger_amount else 0.0 end) as balance, '.
-			'  sum(case when accounting_date >= :start_date then '.
+			'  sum(case when budget_date >= :start_date then '.
 			'    ifnull(ledger_amount, 0.0) else 0.0 end) as transaction_sum, '.
 			'  a.account_id, '.
 			'  case when parent.account_id is null then a.account_name else '.
@@ -870,8 +870,8 @@ class Account
 			'LEFT JOIN Accounts parent on a.account_parent_id = parent.account_id '.
 	  		'  and parent.account_id <> :account_id '.
 			'LEFT JOIN Transactions t ON t.trans_id = le.trans_id '.
-	  		'  and accounting_date >= :min_date '.
-	  		'  and accounting_date <= :max_date '.
+	  		'  and budget_date >= :min_date '.
+	  		'  and budget_date <= :max_date '.
 			'WHERE (a.account_parent_id = :account_id or '.
 			'  parent.account_parent_id = :account_id) and a.active = :active '.
 			'GROUP BY a.account_id, a.account_name '.

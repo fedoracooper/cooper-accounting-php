@@ -33,6 +33,8 @@ class Transaction
 	private $m_ledger_total		= NULL;
 	private $m_ledgerL_list		= array();	//array of account_id=>ledger_amount
 	private $m_ledgerR_list		= array();
+	private $m_prior_month		= 0;
+	private $m_exclude_budget	= 0;
 
 
 	function __construct ()
@@ -96,6 +98,24 @@ class Transaction
 		// mySQL-formatted date
 		//return convert_date ($this->m_accounting_date, 1);
 		return date (SQL_DATE, $this->m_accounting_time);
+	}
+	public function get_budget_date_sql() {
+		if ($this->m_prior_month == 1) {
+			// Prior Month is checked; get last day of prior
+			// month (day 0 of the accounting month).
+			$dateArr = getdate($this->m_accounting_time);
+			$budgetTime = mktime(0, 0, 0, $dateArr['mon'], 0, $dateArr['year']);
+			return date(SQL_DATE, $budgetTime);
+		} else {
+			// otherwise, just use accountint date
+			return $this->get_accounting_date_sql();
+		}
+	}
+	public function get_exclude_budget() {
+		return $this->m_exclude_budget;
+	}
+	public function get_prior_month() {
+		return $this->m_prior_month;
 	}
 	public function get_trans_vendor() {
 		return stripslashes ($this->m_trans_vendor);
@@ -228,6 +248,8 @@ class Transaction
 		$gas_miles,
 		$gas_gallons,
 		$trans_status,
+		$prior_month,
+		$exclude_budget,
 		$trans_id = -1,
 		$repeat_count = 1,
 		$account_display = '',
@@ -247,12 +269,14 @@ class Transaction
 			$accounting_date = $trans_date;
 		}
 		$accounting_time	= parse_date ($accounting_date);
+
 		
 		$this->m_login_id			= $login_id;
 		$this->m_trans_descr		= $trans_descr;
 		$this->m_trans_time			= $trans_time;
 		$this->m_accounting_time	= $accounting_time;
 		$this->m_trans_vendor		= $trans_vendor;
+		$this->m_prior_month		= $prior_month;
 
 		$trans_comment = trim ($trans_comment);
 		if ($trans_comment == '')
@@ -277,6 +301,7 @@ class Transaction
 			$this->m_gas_gallons = $gas_gallons;
 
 		$this->m_trans_status		= $trans_status;
+		$this->m_exclude_budget		= $exclude_budget;
 		$this->m_trans_id			= $trans_id;
 		$this->m_repeat_count		= $repeat_count;
 		$this->m_account_display	= $account_display;
@@ -403,6 +428,14 @@ class Transaction
 		$this->m_gas_miles			= $row['gas_miles'];
 		$this->m_gas_gallons		= $row['gas_gallons'];
 		$this->m_trans_status		= $row['trans_status'];
+		$this->m_exclude_budget		= $row['exclude_from_budget'];
+		$budget_time = strtotime($row['budget_date']);
+		if ($budget_time < $this->m_accounting_time) {
+			// Budget date is < Accounting date
+			$this->m_prior_month = 1;
+		} else {
+			$this->m_prior_month = 0;
+		}
 
 		// Load individual ledger entries
 		$sql = "SELECT le.ledger_id, le.account_id, le.ledger_amount, ".
@@ -527,10 +560,10 @@ class Transaction
 			$sql = "INSERT INTO Transactions \n".
 				"(login_id, trans_descr, trans_date, accounting_date, ".
 				" trans_vendor, trans_comment, check_number, gas_miles, ".
-				" gas_gallons, trans_status) \n".
+				" gas_gallons, trans_status, budget_date, exclude_from_budget) \n".
 				"VALUES( :login_id, :descr, :trans_date, " .
 				" :accounting_date, :vendor, :comment, :check_num, " .
-				" :gas_miles, :gas_gallons, :status ) ";
+				" :gas_miles, :gas_gallons, :status, :budget_date, :exclude_budget ) ";
 			$ps = $pdo->prepare($sql);
 		}
 		else
@@ -546,7 +579,9 @@ class Transaction
 				" check_number = :check_num, ".
 				" gas_miles = :gas_miles, ".
 				" gas_gallons = :gas_gallons, ".
-				" trans_status = :status \n".
+				" trans_status = :status, ".
+				" budget_date = :budget_date, ".
+				" exclude_from_budget = :exclude_budget \n ".
 				"WHERE trans_id = :trans_id ";
 			$ps = $pdo->prepare($sql);
 			// the only additional param is the trans id
@@ -566,6 +601,9 @@ class Transaction
 		$ps->bindParam(':gas_miles', $gas_miles);
 		$ps->bindParam(':gas_gallons', $gas_gallons);
 		$ps->bindParam(':status', $this->m_trans_status, PDO::PARAM_INT);
+		$budgetDate = $this->get_budget_date_sql();
+		$ps->bindParam(':budget_date', $budgetDate);
+		$ps->bindParam(':exclude_budget', $this->m_exclude_budget);
 		
 		$success = $ps->execute();
 		$error = get_pdo_error($ps);
@@ -920,6 +958,7 @@ class Transaction
 			" aa.audit_id, aa.account_balance as audit_balance, ".
 			" a2.account_name as account2_name, ".
 			" a2.account_id as a2_account_id, a.account_id, ".
+			" t.budget_date, t.exclude_from_budget, ".
 			"  (ledger_amount * a.account_debit * :account_debit) as amount \n". 
 			"FROM Transactions t \n".
 			"inner join LedgerEntries le on ".
@@ -967,6 +1006,12 @@ class Transaction
 				$account_display = $row['account2_name']. ':'.
 					$account_display;
 			}
+			$accountingTime = strtotime($row['accounting_date']);
+			$budgetTime = strtotime($row['budget_date']);
+			$priorMonth = 0;
+			if ($budgetTime < $accountingTime) {
+				$priorMonth = 1;
+			}
 
 			$trans = new Transaction();
 			$trans->Init_transaction (
@@ -980,6 +1025,8 @@ class Transaction
 				$row['gas_miles'],
 				$row['gas_gallons'],
 				$row['trans_status'],
+				$priorMonth,
+				$row['exclude_from_budget'],
 				$row['trans_id'],
 				1,		// No repeats by default
 				$account_display,

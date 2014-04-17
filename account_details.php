@@ -182,6 +182,7 @@
 		$budget = $account_data[2];
 		$transactions = $account_data[3];
 		$savingsId = $account_data[4];
+		$accountDescr = $account_data[5];
 
 		$saved = 0.0;
 		$toSave = 0.0;
@@ -221,7 +222,7 @@
 		$toSaveTotal += $toSave;
 		
 		echo "	<tr> \n".
-			"		<td >$accountName</td> \n".
+			"		<td title='$accountDescr'>$accountName</td> \n".
 			"		<td style='text-align: right;'>". format_currency($budget) . "</td> \n".
 			"		<td style='text-align: right;'>". format_currency($transactions) . "</td> \n";
 		if ($showBalance) {

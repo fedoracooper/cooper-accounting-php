@@ -865,6 +865,7 @@ class Account
 			'  a.account_id, a.savings_account_id, '.
 			'  case when parent.account_id is null then a.account_name else '.
 	 		'  concat(parent.account_name, \':\', a.account_name) end as account_name, '.
+			'  a.account_descr, '.
 			'  min(b.budget_amount) as budget '.
 			'FROM Accounts a '.
 			'LEFT JOIN LedgerEntries le ON le.account_id = a.account_id '.
@@ -875,6 +876,7 @@ class Account
 			'LEFT JOIN Transactions t ON t.trans_id = le.trans_id '.
 	  		'  and budget_date >= :min_date '.
 	  		'  and budget_date <= :max_date '.
+			'  and exclude_from_budget = 0 '.
 			'WHERE (a.account_parent_id = :account_id or '.
 			'  parent.account_parent_id = :account_id) and a.active = :active '.
 			'GROUP BY a.account_id, a.account_name '.
@@ -906,7 +908,8 @@ class Account
 					$row['balance'],
 					$row['budget'],
 					$row['transaction_sum'],
-					$row['savings_account_id']);
+					$row['savings_account_id'],
+					$row['account_descr']);
 		}
 		
 		return '';

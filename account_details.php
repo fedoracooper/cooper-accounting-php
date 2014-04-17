@@ -300,6 +300,11 @@
 
 	} // End record loop
 
+	// PHP quirk:  need to unset object reference after foreach,
+	// since we are passing the variable by reference
+	unset($account_data);
+
+
 	// sort the array backwards (descending order)
 	if ($isSorted) {
 		krsort($sortedList, SORT_NATURAL);

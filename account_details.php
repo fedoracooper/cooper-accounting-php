@@ -73,10 +73,10 @@
 	$balanceHeader = '';
 	$savingsHeader = '';
 	if ($showBalance) {
-		$balanceHeader = '<th>Balance</th>';
+		$balanceHeader = '<th onclick="sortBalance();">Balance</th>';
 	} else {
-		$savingsHeader = "<th>Saved</th> \n".
-		"		<th>To Save</th>";
+		$savingsHeader = "<th onclick='sortSaved();'>Saved</th> \n".
+		"		<th onclick='sortToSave();'>To Save</th>";
 	}
 	
 	$activeOnlyChecked = $activeOnly ? 'checked="checked"' : '';
@@ -109,6 +109,10 @@
 			$endDate, $savings_list);
 	}
 	
+	$sortOrder = 'account';
+	if (isset($_POST['sortOrder'])) {
+		$sortOrder = $_POST['sortOrder'];
+	}
 ?>
 
 <html>
@@ -117,10 +121,40 @@
 	<link href="style.css" rel="stylesheet" type="text/css">
 	<script language="javascript" type="text/javascript">
 
-		function bodyLoad()
-		{
-			document.forms[0].start_date.focus();
-		}
+	function bodyLoad()
+	{
+		document.forms[0].start_date.focus();
+	}
+
+	function sortByField(sortField) {
+		document.getElementById('sortOrder').value = sortField;
+		document.getElementById('searchForm').submit();
+	}
+
+	function sortBudget() {
+		sortByField('budget');
+	}
+	function sortAccount() {
+		sortByField('account');
+	}
+	function sortTransactions() {
+		sortByField('transactions');
+	}
+	function sortSaved() {
+		sortByField('saved');
+	}
+	function sortToSave() {
+		sortByField('toSave');
+	}
+	function sortUnspent() {
+		sortByField('unspent');
+	}
+	function sortBudgetPercent() {
+		sortByField('budgetPercent');
+	}
+	function sortBalance() {
+		sortByField('balance');
+	}
 
 	</script>
 </head>
@@ -134,7 +168,8 @@
 <span class="error"><?= $error ?></span>
 <span class="message"><?= $message ?></span>
 
-<form action="account_details.php" method="post">
+<form action="account_details.php" method="post" id="searchForm">
+<input type="hidden" id="sortOrder" name="sortOrder" value="account" />
 <table>
 	<tr>
 		<td>Start Date: </td>
@@ -155,17 +190,16 @@
 
 <table class="budget-list" cellspacing="0" cellpadding="0">
 	<tr>
-		<th>Account</th>
-		<th>Budget</th>
-		<th>Transactions</th>
+		<th onclick="sortAccount();">Account</th>
+		<th onclick="sortBudget();">Budget</th>
+		<th onclick="sortTransactions();">Transactions</th>
 		<?= $balanceHeader ?>
 		<?= $savingsHeader ?>
-		<th>Unspent</th>
-		<th>Budget %</th>
+		<th onclick="sortUnspent();">Unspent</th>
+		<th onclick="sortBudgetPercent()">Budget %</th>
 	</tr>
 
 <?php
-	// First loop through data: calculate totals
 	$balanceTotal = 0.0;
 	$budgetTotal = 0.0;
 	$transactionTotal = 0.0;
@@ -173,9 +207,10 @@
 	$savedTotal = 0.0;
 	$toSaveTotal = 0.0;
 
+	$isSorted = false;
 
-	// Second loop: display data
-	foreach ($account_list as $account_id => $account_data)
+	// First loop:  calculate values and prepare the sort
+	foreach ($account_list as $account_id => &$account_data)
 	{
 		$accountName = $account_data[0];
 		$balance = $account_data[1];
@@ -187,6 +222,7 @@
 		$saved = 0.0;
 		$toSave = 0.0;
 		$budgetPercent = 0.0;
+		$unspent = 0.0;
 		$savingsName = '';
 
 		if ($savingsId > 0) {
@@ -213,6 +249,47 @@
 				$budgetPercent = $transactions / $budget * 100.0;
 			}
 		}
+
+		// Add the calculated values to the data array
+		$account_data[6] = $saved;
+		$account_data[7] = $toSave;
+		$account_data[8] = $budgetPercent;
+		$account_data[9] = $unspent;
+		$account_data[10] = $savingsName;
+		
+		$sortKey = null;
+		switch ($sortOrder) {
+			case 'account':
+				$sortKey = null;  // default sort
+				break;
+			case 'budget':
+				$sortKey = $budget;
+				break;
+			case 'balance':
+				$sortKey = $balance;
+				break;
+			case 'transactions':
+				$sortKey = $transactions;
+				break;
+			case 'saved':
+				$sortKey = $saved;
+				break;
+			case 'toSave':
+				$sortKey = $toSave;
+				break;
+			case 'unspent':
+				$sortKey = $unspent;
+				break;
+			case 'budgetPercent':
+				$sortKey = $budgetPercent;
+				break;
+		}
+
+		if (!is_null($sortKey)) {
+			// use compound key to avoid duplicates
+			$sortedList[$sortKey . $accountName] = $account_data;
+			$isSorted = true;
+		}
 		
 		$balanceTotal += $balance;
 		$budgetTotal += $budget;
@@ -220,6 +297,32 @@
 		$unspentTotal += $unspent;
 		$savedTotal += $saved;
 		$toSaveTotal += $toSave;
+
+	} // End record loop
+
+	// sort the array backwards (descending order)
+	if ($isSorted) {
+		krsort($sortedList, SORT_NATURAL);
+	} else {
+		$sortedList = &$account_list;
+	}
+
+
+	// Second loop:  display results
+	foreach ($sortedList as $sortedKey => $account_data)
+	{
+		$accountName = $account_data[0];
+		$balance = $account_data[1];
+		$budget = $account_data[2];
+		$transactions = $account_data[3];
+		$savingsId = $account_data[4];
+		$accountDescr = $account_data[5];
+		$saved = $account_data[6];
+		$toSave = $account_data[7];
+		$budgetPercent = $account_data[8];
+		$unspent = $account_data[9];
+		$savingsName = $account_data[10];
+
 		
 		echo "	<tr> \n".
 			"		<td title='$accountDescr'>$accountName</td> \n".

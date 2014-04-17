@@ -711,8 +711,9 @@ class Account
 			$sql = 'SELECT a.account_id, case when parent.account_id is null then '
 			. '  a.account_name else '
 			. '  concat(parent.account_name, \':\', a.account_name) end as account_name, '
+			. '  a.account_descr, '
 			. '  a.monthly_budget_default, '
-			. '  b.budget_amount, b.budget_id, '
+			. '  b.budget_amount, b.budget_id, b.budget_comment, '
 			. '  case a.account_id when :account_id then 1 else 0 end as is_parent '
 			. 'FROM Accounts a '
 			. 'LEFT JOIN Accounts parent ON parent.account_id = a.account_parent_id '
@@ -740,7 +741,9 @@ class Account
 					$row['account_name'],
 					$row['monthly_budget_default'],
 					$row['budget_amount'],
-					$row['budget_id']);
+					$row['budget_id'],
+					$row['account_descr'],
+					$row['budget_comment']);
 		}
 		
 		return '';

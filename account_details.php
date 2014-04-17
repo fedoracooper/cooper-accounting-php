@@ -156,9 +156,9 @@
 <table class="budget-list" cellspacing="0" cellpadding="0">
 	<tr>
 		<th>Account</th>
+		<th>Budget</th>
 		<th>Transactions</th>
 		<?= $balanceHeader ?>
-		<th>Monthly Budget</th>
 		<?= $savingsHeader ?>
 		<th>Unspent</th>
 		<th>Budget %</th>
@@ -200,9 +200,11 @@
 				$saved = $savingsData[0];
 				$savingsName = 'Account ' . $savingsData[1];
 			}
-			// max(0, Budget - expenses - savings) = toSave
-			$toSave = max(0.0, $budget - $transactions - $saved);
-			$unspent = 0.0;  // any unspent money gets saved
+			// unspent will be negative when over budget
+			$unspent = $budget - $transactions - $saved;
+			$toSave = max(0.0, $unspent); // To Save is never negative
+			// if toSave is > 0, then subtrace from unspent
+			$unspent -= $toSave;
 		} else {
 			// no savings
 			$unspent = $budget - $transactions;
@@ -220,11 +222,11 @@
 		
 		echo "	<tr> \n".
 			"		<td >$accountName</td> \n".
+			"		<td style='text-align: right;'>". format_currency($budget) . "</td> \n".
 			"		<td style='text-align: right;'>". format_currency($transactions) . "</td> \n";
 		if ($showBalance) {
 			echo "		<td style='text-align: right;'>". format_currency($balance) . "</td> \n";
 		}
-		echo "		<td style='text-align: right;'>". format_currency($budget) . "</td> \n";
 		if (!$showBalance) {
 			// RHS / expenses
 			echo "		<td title='$savingsName' style='text-align: right;'>". format_currency($saved) . "</td> \n".
@@ -248,11 +250,11 @@
 		"	</tr> \n\n".
 		"	<tr> \n".
 		"		<td>Total</td> \n".
+		"		<td style='text-align: right; font-weight: bold;'>$budgetTotalString</td> \n".
 		"		<td style='text-align: right; font-weight: bold;'>$transactionTotalString</td> \n";
 	if ($showBalance) {
 		echo "		<td style='text-align: right; font-weight: bold;'>$balanceTotalString</td> \n";
 	}
-	echo "		<td style='text-align: right; font-weight: bold;'>$budgetTotalString</td> \n";
 	if (!$showBalance) {
 		echo "		<td style='text-align: right; font-weight: bold;'>$savedTotalString</td> \n".
 		"		<td style='text-align: right; font-weight: bold;'>$toSaveTotalString</td> \n";

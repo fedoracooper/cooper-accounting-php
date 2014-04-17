@@ -64,12 +64,14 @@
 		$accountIds = $_POST['accountIds'];
 		$budgetIds  = $_POST['budgetIds'];
 		$defaultBudgets = $_POST['defaultBudgets'];
+		$budgetComments = $_POST['budgetComments'];
 		
 		for ($i = 0; $i < count($accountIds); $i++) {
 			$accountId = $accountIds[$i];
 			$newBudget = $newBudgets[$i];
 			$budgetId = $budgetIds[$i];
 			$defaultBudget = $defaultBudgets[$i];
+			$comments = $budgetComments[$i];
 			if (empty($budgetId)) {
 				// not editing, so set to -1
 				$budgetId = -1;
@@ -77,7 +79,7 @@
 			
 			// update budget
 			$budget = new Budget();
-			$budget->Init_budget($accountId, $budgetDate, $newBudget, $budgetId);
+			$budget->Init_budget($accountId, $budgetDate, $newBudget, $comments, $budgetId);
 			$error = $budget->Save();
 			if ($error != '') {
 				break;
@@ -168,8 +170,9 @@
 	<tr>
 		<th>Account</th>
 		<th style="text-align: center;">Default Budget</th>
-		<th style="text-align: center;">Curent Budget</th>
+		<th style="text-align: center;">Curent</th>
 		<th style="text-align: center;">New Budget</th>
+		<th style="text-align: center;">Budget Comment</th>
 
 	</tr>
 
@@ -194,7 +197,14 @@
 		$accountName = $budget_data[0];
 		$defaultBudget = format_amount($budget_data[1]);
 		$budgetAmount = format_amount($budget_data[2]);
+		$budgetStyle = '';
+		if ($defaultBudget != $budgetAmount) {
+			// This month's budget is not the default
+			$budgetStyle = 'color: red;"';
+		}
 		$budgetId = $budget_data[3];
+		$accountDescr = $budget_data[4];
+		$budgetComment = $budget_data[5];
 		$newBudget = $budgetAmount;
 		if ($budgetAmount == null) {
 			// Apply default to budget when undefined
@@ -204,12 +214,14 @@
 		echo "	<tr> \n".
 			"		<input type='hidden' name='accountIds[]' value='$account_id' />".
 			"		<input type='hidden' name='budgetIds[]' value='$budgetId' />".
-			"		<td>$accountName</td> \n".
+			"		<td title='$accountDescr'>$accountName</td> \n".
 			"		<td><input type='text' name='defaultBudgets[]' ".
-			"maxlength='9' value='$defaultBudget' /></td> \n".
-			"		<td style='text-align: right;'>$budgetAmount</td> \n".
+			"maxlength='9' value='$defaultBudget' size='10' /></td> \n".
+			"		<td style='text-align: right; $budgetStyle'>$budgetAmount</td> \n".
 			"		<td><input type='text' name='budgetAmounts[]' ".
-			"maxlength='9' value='$newBudget' /></td> \n".
+			"maxlength='9' value='$newBudget' size='10' /></td> \n".
+			"		<td><input style='text-align: left;' type='text' name='budgetComments[]' ".
+			"maxlength='100' size='50' value='$budgetComment' /></td> \n".
 			"	</tr> \n\n" ;
 	}	// End budget loop
 
@@ -218,7 +230,7 @@
 	
 	echo "	<tr> \n".
 		"		<td style='border-top: 1px solid black; border-bottom: 1px solid black;' ".
-		" colspan=\"4\">&nbsp;</td> \n".
+		" colspan=\"5\">&nbsp;</td> \n".
 		"	</tr> \n\n".
 		"	<tr> \n".
 		"		<td>Total</td> \n".
@@ -228,7 +240,7 @@
 		"	</tr> \n\n" ;
 
 ?>
-	<tr><td colspan="4" style="text-align: right;">
+	<tr><td colspan="5" style="text-align: right;">
 		<input style="margin-left: 500px; margin-top: 20px;" type="submit" 
 		name="saveBudget" value="Save Budgets" />
 		</td>

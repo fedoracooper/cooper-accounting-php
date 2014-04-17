@@ -7,6 +7,7 @@ class Budget {
 	private $m_account_id = -1;
 	private $m_budget_month = NULL;
 	private $m_budget_amount = 0.0;
+	private $m_budget_comment = '';
 	private $m_updated_time = NULL;
 
 	public function get_budget_id() {
@@ -25,16 +26,22 @@ class Budget {
 		return $this->m_budget_amount;
 	}
 	
+	public function get_budget_comment() {
+		return $this->m_budget_comment;
+	}
+	
 	public function Init_budget(
 			$account_id,
 			$budget_month,
 			$budget_amount,
+			$budget_comment,
 			$budget_id = -1,
 			$updated_time = NULL) {
 		
 		$this->m_account_id = $account_id;
 		$this->m_budget_month = $budget_month;
 		$this->m_budget_amount = $budget_amount;
+		$this->m_budget_comment = $budget_comment;
 		$this->m_budget_id = $budget_id;
 		$this->m_updated_time = $updated_time;
 	}
@@ -44,24 +51,28 @@ class Budget {
 		$pdo = db_connect_pdo();
 		if ($this->m_budget_id < 1) {
 			// INSERT
-			$sql = 'INSERT INTO Budget (account_id, budget_month, budget_amount) '
-					. 'VALUES (:account_id, :budget_month, :budget_amount)';
+			$sql = 'INSERT INTO Budget (account_id, budget_month, budget_amount,'
+				. ' budget_comment) '
+				. 'VALUES (:account_id, :budget_month, :budget_amount, '
+				. ' :budget_comment)';
 			
 			$ps = $pdo->prepare($sql);
 			$ps->bindParam(':account_id', $this->m_account_id);
 			$dateString = $this->m_budget_month->format('Y-m-d');
 			$ps->bindParam(':budget_month', $dateString);
-			$ps->bindParam(':budget_amount', $this->m_budget_amount);
-				
+		
 		} else {
 			// UPDATE
-			$sql = 'UPDATE Budget set budget_amount = :budget_amount '
-					. 'WHERE budget_id = :budget_id';
+			$sql = 'UPDATE Budget set budget_amount = :budget_amount, '
+				. 'budget_comment = :budget_comment '
+				. 'WHERE budget_id = :budget_id';
 			
 			$ps = $pdo->prepare($sql);
 			$ps->bindParam(':budget_id', $this->m_budget_id);
-			$ps->bindParam(':budget_amount', $this->m_budget_amount);
 		}
+
+		$ps->bindParam(':budget_amount', $this->m_budget_amount);
+		$ps->bindParam(':budget_comment', $this->m_budget_comment);
 		
 		$success = $ps->execute();
 		if (!$success) {

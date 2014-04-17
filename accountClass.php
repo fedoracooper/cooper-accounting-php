@@ -809,21 +809,25 @@ class Account
 	
 	
 	/**
-	 * Query from the database to get the top-level Assets
-	 * account_id for the current user.
+	 * Query from the database to get the top-level
+	 * account_id for the current user for the given params.
 	 * @param int $login_id
 	 * @return account_id, or error message on error
 	 */
-	public static function Get_top_asset_account_id($login_id) {
+	public static function Get_top_account_id($login_id, $account_debit,
+	$equation_side) {
 		$error = '';
 		$sql = 'SELECT account_id FROM Accounts '.
-				'WHERE account_parent_id is NULL '.
-				'  and login_id = :login_id and account_debit = 1 '.
-				'  and equation_side = \'L\' ';
+			'WHERE account_parent_id is NULL '.
+			'  and login_id = :login_id '.
+			'  and account_debit = :account_debit '.
+			'  and equation_side = :equation_side ';
 		
 		$pdo = db_connect_pdo();
 		$ps = $pdo->prepare($sql);
 		$ps->bindParam(':login_id', $login_id);
+		$ps->bindParam(':account_debit', $account_debit);
+		$ps->bindParam(':equation_side', $equation_side);
 		$success = $ps->execute();
 		
 		if (!$success) {

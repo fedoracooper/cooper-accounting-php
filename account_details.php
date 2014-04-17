@@ -50,8 +50,8 @@
 	$startDate = getStartDate();
 	$endDate = getEndDate();
 	
-	// default account comes from DB
-	$account_id = Account::Get_top_asset_account_id($login_id);
+	// default account comes from DB (top Expense)
+	$account_id = Account::Get_top_account_id($login_id, '1', 'R');
 	$activeOnly = true;
 	
 	if (!is_numeric($account_id)) {

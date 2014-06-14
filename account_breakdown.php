@@ -130,8 +130,9 @@
 	<tr>
 		<td>Top Account: </td>
 		<td colspan="2"><?= $account_dropdown ?></td>
-		<td colspan="1">&nbsp;&nbsp;<input type="submit" value="<" name="prev_month"> &nbsp;
-		<input type="submit" value=">" name="next_month"></td>
+		<td colspan="1">&nbsp;&nbsp;
+			<input type="submit" value="&lt;" name="prev_month"> &nbsp;
+			<input type="submit" value="&gt;" name="next_month"></td>
 	</tr>
 </table>
 </form>

@@ -37,6 +37,10 @@
 			} catch (Exception $e) {
 				return $e->getMessage();
 			}
+		} else {
+			// default to last day of this month
+			$dateArr = getdate();
+			$endDate->setDate($dateArr['year'], $dateArr['mon']+1, 0);
 		}
 		
 		return $endDate;
@@ -49,6 +53,30 @@
 	// Set budget date to first day of month
 	$startDate = getStartDate();
 	$endDate = getEndDate();
+	
+	if (isset ($_POST['prev_month']))
+	{
+		// go back one month
+		$dateArr = getdate($startDate->getTimestamp());
+		// first day of last month to last day of last month
+		$startDate->setDate($dateArr['year'], $dateArr['mon']-1, 1);
+		$endDate->setDate($dateArr['year'], $dateArr['mon'], 0);
+// 		$interval = new DateInterval('P1M');
+// 		$interval->invert = 1;
+// 		$startDate->add($interval);
+// 		$endDate->add($interval);
+	}
+	elseif (isset ($_POST['next_month']))
+	{
+		// forward one month
+		$dateArr = getdate($startDate->getTimestamp());
+		// first day of next month to last day of next month
+		$startDate->setDate($dateArr['year'], $dateArr['mon']+1, 1);
+		$endDate->setDate($dateArr['year'], $dateArr['mon']+2, 0);
+// 		$interval = new DateInterval('P1M');
+// 		$startDate->add($interval);
+// 		$endDate->add($interval);
+	}
 	
 	// default account comes from DB (top Expense)
 	$account_id = Account::Get_top_account_id($login_id, '1', 'R');
@@ -113,6 +141,10 @@
 	if (isset($_POST['sortOrder'])) {
 		$sortOrder = $_POST['sortOrder'];
 	}
+	$sortDirection = '0';
+	if (isset($_POST['sortDirection'])) {
+		$sortDirection = $_POST['sortDirection'];
+	}
 ?>
 
 <html>
@@ -127,6 +159,11 @@
 	}
 
 	function sortByField(sortField) {
+		if (document.getElementById('sortOrder').value == sortField) {
+			// invert sort order (value will be 0 or 1)
+			var newDirection = (Number(document.getElementById('sortDirection').value) + 1) % 2;
+			document.getElementById('sortDirection').value = newDirection;
+		}
 		document.getElementById('sortOrder').value = sortField;
 		document.getElementById('searchForm').submit();
 	}
@@ -169,19 +206,24 @@
 <span class="message"><?= $message ?></span>
 
 <form action="account_details.php" method="post" id="searchForm">
-<input type="hidden" id="sortOrder" name="sortOrder" value="account" />
+<input type="hidden" id="sortOrder" name="sortOrder" value="<?= $sortOrder ?>" />
+<input type="hidden" id="sortDirection" name="sortDirection" value="<?= $sortDirection ?>" />
 <table>
 	<tr>
 		<td>Start Date: </td>
 		<td><input type="text" maxlength="10" name="start_date" value="<?= $startDateText ?>" /></td>
 		<td>End Date: </td>
 		<td><input type="text" maxlength="10" name="end_date" value="<?= $endDateText ?>" /></td>
+		<td>&nbsp;&nbsp;Active: <input type="checkbox" name="activeOnly" value="1"
+			<?= $activeOnlyChecked ?> /></td>
 	</tr>
 
 	<tr>
 		<td>Top Account: </td>
 		<td colspan="2"><?= $account_dropdown ?></td>
-		<td>&nbsp;&nbsp;Active: <input type="checkbox" name="activeOnly" value="1" <?= $activeOnlyChecked ?> /></td>
+		<td colspan="1">&nbsp;&nbsp;
+			<input type="submit" value="&lt;" name="prev_month"> &nbsp;
+			<input type="submit" value="&gt;" name="next_month"></td>
 		<td>&nbsp;&nbsp;<input type="submit" value="Update" name="update_date"></td>
 	</tr>
 </table>
@@ -305,9 +347,13 @@
 	unset($account_data);
 
 
-	// sort the array backwards (descending order)
 	if ($isSorted) {
-		krsort($sortedList, SORT_NATURAL);
+		if ($sortDirection == 0) {
+			// sort the array backwards (descending order)
+			krsort($sortedList, SORT_NUMERIC);
+		} else {
+			ksort($sortedList, SORT_NUMERIC);
+		}
 	} else {
 		$sortedList = &$account_list;
 	}

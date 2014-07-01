@@ -881,7 +881,8 @@ class Account
 	  		'  and budget_date >= :min_date '.
 	  		'  and budget_date <= :max_date '.
 			'  and exclude_from_budget = 0 '.
-			'WHERE (a.account_parent_id = :account_id or '.
+			'WHERE (a.account_id = :account_id or '.
+			'  a.account_parent_id = :account_id or '.
 			'  parent.account_parent_id = :account_id) and a.active = :active '.
 			'GROUP BY a.account_id, a.account_name '.
 			'ORDER BY ifnull(parent.account_name, a.account_name), '.

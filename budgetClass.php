@@ -41,7 +41,7 @@ class Budget {
 		$this->m_account_id = $account_id;
 		$this->m_budget_month = $budget_month;
 		$this->m_budget_amount = $budget_amount;
-		$this->m_budget_comment = $budget_comment;
+		$this->m_budget_comment = htmlspecialchars_decode($budget_comment);
 		$this->m_budget_id = $budget_id;
 		$this->m_updated_time = $updated_time;
 	}
@@ -72,7 +72,7 @@ class Budget {
 		}
 
 		$ps->bindParam(':budget_amount', $this->m_budget_amount);
-		$ps->bindParam(':budget_comment', $this->m_budget_comment);
+		$ps->bindParam(':budget_comment', $this->m_budget_comment, PDO::PARAM_STR);
 		
 		$success = $ps->execute();
 		if (!$success) {

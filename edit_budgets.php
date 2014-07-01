@@ -194,7 +194,7 @@
 //	foreach ($account_list as $account_data)
 	foreach ($budget_list as $account_id => $budget_data)
 	{
-		$accountName = $budget_data[0];
+		$accountName = htmlspecialchars($budget_data[0]);
 		$defaultBudget = format_amount($budget_data[1]);
 		$budgetAmount = format_amount($budget_data[2]);
 		$budgetStyle = '';
@@ -203,8 +203,8 @@
 			$budgetStyle = 'color: red;"';
 		}
 		$budgetId = $budget_data[3];
-		$accountDescr = $budget_data[4];
-		$budgetComment = $budget_data[5];
+		$accountDescr = htmlspecialchars($budget_data[4]);
+		$budgetComment = htmlspecialchars($budget_data[5]);
 		$newBudget = $budgetAmount;
 		if ($budgetAmount == null) {
 			// Apply default to budget when undefined
@@ -214,14 +214,14 @@
 		echo "	<tr> \n".
 			"		<input type='hidden' name='accountIds[]' value='$account_id' />".
 			"		<input type='hidden' name='budgetIds[]' value='$budgetId' />".
-			"		<td title='$accountDescr'>$accountName</td> \n".
+			"		<td title=\"$accountDescr\">$accountName</td> \n".
 			"		<td><input type='text' name='defaultBudgets[]' ".
 			"maxlength='9' value='$defaultBudget' size='10' /></td> \n".
 			"		<td style='text-align: right; $budgetStyle'>$budgetAmount</td> \n".
 			"		<td><input type='text' name='budgetAmounts[]' ".
 			"maxlength='9' value='$newBudget' size='10' /></td> \n".
 			"		<td><input style='text-align: left;' type='text' name='budgetComments[]' ".
-			"maxlength='100' size='50' value='$budgetComment' /></td> \n".
+			"maxlength='100' size='50' value=\"$budgetComment\" /></td> \n".
 			"	</tr> \n\n" ;
 	}	// End budget loop
 

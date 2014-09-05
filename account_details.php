@@ -282,6 +282,10 @@
 			// unspent will be negative when over budget
 			$unspent = $budget - $transactions - $saved;
 			$toSave = max(0.0, $unspent); // To Save is never negative
+			if ($saved < 0.0) {
+				// When already drawing from savings, toSave is always 0
+				$toSave = 0.0;
+			}
 			// if toSave is > 0, then subtrace from unspent
 			$unspent -= $toSave;
 		} else {

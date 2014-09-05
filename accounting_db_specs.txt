@@ -27,15 +27,16 @@ Query changes
 		Updated query:  filter on budget_date instead of accounting_date
 	Budget:  add Comments field
 
-	select a.accouexpense_account_id, savings_account_id,
+	select a.account_id, a.account_name, ex.account_id as expense_account_id,
+	ex.account_name as expense_account_name,
 	sum(ledger_amount) as savings_total
 	FROM Accounts a
 	INNER JOIN Accounts ex ON ex.savings_account_id = a.account_id
 	INNER JOIN LedgerEntries le ON le.account_id = a.account_id
 	INNER JOIN Transactions t ON t.trans_id = le.trans_id
-		and budget_date >= :min_date
-		and budget_date <= :max_date
-	GROUP BY a.account_id
+	WHERE budget_date >= '2014-04-01'
+	and budget_date <= '2014-04-15'
+	GROUP BY a.account_id, a.account_name, ex.account_id, ex.account_name;
 
 Income - Sinking Withrawals = Expenses + Sinking Contributions
 	Sinking:  from Checking -> Checking subaccounts

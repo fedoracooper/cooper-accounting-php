@@ -385,6 +385,11 @@
 			"		<td style='text-align: right;'>". format_currency($transactions) . "</td> \n";
 		if ($showBalance) {
 			echo "		<td style='text-align: right;'>". format_currency($balance) . "</td> \n";
+			if ($budget == null) {
+				// suppress Unspent from asset accounts with no budget
+				$unspent = '';
+				$budgetPercent = '';
+			}
 		}
 		if (!$showBalance) {
 			// RHS / expenses

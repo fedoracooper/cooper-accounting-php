@@ -97,7 +97,8 @@
 	// Get full account details from DB
 	$account = new Account();
 	$account->Load_account($account_id);
-	$showBalance = ($account->get_equation_side() == 'L');
+	// Show balance field for Assets, Liabilities and -99 (Checking - Liabilities)
+	$showBalance = ($account_id == -99 || $account->get_equation_side() == 'L');
 	$balanceHeader = '';
 	$savingsHeader = '';
 	if ($showBalance) {
@@ -117,7 +118,9 @@
 		'', -1, false, false, true, true);
 
 	// Add special Checking - Liabilities option
-	$account_list[-99] = 'Checking - Credit Cards';
+	$top_item_array = array();
+	$top_item_array[-99] = 'Checking - Credit Cards';
+	$account_list = $top_item_array + $account_list;
 
 	$account_dropdown = Build_dropdown ($account_list, 'account_id',
 		$account_id);

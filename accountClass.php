@@ -847,7 +847,7 @@ class Account
 		$error = '';
 		$sql = 'SELECT sum(ledger_amount) * a.account_debit as balance, '.
 	'  sum(case when budget_date >= :start_date then '.
-	'    ifnull(ledger_amount, 0.0) else 0.0 end) as transaction_sum, '.
+	'    ifnull(ledger_amount, 0.0) else 0.0 end) * a.account_debit as transaction_sum, '.
 	'  a.account_id, a.savings_account_id, '.
 	'  concat(parent.account_name, \':\', a.account_name) as account_name, '.
 	'  a.account_descr, '.
@@ -857,19 +857,17 @@ class Account
 	'LEFT JOIN Budget b on b.account_id = a.account_id '.
 	'  and budget_month = :start_date '.
 	'LEFT JOIN Accounts parent on a.account_parent_id = parent.account_id '.
-	'  and parent.account_id <> :account_id '.
-	'LEFT JOIN Transactions t ON t.trans_id = le.trans_id '.
+	'INNER JOIN Transactions t ON t.trans_id = le.trans_id '.
 	'  and budget_date <= :end_date '.
-	'  and exclude_from_budget = 0 '.
-	'WHERE (a.account_id IN '.
+	'WHERE a.account_id IN '.
 	'  (select a2.account_id from Accounts a1 '.
 	'   INNER JOIN Accounts a2 ON a1.account_id = a2.account_parent_id '.
 	'   WHERE a1.login_id = :login_id and a1.account_parent_id is null '.
 	'     AND a1.equation_side = \'L\' and a1.account_debit = -1 '.
 	'     AND a2.is_savings = 0 and a2.active = 1 '.
-	'   UNION ALL .'
+	'   UNION ALL '.
 	'   SELECT primary_checking_account_id from Logins '.
-	'   WHERE login_id = :login_id and a.active = :active '.
+	'   WHERE login_id = :login_id '.
 	'  ) '.
 	'GROUP BY a.account_id, a.account_name '.
 	'ORDER BY a.account_debit DESC, a.account_name ';
@@ -943,7 +941,7 @@ class Account
 			'LEFT JOIN Transactions t ON t.trans_id = le.trans_id '.
 	  		'  and budget_date >= :min_date '.
 	  		'  and budget_date <= :max_date '.
-			'  and exclude_from_budget = 0 '.
+			'  and (a.equation_side = \'L\' OR exclude_from_budget = 0) '.
 			'WHERE (a.account_id = :account_id or '.
 			'  a.account_parent_id = :account_id or '.
 			'  parent.account_parent_id = :account_id) and a.active = :active '.

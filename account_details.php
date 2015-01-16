@@ -115,8 +115,13 @@
 	// build account dropdowns: include inactive, and only show top 2 tiers
 	$account_list = Account::Get_account_list($login_id,
 		'', -1, false, false, true, true);
+
+	// Add special Checking - Liabilities option
+	$account_list[-99] = 'Checking - Credit Cards';
+
 	$account_dropdown = Build_dropdown ($account_list, 'account_id',
 		$account_id);
+
 	
 	$minDate = $startDate;
 	if ($showBalance) {
@@ -126,9 +131,16 @@
 
 	// Build main data list
 	$account_list = array();	// pass by reference
+	
 	if ($error == '') {
-		$error = Account::Get_account_details($account_id, $startDate,
+		if ($account_id == -99) {
+			// special query for checking - liabilities
+			$error = Account::Get_checking_and_liabilities($startDate,
+				$endDate, $login_id, $account_list);
+		} else {
+			$error = Account::Get_account_details($account_id, $startDate,
 				$endDate, $minDate, $activeOnly, $account_list);
+		}
 	}
 
 	$savings_list = array();

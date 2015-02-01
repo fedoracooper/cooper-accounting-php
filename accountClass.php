@@ -997,6 +997,7 @@ class Account
 		'INNER JOIN Transactions t ON t.trans_id = le.trans_id '.
 		'WHERE budget_date >= :min_date '.
 		'  and budget_date <= :max_date and a.login_id = :login_id  '.
+		'  and exclude_from_budget = 0 '.
 		'GROUP BY a.account_id, a.account_name, ex.account_id ';
 		
 		$pdo = db_connect_pdo();

@@ -237,6 +237,44 @@
 			}
 		}
 
+		// Change from Edit to New, leaving ledger entries in tact.
+		function copyTransaction()
+		{
+			// 1. Change Tx header text
+			var editTrans = document.getElementById('edit_trans');
+			editTrans.innerHTML = 'New Transaction (copy)';
+
+			// 2. Wipe out trans_id hidden field
+			document.forms[1].trans_id.value = '-1';
+
+			// 3. Wipe out ledger ID values
+			var ledgerIds = document.getElementsByName('ledgerL_id[]');
+			for (i = 0; i < ledgerIds.length; i++) {
+				ledgerIds[i].value = '-1';
+			}
+			var ledgerIds = document.getElementsByName('ledgerR_id[]');
+			for (i = 0; i < ledgerIds.length; i++) {
+				ledgerIds[i].value = '-1';
+			}
+
+			// 4. Remove Delete and Cancel buttons
+			var deleteButton = document.getElementById('deleteButton');
+			deleteButton.parentNode.removeChild(deleteButton);
+
+			var cancelButton = document.getElementById('cancelButton');
+			cancelButton.parentNode.removeChild(cancelButton);
+
+			var copyButton = document.getElementById('copyButton');
+			copyButton.parentNode.removeChild(copyButton);
+
+			// 5. Clear out dates
+			var transDate = document.getElementById('trans_date').value = '';
+
+			document.getElementById('accounting_date').value = '';
+
+			transDate.focus();
+		}
+
 		function auditAccount( ledger_id, account_balance )
 		{
 			// Handle a click of an account total; popup a new window
@@ -516,7 +554,7 @@
 <table class="transaction">
 	<tr>
 		<td colspan="2" style="font-weight: bold;">
-			<a name="edit_trans"><?
+			<a name="edit_trans" id="edit_trans"><?
 			if ($trans->get_trans_id() < 0)
 				echo "New Transaction";
 			else
@@ -536,9 +574,11 @@
 		<td><input type="hidden" name="trans_id" value="<?=
 				$trans->get_trans_id() ?>">
 			<input type="text" size="10" maxlength="10" name="trans_date"
+			id="trans_date"
 			value="<?= $trans->get_trans_date() ?>"></td>
 		<td>Accounting date:</td>
 		<td><input type="text" size="10" maxlength="10" name="accounting_date"
+			id="accounting_date"
 			value="<?= $trans->get_accounting_date() ?>"></td>
 		<td style="width: 90px;">Check #:</td>
 		<td><input type="text" size="4" maxlength="4" name="check_number"
@@ -637,16 +677,17 @@
 </table>
 		
 <table>
-	<tr>
-		<td style="width: 50px;">&nbsp;</td>
-		<td style="padding-right: 25px;"><input type="submit" name="save" value="Save transaction"></td>
+	<tr class="padded-row">
+		<td style="padding-left: 25px;">&nbsp;</td>
+		<td><input type="submit" name="save" value="Save transaction"></td>
 <?
 	if ($trans->get_trans_id() > -1)
 	{
 		// currently editing; show delete button
-		echo '<td style="padding-right: 25px;"><input type="submit" name="delete" '.
-			"onClick=\"return confirmDelete()\" value=\"Delete transaction\"></td>\n".
-			"<td><input type=\"submit\" value=\"Cancel\" name=\"cancel\"></td>\n";
+		echo '<td><input type="submit" name="delete" id="deleteButton" '.
+			"onClick=\"return confirmDelete()\" value=\"Delete transaction\" /></td>\n".
+			"<td><input type=\"submit\" value=\"Cancel\" name=\"cancel\" id=\"cancelButton\" /></td>\n" .
+			"<td><input type=\"button\" id=\"copyButton\" value=\"Copy\" onclick=\"copyTransaction()\" /></td>\n";
 	}
 ?>
 	</tr>

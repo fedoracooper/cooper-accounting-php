@@ -2,6 +2,11 @@ body {
 	font-size: 11pt;
 }
 
+tr.padded-row td {
+	padding-top: 5px;
+	padding-right: 25px;
+}
+
 input {
 	font-size: 9pt;
 }

@@ -28,9 +28,10 @@ class AccountSavings {
   			// When already drawing from savings, toSave is always 0
   			$this->toSave = 0.0;
   		}
+  		// if toSave is > 0, then subtrace from unspent
+  		$unspent -= $this->toSave;
   	}
-		// if toSave is > 0, then subtrace from unspent
-		$unspent -= $this->toSave;
+  	
     $this->unspent = $unspent;
     
     // Calculate budget %

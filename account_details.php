@@ -333,26 +333,9 @@
 				$accountSavings->setSaved($savingsData[0], true);
 				$accountSavings->savingsName = 'Account ' . $savingsData[1];
 				$accountSavings->savingsParentId = $savingsData[3];
-			}
-
-			if ($doAutoSink) {
-			  // Check for transaction for this parent account
-			  $sinkLedgerEntries = $sinkParentMap["$parentAccountId"];
-			  if ($sinkLedgerEntries == NULL) {
-			    // new ledger entry array
-			    $sinkLedgerEntries = array();
-          
-          // Add dummy zero amount for parent account
-          $sinkLedgerEntries[0] = array(-1, $savingsParentId, 0.0);
-          
-          $sinkParentMap["$parentAccountId"] = $sinkLedgerEntries;
-			  }
-			  
-			  // Add ledger entry
-			  $sinkLedgerEntries[] = array(-1, $savingsId, $toSave);
-			  if (count($sinkLedgerEntries) >= 5) {
-		      $error = insertSinkTransaction($sinkLedgerEntries);
-			  }
+			} else {
+			  // Savings account, but no savings this period
+			  $accountSavings->setSaved(0.0, true);
 			}
 			
 		} else {

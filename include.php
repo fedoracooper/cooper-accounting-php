@@ -23,6 +23,7 @@ date_default_timezone_set('America/New_York');
 
 
 require ('accountClass.php');
+require ('accountSavingsClass.php');
 require ('transactionClass.php');
 require ('loginClass.php');
 require ('productAccountClass.php');
@@ -222,7 +223,7 @@ function get_auto_increment($pdo)
 	//$pdo = db_connect_pdo();
 	$ps = $pdo->prepare($sql);
 	$ps->execute();
-	$row = $ps->fetch(); 
+	$row = $ps->fetch();
 	if ($row != NULL)
 	{
 		// Successful query
@@ -330,6 +331,12 @@ function get_checked($value) {
 	} else {
 		return "";
 	}
+}
+
+
+// Get account details + savings
+function get_account_details_and_savings() {
+  
 }
 
 ?>

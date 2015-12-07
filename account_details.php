@@ -45,6 +45,52 @@
 		
 		return $endDate;
 	}
+	
+	function insertSinkTransaction($ledgerEntries) {
+	  // calculate sink total
+	  $sinkTotal = 0.0;
+	  foreach ($ledgerEntries as $ledgerEntry) {
+	    $sinkTotal += $ledgerEntry[2];  // Amount
+	  }
+	  
+	  // Update first ledger entry (the parent account)
+	  $parentLedger = $ledgerEntries[0];
+	  $parentLedger[2] = ($sinkTotal * -1.0);
+	  
+	  // Build full, final transaction and validate
+	  
+    $sinkTransaction = new Transaction();
+    $error = $sinkTransaction->Init_transaction(
+			$loginId,
+			"EOM auto-sink",
+			$endDate,
+			$endDate,
+			NULL, // Vendor
+			NULL, // Comment
+			NULL, // Check #
+			NULL, // Miles
+			NULL, // Gallons,
+			1, // Transaction status (1= fulfilled)
+			0, // Prior Month flag
+			0, // Exclude Budget flag
+			-1, // transaction ID
+			1,  // repeat count
+			'',		//account display
+			NULL,	//ledger amt
+			-1,		//ledger ID
+			-1,		//audit ID
+			0.0,	//audit balance
+			$ledgerEntries,  // LHS
+			array() // RHS
+    );
+    
+    if ($error == '') {
+  	  // Now save it!
+  	  $error = $transaction->Save_transaction();
+    }
+    
+    return $error;
+	}
 
 	$error = '';
 	$message = '';
@@ -53,6 +99,7 @@
 	// Set budget date to first day of month
 	$startDate = getStartDate();
 	$endDate = getEndDate();
+	$doAutoSink = false;
 	
 	if (isset ($_POST['prev_month']))
 	{
@@ -77,6 +124,10 @@
 // 		$startDate->add($interval);
 // 		$endDate->add($interval);
 	}
+	elseif (isset ($_POST['auto_sink']))
+	{
+    $doAutoSink = true;
+	}
 	
 	// default account comes from DB (top Expense)
 	$account_id = Account::Get_top_account_id($login_id, '1', 'R');
@@ -91,6 +142,7 @@
 		} else {
 			// unchecked active only
 			$activeOnly = false;
+			$sinkParentMap = array();
 		}
 	}
 	
@@ -267,22 +319,9 @@
 	$isSorted = false;
 
 	// First loop:  calculate values and prepare the sort
-	foreach ($account_list as $account_id => &$account_data)
+	foreach ($account_list as $account_id => &$accountSavings)
 	{
-		$accountName = $account_data[0];
-		$balance = $account_data[1];
-		$budget = $account_data[2];
-		$transactions = $account_data[3];
-		$savingsId = $account_data[4];
-		$accountDescr = $account_data[5];
-
-		$saved = 0.0;
-		$toSave = 0.0;
-		$budgetPercent = 0.0;
-		$unspent = 0.0;
-		$savingsName = '';
-
-		if ($savingsId > 0) {
+		if ($accountSavings->savingsId > 0) {
 			// check for savings record for this account
 			$savingsData = null;
 			if (isset($savings_list[$account_id])) {
@@ -291,79 +330,82 @@
 			// This is an expense account with a sinking / savings
 			// account associated.
 			if ($savingsData != null) {
-				$saved = $savingsData[0];
-				$savingsName = 'Account ' . $savingsData[1];
+				$accountSavings->setSaved($savingsData[0], true);
+				$accountSavings->savingsName = 'Account ' . $savingsData[1];
+				$accountSavings->savingsParentId = $savingsData[3];
 			}
-			// unspent will be negative when over budget
-			$unspent = $budget - $transactions - $saved;
-			$toSave = max(0.0, $unspent); // To Save is never negative
-			if ($saved < 0.0) {
-				// When already drawing from savings, toSave is always 0
-				$toSave = 0.0;
+
+			if ($doAutoSink) {
+			  // Check for transaction for this parent account
+			  $sinkLedgerEntries = $sinkParentMap["$parentAccountId"];
+			  if ($sinkLedgerEntries == NULL) {
+			    // new ledger entry array
+			    $sinkLedgerEntries = array();
+          
+          // Add dummy zero amount for parent account
+          $sinkLedgerEntries[0] = array(-1, $savingsParentId, 0.0);
+          
+          $sinkParentMap["$parentAccountId"] = $sinkLedgerEntries;
+			  }
+			  
+			  // Add ledger entry
+			  $sinkLedgerEntries[] = array(-1, $savingsId, $toSave);
+			  if (count($sinkLedgerEntries) >= 5) {
+		      $error = insertSinkTransaction($sinkLedgerEntries);
+			  }
 			}
-			// if toSave is > 0, then subtrace from unspent
-			$unspent -= $toSave;
+			
 		} else {
 			// no savings
-			$unspent = $budget - $transactions;
-			if ($budget != 0.0) {
-				$budgetPercent = $transactions / $budget * 100.0;
-			}
+			$accountSavings->setSaved(0.0, false);
 		}
 
-		// Add the calculated values to the data array
-		$account_data[6] = $saved;
-		$account_data[7] = $toSave;
-		$account_data[8] = $budgetPercent;
-		$account_data[9] = $unspent;
-		$account_data[10] = $savingsName;
-		
 		$sortKey = null;
 		switch ($sortOrder) {
 			case 'account':
 				$sortKey = null;  // default sort
 				break;
 			case 'budget':
-				$sortKey = $budget;
+				$sortKey = $accountSavings->budget;
 				break;
 			case 'balance':
-				$sortKey = $balance;
+				$sortKey = $accountSavings->balance;
 				break;
 			case 'transactions':
-				$sortKey = $transactions;
+				$sortKey = $accountSavings->transactions;
 				break;
 			case 'saved':
-				$sortKey = $saved;
+				$sortKey = $accountSavings->getSaved();
 				break;
 			case 'toSave':
-				$sortKey = $toSave;
+				$sortKey = $accountSavings->getToSave();
 				break;
 			case 'unspent':
-				$sortKey = $unspent;
+				$sortKey = $accountSavings->getUnspent();
 				break;
 			case 'budgetPercent':
-				$sortKey = $budgetPercent;
+				$sortKey = $accountSavings->getBudgetPercent();
 				break;
 		}
 
 		if (!is_null($sortKey)) {
 			// use compound key to avoid duplicates
-			$sortedList[$sortKey . $accountName] = $account_data;
+			$sortedList[$sortKey . $accountSavings->accountName] = $accountSavings;
 			$isSorted = true;
 		}
 		
-		$balanceTotal += $balance;
-		$budgetTotal += $budget;
-		$transactionTotal += $transactions;
-		$unspentTotal += $unspent;
-		$savedTotal += $saved;
-		$toSaveTotal += $toSave;
+		$balanceTotal += $accountSavings->balance;
+		$budgetTotal += $accountSavings->budget;
+		$transactionTotal += $accountSavings->transactions;
+		$unspentTotal += $accountSavings->getUnspent();
+		$savedTotal += $accountSavings->getSaved();
+		$toSaveTotal += $accountSavings->getToSave();
 
 	} // End record loop
 
 	// PHP quirk:  need to unset object reference after foreach,
 	// since we are passing the variable by reference
-	unset($account_data);
+	unset($accountSavings);
 
 
 	if ($isSorted) {
@@ -379,28 +421,18 @@
 
 
 	// Second loop:  display results
-	foreach ($sortedList as $sortedKey => $account_data)
+	foreach ($sortedList as $sortedKey => $accountSavings)
 	{
-		$accountName = $account_data[0];
-		$balance = $account_data[1];
-		$budget = $account_data[2];
-		$transactions = $account_data[3];
-		$savingsId = $account_data[4];
-		$accountDescr = $account_data[5];
-		$saved = $account_data[6];
-		$toSave = $account_data[7];
-		$budgetPercent = $account_data[8];
-		$unspent = $account_data[9];
-		$savingsName = $account_data[10];
-
-		
+	  $unspent = $accountSavings->getUnspent();
+	  $budgetPercent = $accountSavings->getBudgetPercent();
+	  
 		echo "	<tr> \n".
-			"		<td title='$accountDescr'>$accountName</td> \n".
-			"		<td style='text-align: right;'>". format_currency($budget) . "</td> \n".
-			"		<td style='text-align: right;'>". format_currency($transactions) . "</td> \n";
+			"		<td title='$accountSavings->accountDescr'>$accountSavings->accountName</td> \n".
+			"		<td style='text-align: right;'>". format_currency($accountSavings->budget) . "</td> \n".
+			"		<td style='text-align: right;'>". format_currency($accountSavings->transactions) . "</td> \n";
 		if ($showBalance) {
-			echo "		<td style='text-align: right;'>". format_currency($balance) . "</td> \n";
-			if ($budget == null) {
+			echo "		<td style='text-align: right;'>". format_currency($accountSavings->balance) . "</td> \n";
+			if ($accountSavings->budget == null) {
 				// suppress Unspent from asset accounts with no budget
 				$unspent = '';
 				$budgetPercent = '';
@@ -408,8 +440,9 @@
 		}
 		if (!$showBalance) {
 			// RHS / expenses
-			echo "		<td title='$savingsName' style='text-align: right;'>". format_currency($saved) . "</td> \n".
-			"		<td style='text-align: right;'>". format_currency($toSave) . "</td> \n";
+			echo "		<td title='$accountSavings->savingsName' style='text-align: right;'>".
+			  format_currency($accountSavings->getSaved()) . "</td> \n".
+			"		<td style='text-align: right;'>". format_currency($accountSavings->getToSave()) . "</td> \n";
 		}
 		echo	"		<td style='text-align: right;'>". format_currency($unspent) . "</td> \n".
 			"		<td style='text-align: right;'>". format_percent($budgetPercent, 0) . "</td> \n".

@@ -306,7 +306,7 @@ class Account
 		For the full account list, only show active accounts.
 		Otherwise show inactive as well, for editing.
 
-		top2_tiers: when true, this will retrieve a list of the top 2 tiers 
+		top2_tiers: when true, this will retrieve a list of the top 2 tiers
 		of accounts.
 		
 	 * @param int $login_id User's login id; will always filter by this
@@ -410,7 +410,7 @@ class Account
 	}
 
 	
-	/*	This function creates a list of monthly summaries, in descending 
+	/*	This function creates a list of monthly summaries, in descending
 		chronological order, of two selected accounts. Account2 is subracted
 		from account1, with the total being displayed as well.
 
@@ -509,7 +509,7 @@ class Account
 			$ps->bindParam(':account_id', $account_id);
 			$ps->bindParam(':start_date_sql', $start_date_sql);
 			$ps->bindParam(':end_date_sql', $end_date_sql);
-			$success = $ps->execute();			
+			$success = $ps->execute();
 			
 			if (!$success)
 			{
@@ -593,7 +593,7 @@ class Account
 		for each Car expense account that has gas_gallons & gas_miles data.
 
 		returns:
-		//	array (account_name, accounting_year, num_records, total_miles, 
+		//	array (account_name, accounting_year, num_records, total_miles,
 		//		total_gallons, total_dollars)
 	*/
 	public static function Get_gas_totals (&$totals)
@@ -888,14 +888,16 @@ class Account
 		
 		while ($row = $ps->fetch(PDO::FETCH_ASSOC))
 		{
-			// Row:  account_id => (account name, budget amount)
-			$account_list[ $row['account_id'] ] = array(
-					$row['account_name'],
-					$row['balance'],
-					$row['budget'],
-					$row['transaction_sum'],
-					$row['savings_account_id'],
-					$row['account_descr']);
+			// Row:  account_id => AccountSavings object
+			$accountSavings = new AccountSavings();
+			$accountSavings->accountName = $row['account_name'];
+		  $accountSavings->balance = $row['balance'];
+			$accountSavings->budget = $row['budget'];
+			$accountSavings->transactions = $row['transaction_sum'];
+			$accountSavings->savingsId = $row['savings_account_id'];
+			$accountSavings->accountDescr = $row['account_descr'];
+
+			$account_list[ $row['account_id'] ] = $accountSavings;
 		}
 		
 		return '';
@@ -907,7 +909,7 @@ class Account
 	 * to roll up any sub-accounts.  It will get a total balance,
 	 * relevant for assets + liabilities, as well as the budget and
 	 * transaction sum within the specified date range.
-	 * 
+	 *
 	 * <p>Note that min_date is the minimum date for all transactions,
 	 * which should be '0000-00-00' when looking at Assets + Liabilities.</p>
 	 * @param int $parent_account_id
@@ -968,14 +970,16 @@ class Account
 		
 		while ($row = $ps->fetch(PDO::FETCH_ASSOC))
 		{
-			// Row:  account_id => (account name, budget amount)
-			$account_list[ $row['account_id'] ] = array(
-					$row['account_name'],
-					$row['balance'],
-					$row['budget'],
-					$row['transaction_sum'],
-					$row['savings_account_id'],
-					$row['account_descr']);
+		  // Row:  account_id => AccountSavings object
+			$accountSavings = new AccountSavings();
+			$accountSavings->accountName = $row['account_name'];
+		  $accountSavings->balance = $row['balance'];
+			$accountSavings->budget = $row['budget'];
+			$accountSavings->transactions = $row['transaction_sum'];
+			$accountSavings->savingsId = $row['savings_account_id'];
+			$accountSavings->accountDescr = $row['account_descr'];
+
+			$account_list[ $row['account_id'] ] = $accountSavings;
 		}
 		
 		return '';
@@ -990,6 +994,7 @@ class Account
 
 		$sql = 'select a.account_id, ex.account_id as expense_account_id, '.
 		' a.account_name as savings_account_name, '.
+		' a.account_parent_id, '.
 		' sum(ledger_amount * a.account_debit) as savings_total '.
 		'FROM Accounts a '.
 		'INNER JOIN Accounts ex ON ex.savings_account_id = a.account_id '.
@@ -1019,7 +1024,8 @@ class Account
 			$account_list[$row['expense_account_id']] = array(
 				$row['savings_total'],
 				$row['savings_account_name'],
-				$row['account_id']);
+				$row['account_id'],
+				$row['account_parent_id']);
 		}
 
 		return '';
@@ -1030,7 +1036,7 @@ class Account
 			'as account_name '.
 			'FROM Accounts a '.
 			'INNER JOIN Accounts parent ON '.
-			'  parent.account_id = a.account_parent_id '. 
+			'  parent.account_id = a.account_parent_id '.
 			'WHERE a.is_savings = 1 AND a.login_id = :login_id '.
 			'ORDER BY concat(parent.account_name, \':\', a.account_name) ';
 		$pdo = db_connect_pdo();

@@ -1,0 +1,48 @@
+Accounting - enhnacements
+
+1. End of month auto-sinking of accounts
+	a. Make sure we are not over budget for the month
+	b. Go through all Savings accounts, comparing to budget
+		- calculation should work same as Account Details:  To Save
+	c. Automatically create new transactions
+		- Max 4 savings accounts per tx
+		- Group by common parent account
+		- Description:  EOM XXX sink
+		
+		
+2. Provide Priority column for budget items
+
+
+
+Account Details current algorithm
+	2 queries
+		Get_account_details:  total transactions per account / balance per account / budget
+		Get_expense_savings:  Savings account totals (for accounts tied to Expense accounts)
+		
+		
+Fields needed for auto-sinking:
+	toSave, savingsAccountId, savingsAccountParentId
+	toSave = max(0.0, $budget - $transactions - $saved)
+	
+Challenge:  current business logic is inside account_details.php
+	- Current page does two queries
+	- need separate function to build combined data map
+
+Proposal 1
+  - use existing account_details code & HTML
+  - integration INSERT logic into existing for loop
+  - need to aggregate Sinking accounts based on parent account ID
+      sinkMap:  parent -> transaction
+        - the transaction will start out w/ 2 ledger entries
+          - we will insert the transaction when it has 5 ledger entries or @ end of loop
+  - problem:  nowhere to put error text, since header HTML has already been generated
+
+Proposal 2
+  - go to new, read-only UI / status page
+    - that means posting to a different PHP page
+    - logic for building of data has to either be duplicated or extracted
+  - reusable code would do the following
+    - execute 2 SQL queries
+    - build Object graph by the combination, via a for loop
+      - this graph does not exist today, except temporarily
+    - The new page would only need minimal data for calculations

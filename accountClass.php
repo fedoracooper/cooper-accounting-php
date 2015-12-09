@@ -995,14 +995,17 @@ class Account
 		$sql = 'select a.account_id, ex.account_id as expense_account_id, '.
 		' a.account_name as savings_account_name, '.
 		' a.account_parent_id, '.
-		' sum(ledger_amount * a.account_debit) as savings_total '.
+		' sum(IFNULL(le.ledger_amount, 0.0) * a.account_debit) as savings_total '.
 		'FROM Accounts a '.
 		'INNER JOIN Accounts ex ON ex.savings_account_id = a.account_id '.
-		'INNER JOIN LedgerEntries le ON le.account_id = a.account_id '.
-		'INNER JOIN Transactions t ON t.trans_id = le.trans_id '.
-		'WHERE budget_date >= :min_date '.
-		'  and budget_date <= :max_date and a.login_id = :login_id  '.
-		'  and exclude_from_budget = 0 '.
+		'LEFT JOIN Transactions t ON t.trans_id IN '.
+		'  (SELECT le1.trans_id FROM LedgerEntries le1 WHERE le1.account_id = a.account_id) '.
+		'  and t.budget_date >= :min_date '.
+		'  and t.budget_date <= :max_date '.
+		'  and t.exclude_from_budget = 0 '.
+		'LEFT JOIN LedgerEntries le ON t.trans_id = le.trans_id '.
+		'  and le.account_id = a.account_id '.
+		'WHERE a.login_id = :login_id  '.
 		'GROUP BY a.account_id, a.account_name, ex.account_id ';
 		
 		$pdo = db_connect_pdo();

@@ -130,6 +130,10 @@
 				$accountSavings->savingsParentId = $savingsData[3];
 				$savingsParentId = $savingsData[3];
 				
+				if ($accountSavings->getToSave() < 0.0001) {
+				  // Nothing to save, so skip it
+				  continue;
+				}
 				$sinkTransaction = null;
 	      // Check for transaction for this parent account
 	      if (isset($sinkParentMap[$savingsParentId])) {
@@ -168,12 +172,18 @@
 
   } // End record loop
   
-  $message = "Found $savingsCount savings accounts and $fullSavingsCount full savings accounts";
-  
+  $message = "Found $savingsCount savings accounts and $fullSavingsCount full savings accounts.";
+  $nullCount = 0;
   // Add transactions from the Parent Map (< 5 ledger entries)
   foreach ($sinkParentMap as $parentAccountId => $sinkTransaction) {
-    $transactions[] = $sinkTransaction;
+    if ($sinkTransaction == null) {
+      $nullCount++;
+    } else {
+      $transactions[] = $sinkTransaction;
+    }
   }
+  
+  $message .= "Found $nullCount null transactions.";
   
   if ($doAutoSink == '1') {
     $count = 0;

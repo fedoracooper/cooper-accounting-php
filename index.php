@@ -158,7 +158,7 @@
 		if (isset($_POST['exclude_budget'])) {
 			$excludeBudget = 1;
 		}
-		$error = $trans->Init_transaction (
+		$trans->Init_transaction (
 			$_SESSION['login_id'],
 			$_POST['trans_descr'],
 			$_POST['trans_date'],
@@ -181,6 +181,7 @@
 			$ledgerL_list,
 			$ledgerR_list
 		);
+		$error = $trans->Validate();
 
 		if ($error == '')
 		{

@@ -7,7 +7,7 @@
 //------------------------------------------------------------------------------
 // As with accounts, maintain all member variables with slashes added.
 class Transaction
-{	
+{
 	private	$m_trans_id			= -1;	//hidden form var
 	private $m_ledger_id		= -1;	//For each transaction sub-item
 	private $m_audit_id			= -1;	//If the ledger item was audited
@@ -35,6 +35,7 @@ class Transaction
 	private $m_ledgerR_list		= array();
 	private $m_prior_month		= 0;
 	private $m_exclude_budget	= 0;
+	private $m_account_savings = array();
 
 
 	function __construct ()
@@ -85,7 +86,7 @@ class Transaction
 			return $this->m_accounting_str;
 		}
 		else
-		{		
+		{
 			if ($short)
 				// cut off last 2 digits of year
 				return date ('m/d/y', $this->m_accounting_time);
@@ -226,11 +227,17 @@ class Transaction
 	public function get_audit_balance() {
 		return $this->m_audit_balance;
 	}
-	public function get_ledgerL_list() {
+	public function &get_ledgerL_list() {
 		return $this->m_ledgerL_list;
 	}
 	public function get_ledgerR_list() {
 		return $this->m_ledgerR_list;
+	}
+	public function set_account_savings($account_savings) {
+	  $this->m_account_savings = $account_savings;
+	}
+	public function &get_account_savings() {
+	  return $this->m_account_savings;
 	}
 
 
@@ -311,9 +318,11 @@ class Transaction
 		$this->m_audit_balance		= $audit_balance;
 		$this->m_ledgerL_list		= $ledgerL_list;
 		$this->m_ledgerR_list		= $ledgerR_list;
+		
+  }
 
 
-		// VALIDATE
+  public function Validate() {
 		$error = '';
 
 		$ledger_total = 0.0;	//total of LHS & RHS; must equal 0
@@ -959,7 +968,7 @@ class Transaction
 			" a2.account_name as account2_name, ".
 			" a2.account_id as a2_account_id, a.account_id, ".
 			" t.budget_date, t.exclude_from_budget, ".
-			"  (ledger_amount * a.account_debit * :account_debit) as amount \n". 
+			"  (ledger_amount * a.account_debit * :account_debit) as amount \n".
 			"FROM Transactions t \n".
 			"inner join LedgerEntries le on ".
 			"	le.trans_id = t.trans_id ".
@@ -1102,7 +1111,7 @@ class Transaction
 	}
 
 	// Queries the total account balance based on the accounting date
-	// and transaction id (when transactions occur on the same date, 
+	// and transaction id (when transactions occur on the same date,
 	// the lower transaction id is displayed first).
 	// The dates refer to accounting dates, assuming we are comparing them
 	// to transaction dates.; min_date can be null, in which

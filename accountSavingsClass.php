@@ -56,6 +56,13 @@ class AccountSavings {
   public function getBudgetPercent() {
     return $this->budgetPercent;
   }
+}  // End AccountSavings
+
+
+//
+class AccountSavingsTransaction {
+  
+  
 }
 
 ?>

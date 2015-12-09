@@ -46,3 +46,17 @@ Proposal 2
     - build Object graph by the combination, via a for loop
       - this graph does not exist today, except temporarily
     - The new page would only need minimal data for calculations
+
+Objects
+  AccountSavings
+    -> aggregated into LedgerEntry arrays
+    - need another class:
+    Transaction:  contains several AccountSavings
+    AccountSavingsTransaction
+      accountSavings
+      array of LedgerEntries
+
+  Transaction
+    - many Ledger Entries
+      Ledger Entry:  basic array of arrays - only used for DB insertion
+      Array of AccountSavings - full details

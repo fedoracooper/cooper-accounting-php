@@ -45,52 +45,7 @@
 		
 		return $endDate;
 	}
-	
-	function insertSinkTransaction($ledgerEntries) {
-	  // calculate sink total
-	  $sinkTotal = 0.0;
-	  foreach ($ledgerEntries as $ledgerEntry) {
-	    $sinkTotal += $ledgerEntry[2];  // Amount
-	  }
-	  
-	  // Update first ledger entry (the parent account)
-	  $parentLedger = $ledgerEntries[0];
-	  $parentLedger[2] = ($sinkTotal * -1.0);
-	  
-	  // Build full, final transaction and validate
-	  
-    $sinkTransaction = new Transaction();
-    $error = $sinkTransaction->Init_transaction(
-			$loginId,
-			"EOM auto-sink",
-			$endDate,
-			$endDate,
-			NULL, // Vendor
-			NULL, // Comment
-			NULL, // Check #
-			NULL, // Miles
-			NULL, // Gallons,
-			1, // Transaction status (1= fulfilled)
-			0, // Prior Month flag
-			0, // Exclude Budget flag
-			-1, // transaction ID
-			1,  // repeat count
-			'',		//account display
-			NULL,	//ledger amt
-			-1,		//ledger ID
-			-1,		//audit ID
-			0.0,	//audit balance
-			$ledgerEntries,  // LHS
-			array() // RHS
-    );
-    
-    if ($error == '') {
-  	  // Now save it!
-  	  $error = $transaction->Save_transaction();
-    }
-    
-    return $error;
-	}
+
 
 	$error = '';
 	$message = '';
@@ -124,11 +79,7 @@
 // 		$startDate->add($interval);
 // 		$endDate->add($interval);
 	}
-	elseif (isset ($_POST['auto_sink']))
-	{
-    $doAutoSink = true;
-	}
-	
+
 	// default account comes from DB (top Expense)
 	$account_id = Account::Get_top_account_id($login_id, '1', 'R');
 	$activeOnly = true;
@@ -145,6 +96,8 @@
 			$sinkParentMap = array();
 		}
 	}
+	
+	$searchAccountId = $account_id;
 	
 	// Get full account details from DB
 	$account = new Account();
@@ -212,6 +165,104 @@
 	if (isset($_POST['sortDirection'])) {
 		$sortDirection = $_POST['sortDirection'];
 	}
+	
+	
+	
+	$balanceTotal = 0.0;
+	$budgetTotal = 0.0;
+	$transactionTotal = 0.0;
+	$unspentTotal = 0.0;
+	$savedTotal = 0.0;
+	$toSaveTotal = 0.0;
+
+	$isSorted = false;
+
+	// First loop:  calculate values and prepare the sort
+	foreach ($account_list as $account_id => $accountSavings)
+	{
+		if ($accountSavings->savingsId > 0) {
+			// check for savings record for this account
+			$savingsData = null;
+			if (isset($savings_list[$account_id])) {
+				$savingsData = $savings_list[$account_id];
+			}
+			// This is an expense account with a sinking / savings
+			// account associated.
+			if ($savingsData != null) {
+				$accountSavings->setSaved($savingsData[0], true);
+				$accountSavings->savingsName = 'Account ' . $savingsData[1];
+				$accountSavings->savingsParentId = $savingsData[3];
+			} else {
+			  // Savings account, but no savings this period
+			  $accountSavings->setSaved(0.0, true);
+			}
+			
+		} else {
+			// no savings
+			$accountSavings->setSaved(0.0, false);
+		}
+		
+		$balanceTotal += $accountSavings->balance;
+		$budgetTotal += $accountSavings->budget;
+		$transactionTotal += $accountSavings->transactions;
+		$unspentTotal += $accountSavings->getUnspent();
+		$savedTotal += $accountSavings->getSaved();
+		$toSaveTotal += $accountSavings->getToSave();
+
+
+		$sortKey = null;
+		switch ($sortOrder) {
+			case 'account':
+				$sortKey = null;  // default sort
+				break;
+			case 'budget':
+				$sortKey = $accountSavings->budget;
+				break;
+			case 'balance':
+				$sortKey = $accountSavings->balance;
+				break;
+			case 'transactions':
+				$sortKey = $accountSavings->transactions;
+				break;
+			case 'saved':
+				$sortKey = $accountSavings->getSaved();
+				break;
+			case 'toSave':
+				$sortKey = $accountSavings->getToSave();
+				break;
+			case 'unspent':
+				$sortKey = $accountSavings->getUnspent();
+				break;
+			case 'budgetPercent':
+				$sortKey = $accountSavings->getBudgetPercent();
+				break;
+		}
+
+		if (!is_null($sortKey)) {
+			// use compound key to avoid duplicates
+			$sortedList[$sortKey . $accountSavings->accountName] = $accountSavings;
+			$isSorted = true;
+		}
+		
+	} // End record loop
+
+	// PHP quirk:  need to unset object reference after foreach,
+	// since we are passing the variable by reference
+	unset($accountSavings);
+
+
+	if ($isSorted) {
+		if ($sortDirection == 0) {
+			// sort the array backwards (descending order)
+			krsort($sortedList, SORT_NUMERIC);
+		} else {
+			ksort($sortedList, SORT_NUMERIC);
+		}
+	} else {
+		$sortedList = &$account_list;
+	}
+
+
 ?>
 
 <html>
@@ -309,99 +360,6 @@
 	</tr>
 
 <?php
-	$balanceTotal = 0.0;
-	$budgetTotal = 0.0;
-	$transactionTotal = 0.0;
-	$unspentTotal = 0.0;
-	$savedTotal = 0.0;
-	$toSaveTotal = 0.0;
-
-	$isSorted = false;
-
-	// First loop:  calculate values and prepare the sort
-	foreach ($account_list as $account_id => &$accountSavings)
-	{
-		if ($accountSavings->savingsId > 0) {
-			// check for savings record for this account
-			$savingsData = null;
-			if (isset($savings_list[$account_id])) {
-				$savingsData = $savings_list[$account_id];
-			}
-			// This is an expense account with a sinking / savings
-			// account associated.
-			if ($savingsData != null) {
-				$accountSavings->setSaved($savingsData[0], true);
-				$accountSavings->savingsName = 'Account ' . $savingsData[1];
-				$accountSavings->savingsParentId = $savingsData[3];
-			} else {
-			  // Savings account, but no savings this period
-			  $accountSavings->setSaved(0.0, true);
-			}
-			
-		} else {
-			// no savings
-			$accountSavings->setSaved(0.0, false);
-		}
-
-		$sortKey = null;
-		switch ($sortOrder) {
-			case 'account':
-				$sortKey = null;  // default sort
-				break;
-			case 'budget':
-				$sortKey = $accountSavings->budget;
-				break;
-			case 'balance':
-				$sortKey = $accountSavings->balance;
-				break;
-			case 'transactions':
-				$sortKey = $accountSavings->transactions;
-				break;
-			case 'saved':
-				$sortKey = $accountSavings->getSaved();
-				break;
-			case 'toSave':
-				$sortKey = $accountSavings->getToSave();
-				break;
-			case 'unspent':
-				$sortKey = $accountSavings->getUnspent();
-				break;
-			case 'budgetPercent':
-				$sortKey = $accountSavings->getBudgetPercent();
-				break;
-		}
-
-		if (!is_null($sortKey)) {
-			// use compound key to avoid duplicates
-			$sortedList[$sortKey . $accountSavings->accountName] = $accountSavings;
-			$isSorted = true;
-		}
-		
-		$balanceTotal += $accountSavings->balance;
-		$budgetTotal += $accountSavings->budget;
-		$transactionTotal += $accountSavings->transactions;
-		$unspentTotal += $accountSavings->getUnspent();
-		$savedTotal += $accountSavings->getSaved();
-		$toSaveTotal += $accountSavings->getToSave();
-
-	} // End record loop
-
-	// PHP quirk:  need to unset object reference after foreach,
-	// since we are passing the variable by reference
-	unset($accountSavings);
-
-
-	if ($isSorted) {
-		if ($sortDirection == 0) {
-			// sort the array backwards (descending order)
-			krsort($sortedList, SORT_NUMERIC);
-		} else {
-			ksort($sortedList, SORT_NUMERIC);
-		}
-	} else {
-		$sortedList = &$account_list;
-	}
-
 
 	// Second loop:  display results
 	foreach ($sortedList as $sortedKey => $accountSavings)
@@ -456,10 +414,11 @@
 	}
 	echo "		<td style='text-align: right; font-weight: bold;'>$unspentTotalString</td> \n".
 		"	</tr> \n\n" ;
-
-?>
 		
-</table>
+	echo "</table>";
+  echo "<a href=\"auto_sink.php?account_id=$searchAccountId&start_date=$startDateText".
+    "&end_date=$endDateText\">Auto Sink Accounts</a>";
+?>
 
 </body>
 </html>

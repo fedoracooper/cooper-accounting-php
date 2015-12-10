@@ -87,7 +87,7 @@ Income - Sinking Withrawals = Expenses + Sinking Contributions
 
 		Aggregate statistics (budget vs. actual):
 			Total income + Total savings draw
-			- Total expenses - Total sinking - should be $0 
+			- Total expenses - Total sinking - should be $0
 
 
 Login
@@ -122,7 +122,7 @@ LedgerEntries
 
 Accounts
 	account_id		PK	smallint
-	login_id		FK	tinyint		
+	login_id		FK	tinyint
 	account_parent_id	FK(nl)	smallint	link to own table for parent accounts
 	account_name			varchar(25)
 	account_descr			varchar(50)
@@ -149,11 +149,11 @@ create table Budget (
 	budget_month date not null,
 	budget_amount decimal(8,2) not null,
 	updated_time timestamp not null default current_timestamp on update current_timestamp,
-	constraint unique index budget_uk (account_id, budget_month) 
+	constraint unique index budget_uk (account_id, budget_month)
 );
 
 alter table Accounts
-add updated_time timestamp on update current_timestamp; 
+add updated_time timestamp on update current_timestamp;
 
 alter table Accounts
 modify monthly_budget_default decimal(8,2) not null default 0;
@@ -170,18 +170,18 @@ SELECT a.account_id, a.account_name, a.monthly_budget, b.budget_amount, case a.a
 
 
 
-SELECT ifnull(a2.account_id, a.account_id) as account_id, 
-  sum( a.monthly_budget_default ) + 
- min(ifnull(a2.monthly_budget_default, 0.0)) as monthly_budget, 
- min( ifnull( a2.account_name, a.account_name ) ) as name 
-FROM Accounts a 
-LEFT JOIN Accounts a2 ON a.account_parent_id = a2.account_id 
+SELECT ifnull(a2.account_id, a.account_id) as account_id,
+  sum( a.monthly_budget_default ) +
+ min(ifnull(a2.monthly_budget_default, 0.0)) as monthly_budget,
+ min( ifnull( a2.account_name, a.account_name ) ) as name
+FROM Accounts a
+LEFT JOIN Accounts a2 ON a.account_parent_id = a2.account_id
  AND a2.account_id <> 14
 WHERE (a.account_parent_id = 14
   OR a2.account_parent_id = 14
-  OR a.account_id = 14) 
-  AND a.active = 1 
-GROUP BY ifnull(a2.account_id, a.account_id) 
+  OR a.account_id = 14)
+  AND a.active = 1
+GROUP BY ifnull(a2.account_id, a.account_id)
 ORDER BY monthly_budget DESC, name
 
 select parent.account_id,
@@ -213,7 +213,7 @@ group by parent.account_id, parent.account_name, pb.budget_amount
 
 UNION ALL
 
-select a.account_id, b.budget_amount as budget, 
+select a.account_id, b.budget_amount as budget,
 concat(account_name, ' (top)') as account_name, 1 as is_parent
 from Accounts a
 inner join Budget b ON b.account_id = a.account_id
@@ -356,6 +356,27 @@ Utilities
 
 QUERIES
 
+Expense Savings Query:
+
+select a.account_id, ex.account_id as expense_account_id,
+a.account_name as savings_account_name,
+a.account_parent_id, ap.account_name as parent_name,
+sum(IFNULL(tle.ledger_amount, 0.0) * a.account_debit) as savings_total
+FROM Accounts a
+INNER JOIN Accounts ex ON ex.savings_account_id = a.account_id
+INNER JOIN Accounts ap ON ap.account_id = a.account_parent_id
+LEFT JOIN (select le.ledger_amount, le.account_id, t.budget_date, t.exclude_from_budget
+  from Transactions t
+  JOIN LedgerEntries le ON le.trans_id = t.trans_id) as tle
+  ON tle.account_id = a.account_id
+ and tle.budget_date >= '2015-11-01'
+ and tle.budget_date <= '2015-11-30'
+ and tle.exclude_from_budget = 0
+WHERE a.login_id = 1
+GROUP BY a.account_id, a.account_name, ex.account_id
+ORDER BY a.account_parent_id, a.account_name;
+
+
 List of accounts
 
 	select coalesce(a3.account_name + ':', '')
@@ -422,61 +443,4 @@ Monthly Total
 	where (a.account_id = Y or
 	  a2.account_id = Y or a2.account_parent_id = Y) and
 	  t.accounting_date >= W and
-	  (t.accounting_date < X or
-	   t.accounting_date = X and t.trans_id <= Z)
-
-ACCOUNTS
-
-Assets (debit)
-  Checking (Citizens)
-  Brokerage (E*Trade)
-  Prepaid insurance
-  Prepaid Ascent expenses
-  Prepaid rent
-  Paypal
-
-Liabilities (credit)
-  Discover
-  Chase Mastercard
-  Best Buy card
-
-Income (credit)
-  Ascent
-  Gifts
-  Independent jobs
-
-Expenses (debit)
-  Taxes
-    Federal Income
-    State Income
-    Local Income
-    Social Security
-    SUI
-  Cars
-    Elise Gas
-    Civic Gas
-    Elise maintenance
-    Civic maintenance
-  Bills
-    Gas
-    Electric
-    Sewage
-    Water
-    Phone/DSL
-    Cable
-    Dental insurance
-    Optical insurance
-    Health insurance
-  Groceries
-  Dining
-  Software
-    Music
-    Movies
-    Computer
-  Electronics
-    Computer
-    Audio/Video
-  Household
-  Travel
-  Cash expenditures
-  Miscellaneous
+	  (t.accounting_dat

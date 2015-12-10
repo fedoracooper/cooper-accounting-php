@@ -334,9 +334,4 @@ function get_checked($value) {
 }
 
 
-// Get account details + savings
-function get_account_details_and_savings() {
-  
-}
-
 ?>

@@ -15,6 +15,7 @@ class AccountSavings {
 	private $unspent = 0.0;
 	public $savingsName = '';
 	public $savingsParentId = -1;
+	public $parentName = '';
 	
 	// After setting the Saved amount for the account, we calculate unspent and toSave.
 	public function setSaved($saved, $setToSave) {
@@ -28,7 +29,7 @@ class AccountSavings {
   			// When already drawing from savings, toSave is always 0
   			$this->toSave = 0.0;
   		}
-  		// if toSave is > 0, then subtrace from unspent
+  		// if toSave is > 0, then subtract from unspent
   		$unspent -= $this->toSave;
   	}
   	

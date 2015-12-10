@@ -319,6 +319,16 @@ class Transaction
 		$this->m_ledgerL_list		= $ledgerL_list;
 		$this->m_ledgerR_list		= $ledgerR_list;
 		
+		
+		if ($trans_time == -1) {
+			$error = 'Transaction Date is invalid';
+			$this->m_trans_str = $trans_date;
+			$this->m_accounting_str = $accounting_date;
+		}
+		elseif ($accounting_time == -1) {
+			$error = 'Accounting Date is invalid';
+			$this->m_accounting_str = $accounting_date;
+		}
   }
 
 
@@ -326,7 +336,7 @@ class Transaction
 		$error = '';
 
 		$ledger_total = 0.0;	//total of LHS & RHS; must equal 0
-		$ledger_list = array_merge ($ledgerL_list, $ledgerR_list);
+		$ledger_list = array_merge ($this->m_ledgerL_list, $this->m_ledgerR_list);
 		// 0=ledger_id, 1=account_id/account_debit, 2=amount
 		foreach ($ledger_list as $ledger_data)
 		{
@@ -365,37 +375,50 @@ class Transaction
 		if (abs ($ledger_total) > .001)
 			$error = "Transaction must total to zero; it currently totals \$".
 				round($ledger_total, 3);
-		elseif (trim ($trans_descr) == '')
+		elseif (trim ($this->m_trans_descr) == '')
 			$error = 'You must enter a description of the transaction';
-		elseif ($trans_time == -1) {
-			$error = 'Transaction Date is invalid';
-			$this->m_trans_str = $trans_date;
-			$this->m_accounting_str = $accounting_date;
-		}
-		elseif ($accounting_time == -1) {
-			$error = 'Accounting Date is invalid';
-			$this->m_accounting_str = $accounting_date;
-		}
-		elseif (!is_numeric ($repeat_count)) {
+		elseif (!is_numeric ($this->m_repeat_count)) {
 			// Any non-numeric value is changed to 1
 			$this->m_repeat_count = 1;
 		}
-		elseif ($check_number != '' && !is_numeric ($check_number)) {
+		elseif ($this->m_check_number != '' && !is_numeric ($this->m_check_number)) {
 			$error = 'Check number is not a whole number';
 		}
-		elseif ($gas_miles != '' && !is_numeric ($this->get_gas_miles(false))) {
+		elseif ($this->m_gas_miles != '' && !is_numeric ($this->get_gas_miles(false))) {
 			$error = 'Gas mileage is not a number';
 		}
-		elseif ($gas_gallons != '' && !is_numeric ($gas_gallons)) {
+		elseif ($this->m_gas_gallons != '' && !is_numeric ($this->m_gas_gallons)) {
 			$error = 'Gallons are not numeric';
 		}
 		// 12/4/2004 change:  can have just 1 entry with zero value
 		elseif (count ($ledger_list) < 1)
 			$error = 'You must have at least one ledger entry to save';
+		elseif ($this->m_trans_time == -1) {
+			$error = 'Transaction Date is invalid';
+		}
+		elseif ($this->m_accounting_time == -1) {
+			$error = 'Accounting Date is invalid';
+		}
 		
 
 		return $error;
 	}
+	
+	
+	// When auto sinking, calculate the ledger entry amount of the
+	// parent account, which will be the first ledger entry.
+	public function Calculate_sinking_total() {
+	  
+	  $total = 0.0;
+	  foreach ($this->m_ledgerL_list as $ledgerEntry) {
+	    $total -= $ledgerEntry[2];
+	  }
+	  
+	  // Set total in the first entry
+	  $this->m_ledgerL_list[0][2] = $total;
+	}
+	
+	
 
 	// Add slashes to all string fields
 	public function Load_transaction ($trans_id)

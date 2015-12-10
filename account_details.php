@@ -369,10 +369,10 @@
 	  
 		echo "	<tr> \n".
 			"		<td title='$accountSavings->accountDescr'>$accountSavings->accountName</td> \n".
-			"		<td style='text-align: right;'>". format_currency($accountSavings->budget) . "</td> \n".
-			"		<td style='text-align: right;'>". format_currency($accountSavings->transactions) . "</td> \n";
+			"		<td class='numeric'>". format_currency($accountSavings->budget) . "</td> \n".
+			"		<td class='numeric'>". format_currency($accountSavings->transactions) . "</td> \n";
 		if ($showBalance) {
-			echo "		<td style='text-align: right;'>". format_currency($accountSavings->balance) . "</td> \n";
+			echo "		<td class='numeric'>". format_currency($accountSavings->balance) . "</td> \n";
 			if ($accountSavings->budget == null) {
 				// suppress Unspent from asset accounts with no budget
 				$unspent = '';
@@ -383,10 +383,10 @@
 			// RHS / expenses
 			echo "		<td title='$accountSavings->savingsName' style='text-align: right;'>".
 			  format_currency($accountSavings->getSaved()) . "</td> \n".
-			"		<td style='text-align: right;'>". format_currency($accountSavings->getToSave()) . "</td> \n";
+			"		<td class='numeric'>". format_currency($accountSavings->getToSave()) . "</td> \n";
 		}
-		echo	"		<td style='text-align: right;'>". format_currency($unspent) . "</td> \n".
-			"		<td style='text-align: right;'>". format_percent($budgetPercent, 0) . "</td> \n".
+		echo	"		<td class='numeric'>". format_currency($unspent) . "</td> \n".
+			"		<td class='numeric'>". format_percent($budgetPercent, 0) . "</td> \n".
 			"	</tr> \n";
 	}	// End budget loop
 
@@ -403,22 +403,29 @@
 		"	</tr> \n\n".
 		"	<tr> \n".
 		"		<td>Total</td> \n".
-		"		<td style='text-align: right; font-weight: bold;'>$budgetTotalString</td> \n".
-		"		<td style='text-align: right; font-weight: bold;'>$transactionTotalString</td> \n";
+		"		<td class='total'>$budgetTotalString</td> \n".
+		"		<td class='total'>$transactionTotalString</td> \n";
 	if ($showBalance) {
-		echo "		<td style='text-align: right; font-weight: bold;'>$balanceTotalString</td> \n";
+		echo "		<td class='total'>$balanceTotalString</td> \n";
 	}
 	if (!$showBalance) {
-		echo "		<td style='text-align: right; font-weight: bold;'>$savedTotalString</td> \n".
-		"		<td style='text-align: right; font-weight: bold;'>$toSaveTotalString</td> \n";
+		echo "		<td class='total'>$savedTotalString</td> \n".
+		"		<td class='total'>$toSaveTotalString</td> \n";
 	}
-	echo "		<td style='text-align: right; font-weight: bold;'>$unspentTotalString</td> \n".
+	echo "		<td class='total'>$unspentTotalString</td> \n".
 		"	</tr> \n\n" ;
 		
-	echo "</table>";
-  echo "<a href=\"auto_sink.php?account_id=$searchAccountId&start_date=$startDateText".
-    "&end_date=$endDateText\">Auto Sink Accounts</a>";
 ?>
+</table>
+
+<div class="bottom">
+  <form action='auto_sink.php' method='POST'>
+    <input type='hidden' name='account_id' value='<?= $searchAccountId ?>' />
+    <input type='hidden' name='start_date' value='<?= $startDateText ?>' />
+    <input type='hidden' name='end_date' value='<?= $endDateText ?>' />
+    <input type='submit' name='goSink' value='End of Month - Auto Sink Accounts' />
+  </form>
+</div>
 
 </body>
 </html>

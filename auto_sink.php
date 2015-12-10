@@ -30,7 +30,7 @@
 			"EOM auto-sink",
 			$txDateString,
 			$txDateString,
-			NULL, // Vendor
+			'', // Vendor
 			NULL, // Comment
 			NULL, // Check #
 			NULL, // Miles
@@ -52,38 +52,19 @@
     return $sinkTransaction;
 	}
 
-  function insertSinkTransaction($ledgerEntries) {
-	  // calculate sink total
-	  $sinkTotal = 0.0;
-	  foreach ($ledgerEntries as $ledgerEntry) {
-	    $sinkTotal += $ledgerEntry[2];  // Amount
-	  }
-	  
-	  // Update first ledger entry (the parent account)
-	  $parentLedger = $ledgerEntries[0];
-	  $parentLedger[2] = ($sinkTotal * -1.0);
-	  
-	  // Build full, final transaction and validate
-	  
-    
-    if ($error == '') {
-  	  // Now save it!
-  	  $error = $transaction->Save_transaction();
-    }
-    
-    return $error;
-	}
-	
-	// Get GET params
-	$account_id = $_GET['account_id'];
-	$startDate = new DateTime($_GET['start_date']);
-	$endDate = new DateTime($_GET['end_date']);
+
+	// Get POST params
+	$account_id = $_POST['account_id'];
+	$startDate = new DateTime($_POST['start_date']);
+	$startDateText = $startDate->format(DISPLAY_DATE);
+	$endDate = new DateTime($_POST['end_date']);
+  $endDateText = $endDate->format(DISPLAY_DATE);
 	$minDate = $startDate;
 	$activeOnly = 1;
 	$account_list = array();
 	$doAutoSink = null;
-	if (isset($_GET['doAutoSink'])) {
-  	$doAutoSink = ($_GET['doAutoSink'] == '1');
+	if (isset($_POST['doAutoSink'])) {
+  	$doAutoSink = ($_POST['doAutoSink'] == '1');
 	}
 	
 	// Perform SQL queries
@@ -112,16 +93,13 @@
   $transactions = array();
   
   $savingsCount = 0;
-  $fullSavingsCount = 0;
-	foreach ($account_list as $account_id => $accountSavings)
+	foreach ($account_list as $expense_account_id => $accountSavings)
 	{
 		if ($accountSavings->savingsId > 0) {
 			// check for savings record for this account
-			$savingsCount++;
 			$savingsData = null;
-			if (isset($savings_list[$account_id])) {
-			  $fullSavingsCount++;
-				$savingsData = $savings_list[$account_id];
+			if (isset($savings_list[$expense_account_id])) {
+				$savingsData = $savings_list[$expense_account_id];
 
   			// This is an expense account with a sinking / savings
   			// account associated.
@@ -129,11 +107,14 @@
 				$accountSavings->savingsName = $savingsData[1];
 				$accountSavings->savingsParentId = $savingsData[3];
 				$savingsParentId = $savingsData[3];
+				$accountSavings->parentName = $savingsData[4];
 				
 				if ($accountSavings->getToSave() < 0.0001) {
 				  // Nothing to save, so skip it
 				  continue;
 				}
+				
+  			$savingsCount++;
 				$sinkTransaction = null;
 	      // Check for transaction for this parent account
 	      if (isset($sinkParentMap[$savingsParentId])) {
@@ -172,7 +153,6 @@
 
   } // End record loop
   
-  $message = "Found $savingsCount savings accounts and $fullSavingsCount full savings accounts.";
   $nullCount = 0;
   // Add transactions from the Parent Map (< 5 ledger entries)
   foreach ($sinkParentMap as $parentAccountId => $sinkTransaction) {
@@ -182,22 +162,36 @@
       $transactions[] = $sinkTransaction;
     }
   }
+
+  if ($nullCount > 0) {
+    $message .= "Found $nullCount null transactions.";
+  }
   
-  $message .= "Found $nullCount null transactions.";
+  $message = "Found $savingsCount savings account(s) for sinking across ".
+    count($transactions) . ' transaction(s).';
+
   
-  if ($doAutoSink == '1') {
-    $count = 0;
-    foreach ($transactions as $transaction) {
-      $error = insertSinkTransaction($transaction);
+  $count = 0;
+  // Final loop:  set Sinking Total and Validate.  Insert if needed.
+  foreach ($transactions as $transaction) {
+    $transaction->Calculate_sinking_total();
+    $error = $transaction->Validate();
+    if ($error != '') {
+      break;
+    }
+
+    if ($doAutoSink == '1') {
+      $error = $transaction->Save_repeat_transactions();
       if ($error != '') {
         break;
       }
       $count++;
     }
-    
-    $message = "Successfully inserted $count transactions.";
   }
   
+  if ($count > 0) {
+    $message = "Successfully inserted $count transaction(s).";
+  }
 ?>
 
 
@@ -218,10 +212,6 @@
 <span class="error"><?= $error ?></span>
 <span class="message"><?= $message ?></span>
 
-<form action="auto_sink.php" method="GET" id="autoSink">
-
-</form>
-
 <p>Savings Accounts for Sinking</p>
 <table class="budget-list">
   <th>Savings Account</th>
@@ -230,37 +220,57 @@
   <th>Transactions</th>
   <th>Saved</th>
   <th>To Save</th>
-  <th>Unspent</th>
-
 
 
 <?php
   foreach ($transactions as $transaction) {
       $accountSavingsList = $transaction->get_account_savings();
       // Header row:  Parent account
-      echo "  <tr><td>Account ID ". $transaction->get_ledgerL_list()[0][1] . "</td>".
-      "   <td>Parent Savings</td>".
-      "   <td></td>".
-      "   <td></td>".
-      "   <td></td>".
-      "   <td></td>".
-      "   <td></td>".
-      " </tr>";
+      echo '  <tr><td style="font-weight: bold;">Parent: '. $accountSavingsList[0]->parentName . "</td>\n".
+      "   <td></td>\n".
+      "   <td></td>\n".
+      "   <td></td>\n".
+      "   <td></td>\n".
+      "   <td class='numeric' style='font-weight: bold;'>".
+          format_currency($transaction->get_ledgerL_list()[0][2]) . "</td>\n".
+      " </tr>\n";
       
       foreach ($accountSavingsList as $accountSavings) {
         echo "  <tr><td>". $accountSavings->savingsName . "</td>".
         "   <td>$accountSavings->accountName</td>".
-        "   <td>$accountSavings->budget</td>".
-        "   <td>$accountSavings->transactions</td>".
-        "   <td>" . $accountSavings->getSaved() . "</td>".
-        "   <td>" . $accountSavings->getToSave() . "</td>".
-        "   <td>" . $accountSavings->getUnspent() . "</td>".
-        " </tr>";
+        '   <td class="numeric">'. format_currency($accountSavings->budget). "</td>\n".
+        '   <td class="numeric">'. format_currency($accountSavings->transactions). "</td>\n".
+        '   <td class="numeric">'. format_currency($accountSavings->getSaved()) . "</td>\n".
+        '   <td class="numeric">'. format_currency($accountSavings->getToSave()) . "</td>\n".
+        " </tr>\n";
       }
   }
 
+  $disableSink = '';
+  if ($doAutoSink == '1') {
+    // Already sinked; disable the button
+    $disableSink = "disabled";
+  }
 ?>
-
 </table>
+
+<div class="bottom">
+  <form action="account_details.php" method="POST" id="backForm">
+    <input type='hidden' name='account_id' value='<?= $account_id ?>' />
+    <input type='hidden' name='start_date' value='<?= $startDateText ?>' />
+    <input type='hidden' name='end_date' value='<?= $endDateText ?>' />
+    <input type='hidden' name='activeOnly' value='1' />
+    <input type='submit' name='goBack' value='Back to Account Details' />
+  </form>
+  
+  <span style='line-height: 20px;' id='button-spacer'><br/></span>
+  <form action="auto_sink.php" method="POST" id="autoSink">
+    <input type='hidden' name='account_id' value='<?= $account_id ?>' />
+    <input type='hidden' name='start_date' value='<?= $startDateText ?>' />
+    <input type='hidden' name='end_date' value='<?= $endDateText ?>' />
+    <input type='hidden' name='doAutoSink' value='1' />
+    <input type='submit' name='doAutoSinkButton' value='Execute Auto Sink' <?= $disableSink ?>/>
+  </form>
+
 </body>
 </html>

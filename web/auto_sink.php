@@ -103,14 +103,16 @@
 
   			// This is an expense account with a sinking / savings
   			// account associated.
+  			// Set savingsBalance *before* setSaved, for calculation.
+				$accountSavings->savingsBalance = $savingsData[5];
 				$accountSavings->setSaved($savingsData[0], true);
 				$accountSavings->savingsName = $savingsData[1];
 				$accountSavings->savingsParentId = $savingsData[3];
 				$savingsParentId = $savingsData[3];
 				$accountSavings->parentName = $savingsData[4];
 				
-				if ($accountSavings->getToSave() < 0.0001) {
-				  // Nothing to save, so skip it
+				if (abs($accountSavings->getToSave()) < 1.0) {
+				  // Don't show accounts with 0 to save, or very small amounts
 				  continue;
 				}
 				
@@ -219,6 +221,7 @@
   <th>Budget</th>
   <th>Transactions</th>
   <th>Saved</th>
+  <th>Savings Balance</th>
   <th>To Save</th>
 
 
@@ -227,6 +230,7 @@
       $accountSavingsList = $transaction->get_account_savings();
       // Header row:  Parent account
       echo '  <tr><td style="font-weight: bold;">Parent: '. $accountSavingsList[0]->parentName . "</td>\n".
+      "   <td></td>\n".
       "   <td></td>\n".
       "   <td></td>\n".
       "   <td></td>\n".
@@ -241,6 +245,7 @@
         '   <td class="numeric">'. format_currency($accountSavings->budget). "</td>\n".
         '   <td class="numeric">'. format_currency($accountSavings->transactions). "</td>\n".
         '   <td class="numeric">'. format_currency($accountSavings->getSaved()) . "</td>\n".
+        '   <td class="numeric">'. format_currency($accountSavings->savingsBalance) . "</td>\n".
         '   <td class="numeric">'. format_currency($accountSavings->getToSave()) . "</td>\n".
         " </tr>\n";
       }

@@ -995,16 +995,17 @@ class Account
 		$sql = 'select a.account_id, ex.account_id as expense_account_id, '.
 		' a.account_name as savings_account_name, '.
 		' a.account_parent_id, ap.account_name as parent_name, '.
-		' sum(IFNULL(tle.ledger_amount, 0.0) * a.account_debit) as savings_total '.
+		' sum(IFNULL(CASE WHEN(tle.budget_date >= :min_date '.
+		'   and tle.budget_date <= :max_date '.
+		'   and tle.exclude_from_budget = 0) THEN tle.ledger_amount END, 0.0) '.
+    '   * a.account_debit) as savings_total, '.
+    ' sum(IFNULL(tle.ledger_amount, 0.0)) as savings_balance '.
 		'FROM Accounts a '.
 		'INNER JOIN Accounts ex ON ex.savings_account_id = a.account_id '.
 		'INNER JOIN Accounts ap ON ap.account_id = a.account_parent_id '.
 		'LEFT JOIN (SELECT le.ledger_amount, le.account_id, t.budget_date, t.exclude_from_budget '.
     '  FROM Transactions t JOIN LedgerEntries le ON le.trans_id = t.trans_id) as tle ON '.
     '  tle.account_id = a.account_id '.
-		'  and tle.budget_date >= :min_date '.
-		'  and tle.budget_date <= :max_date '.
-		'  and tle.exclude_from_budget = 0 '.
 		'WHERE a.login_id = :login_id  '.
 		'GROUP BY a.account_id, a.account_name, ex.account_id '.
 		'ORDER BY a.account_parent_id, a.account_name';
@@ -1030,7 +1031,8 @@ class Account
 				$row['savings_account_name'],
 				$row['account_id'],
 				$row['account_parent_id'],
-				$row['parent_name']);
+				$row['parent_name'],
+				$row['savings_balance']);
 		}
 
 		return '';

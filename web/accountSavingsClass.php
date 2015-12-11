@@ -15,6 +15,7 @@ class AccountSavings {
 	private $unspent = 0.0;
 	public $savingsName = '';
 	public $savingsParentId = -1;
+	public $savingsBalance = 0.0;
 	public $parentName = '';
 	
 	// After setting the Saved amount for the account, we calculate unspent and toSave.
@@ -24,10 +25,11 @@ class AccountSavings {
 		// unspent will be negative when over budget
   	$unspent = $this->budget - $this->transactions - $this->saved;
   	if ($setToSave) {
-  		$this->toSave = max(0.0, $unspent); // To Save is never negative
   		if ($this->saved < 0.0) {
   			// When already drawing from savings, toSave is always 0
   			$this->toSave = 0.0;
+  		} else {
+  		  $this->toSave = $this->calculateToSave($unspent);
   		}
   		// if toSave is > 0, then subtract from unspent
   		$unspent -= $this->toSave;
@@ -40,6 +42,15 @@ class AccountSavings {
   		$this->budgetPercent = $this->transactions / $this->budget * 100.0;
   	}
 
+	}
+	
+	private function calculateToSave($unspent) {
+	  if ($unspent >= 0.0) {
+	    return $unspent;
+	  } else {
+	    // Don't exceed savings balance when drawing
+	    return max(($this->savingsBalance * -1.0), $unspent);
+	  }
 	}
 
   public function getSaved() {

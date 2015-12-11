@@ -189,6 +189,8 @@
 			// This is an expense account with a sinking / savings
 			// account associated.
 			if ($savingsData != null) {
+  			// Set savingsBalance *before* setSaved, for calculation.
+				$accountSavings->savingsBalance = $savingsData[5];
 				$accountSavings->setSaved($savingsData[0], true);
 				$accountSavings->savingsName = 'Account ' . $savingsData[1];
 				$accountSavings->savingsParentId = $savingsData[3];

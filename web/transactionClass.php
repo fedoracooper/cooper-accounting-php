@@ -1070,6 +1070,11 @@ class Transaction
 			
 			$trans_list[$i] = $trans;
 			$i++;
+			
+			if ($i > 500) {
+			  // Avoid memory errors
+			  break;
+			}
 		}
 
 		// The array order must be reversed (by the array key)

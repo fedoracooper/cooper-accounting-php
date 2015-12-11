@@ -109,8 +109,8 @@
 	if ($showBalance) {
 		$balanceHeader = '<th onclick="sortBalance();">Balance</th>';
 	} else {
-		$savingsHeader = "<th onclick='sortSaved();'>Saved</th> \n".
-		"		<th onclick='sortToSave();'>To Save</th>";
+		$savingsHeader = "<th style='text-align: right;' onclick='sortSaved();'>Saved</th> \n".
+		"		<th style='text-align: right;' onclick='sortToSave();'>To Save</th>";
 	}
 	
 	$activeOnlyChecked = $activeOnly ? 'checked="checked"' : '';
@@ -353,7 +353,7 @@
 <table class="budget-list" cellspacing="0" cellpadding="0">
 	<tr>
 		<th onclick="sortAccount();">Account</th>
-		<th onclick="sortBudget();">Budget</th>
+		<th style='text-align: right;' onclick="sortBudget();">Budget</th>
 		<th onclick="sortTransactions();">Transactions</th>
 		<?= $balanceHeader ?>
 		<?= $savingsHeader ?>
@@ -383,9 +383,15 @@
 		}
 		if (!$showBalance) {
 			// RHS / expenses
+			$balanceTitle = '';
+			if ($accountSavings->savingsParentId > 0) {
+			  // Savings account is present for this expense account
+			  $balanceTitle = "Savings balance: $accountSavings->savingsBalance";
+			}
 			echo "		<td title='$accountSavings->savingsName' style='text-align: right;'>".
 			  format_currency($accountSavings->getSaved()) . "</td> \n".
-			"		<td class='numeric'>". format_currency($accountSavings->getToSave()) . "</td> \n";
+			  "		<td title='$balanceTitle' class='numeric'>".
+			  format_currency($accountSavings->getToSave()) . "</td> \n";
 		}
 		echo	"		<td class='numeric'>". format_currency($unspent) . "</td> \n".
 			"		<td class='numeric'>". format_percent($budgetPercent, 0) . "</td> \n".

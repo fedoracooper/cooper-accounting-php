@@ -199,9 +199,10 @@
 	}
 
 	$error1 = $error;
+	$warning = '';
 	// Build the transaction list
 	$trans_list = Transaction::Get_transaction_list ($sel_account_id,
-		$start_date, $end_date, $limit, $search_text, $total_period, $error);
+		$start_date, $end_date, $limit, $search_text, $total_period, $error, $warning);
 	// Strip slashes from search_text variable
 	$search_text = stripslashes( $search_text );
 	$sel_account = new Account ();
@@ -307,7 +308,10 @@
 
 <?
 	if ($error != '')
-		echo	"<p class=\"error\">$error</p> \n";
+		echo "<div class='error'>$error</div> \n";
+	if ($warning != '') {
+		echo "<div class='message'>$warning</div> \n";
+	}
 ?>
 
 <form method="post" action="index.php" name="searchForm">
@@ -677,7 +681,7 @@
 ?>
 </table>
 		
-<table>
+<table style="float: left;">
 	<tr class="padded-row">
 		<td style="padding-left: 25px;">&nbsp;</td>
 		<td><input type="submit" name="save" value="Save transaction"></td>
@@ -690,14 +694,17 @@
 			"<td><input type=\"submit\" value=\"Cancel\" name=\"cancel\" id=\"cancelButton\" /></td>\n" .
 			"<td><input type=\"button\" id=\"copyButton\" value=\"Copy\" onclick=\"copyTransaction()\" /></td>\n";
 	}
+		echo '<td>';
+		echo '</td>';
 ?>
 	</tr>
 
 </table>
 
-
-
+<?php require('footer.php'); ?>
 
 </form>
+
 </body>
 </html>
+

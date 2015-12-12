@@ -5,6 +5,8 @@
 	Modified 10/11/2004: moved class definitions to external files.
 */
 
+$startTime = microtime(true);
+
 header ("Content-type: text/html; charset=utf-8");
 
 echo '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" '.

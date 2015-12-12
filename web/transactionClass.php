@@ -915,7 +915,7 @@ class Transaction
 	// A limit of 0 means no limit; otherwise it counts the number of
 	// rows prior to end_date & ignores the start_date
 	public static function Get_transaction_list ($account_id, $start_date,
-		$end_date, $limit, $search_text, $total_period, &$error)
+		$end_date, $limit, $search_text, $total_period, &$error, &$warning)
 	{
 		$trans_list = array();
 
@@ -1071,9 +1071,11 @@ class Transaction
 			$trans_list[$i] = $trans;
 			$i++;
 			
-			if ($i > 500) {
-			  // Avoid memory errors
-			  break;
+			$MAX_ROWS = 1000;
+			if ($i > $MAX_ROWS) {
+				// Avoid memory errors
+				$warning = "Warning: truncated data to $MAX_ROWS rows";
+				break;
 			}
 		}
 

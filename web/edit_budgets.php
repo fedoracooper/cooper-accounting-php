@@ -230,21 +230,19 @@
 	
 	echo "	<tr> \n".
 		"		<td style='border-top: 1px solid black; border-bottom: 1px solid black;' ".
-		" colspan=\"5\">&nbsp;</td> \n".
+		" colspan='5'>&nbsp;</td> \n".
 		"	</tr> \n\n".
 		"	<tr> \n".
 		"		<td>Total</td> \n".
 		"		<td style='text-align: right; font-weight: bold;'>$defaultTotalString</td> \n".
-		"		<td style='text-align: right; font-weight: bold;'>$budgetTotalString</td> \n".
-		"		<td style='text-align: right; font-weight: bold;'></td> \n".
-		"	</tr> \n\n" ;
-
+		"		<td style='text-align: right; font-weight: bold;'>$budgetTotalString</td> \n";
 ?>
-	<tr><td colspan="5" style="text-align: right;">
-		<input style="margin-left: 500px; margin-top: 20px;" type="submit" 
+	<td colspan="1" style="text-align: right;">
+		<input style="margin-top: 5px; margin-bottom: 5px;" type="submit" 
 		name="saveBudget" value="Save Budgets" />
 		</td>
-	</tr>
+	<td><?php require('footer.php'); ?></td>
+</tr>
 		
 </table>
 </form>

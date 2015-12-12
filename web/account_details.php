@@ -432,8 +432,10 @@
     <input type='hidden' name='start_date' value='<?= $startDateText ?>' />
     <input type='hidden' name='end_date' value='<?= $endDateText ?>' />
     <input type='submit' name='goSink' value='End of Month - Auto Sink Accounts' />
+<?php require('footer.php'); ?>
   </form>
 </div>
+
 
 </body>
 </html>

@@ -27,12 +27,12 @@ CREATE TABLE `AccountAudits` (
   `ledger_id` int(11) NOT NULL DEFAULT '0',
   `audit_date` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
   `account_balance` decimal(9,2)/*old*/ NOT NULL DEFAULT '0.00',
-  `audit_comment` text COLLATE latin1_general_ci NOT NULL,
+  `audit_comment` mediumtext NOT NULL,
   `updated_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`audit_id`),
   KEY `ledger_id` (`ledger_id`),
   CONSTRAINT `AccountAudits_ibfk_1` FOREIGN KEY (`ledger_id`) REFERENCES `LedgerEntries` (`ledger_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=630 DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=630 DEFAULT CHARSET=utf8 ROW_FORMAT=COMPACT;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -46,8 +46,8 @@ CREATE TABLE `Accounts` (
   `account_id` smallint(6) NOT NULL AUTO_INCREMENT,
   `login_id` tinyint(4) NOT NULL DEFAULT '0',
   `account_parent_id` smallint(6) DEFAULT NULL,
-  `account_name` varchar(25) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL DEFAULT '',
-  `account_descr` varchar(50) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL DEFAULT '',
+  `account_name` varchar(25) NOT NULL DEFAULT '',
+  `account_descr` varchar(50) NOT NULL DEFAULT '',
   `account_debit` tinyint(4) NOT NULL DEFAULT '1',
   `equation_side` char(1) NOT NULL DEFAULT 'L',
   `monthly_budget_default` decimal(8,2) NOT NULL DEFAULT '0.00',
@@ -62,7 +62,7 @@ CREATE TABLE `Accounts` (
   CONSTRAINT `Accounts_ibfk_1` FOREIGN KEY (`login_id`) REFERENCES `Logins` (`login_id`),
   CONSTRAINT `Accounts_ibfk_2` FOREIGN KEY (`login_id`) REFERENCES `Logins` (`login_id`),
   CONSTRAINT `fk_savings_account_id` FOREIGN KEY (`savings_account_id`) REFERENCES `Accounts` (`account_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=238 DEFAULT CHARSET=latin1 COMMENT='Account_debit is 1 or -1 for math reasons.';
+) ENGINE=InnoDB AUTO_INCREMENT=238 DEFAULT CHARSET=utf8 COMMENT='Account_debit is 1 or -1 for math reasons.';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -78,10 +78,10 @@ CREATE TABLE `Budget` (
   `budget_month` date NOT NULL,
   `budget_amount` decimal(8,2) NOT NULL,
   `updated_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `budget_comment` varchar(500) COLLATE latin1_general_ci DEFAULT NULL,
+  `budget_comment` varchar(500) DEFAULT NULL,
   PRIMARY KEY (`budget_id`),
   UNIQUE KEY `budget_uk` (`account_id`,`budget_month`)
-) ENGINE=InnoDB AUTO_INCREMENT=1663 DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1663 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -95,13 +95,13 @@ CREATE TABLE `LedgerEntries` (
   `ledger_id` int(11) NOT NULL AUTO_INCREMENT,
   `trans_id` int(11) NOT NULL DEFAULT '0',
   `account_id` smallint(6) NOT NULL DEFAULT '0',
-  `ledger_amount` decimal(9,2)/*old*/ NOT NULL DEFAULT '0.00',
+  `ledger_amount` decimal(9,2) NOT NULL DEFAULT '0.00',
   PRIMARY KEY (`ledger_id`),
-  KEY `trans_id` (`trans_id`,`account_id`),
   KEY `account_id` (`account_id`),
+  KEY `trans_id` (`trans_id`),
   CONSTRAINT `LedgerEntries_ibfk_1` FOREIGN KEY (`trans_id`) REFERENCES `Transactions` (`trans_id`),
   CONSTRAINT `LedgerEntries_ibfk_2` FOREIGN KEY (`account_id`) REFERENCES `Accounts` (`account_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=24325 DEFAULT CHARSET=latin1 COMMENT='Adjustment to a single account';
+) ENGINE=InnoDB AUTO_INCREMENT=24365 DEFAULT CHARSET=latin1 COMMENT='Adjustment to a single account';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -131,7 +131,7 @@ CREATE TABLE `Logins` (
   KEY `primary_checking_account_id` (`primary_checking_account_id`),
   CONSTRAINT `Logins_ibfk_1` FOREIGN KEY (`default_account_id`) REFERENCES `Accounts` (`account_id`),
   CONSTRAINT `Logins_ibfk_2` FOREIGN KEY (`primary_checking_account_id`) REFERENCES `Accounts` (`account_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=latin1 COMMENT='Each login has its own set of accounts';
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8 COMMENT='Each login has its own set of accounts';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -152,7 +152,7 @@ CREATE TABLE `ProductAccounts` (
   PRIMARY KEY (`prod_account_id`),
   KEY `prod_id` (`prod_id`),
   CONSTRAINT `ProductAccounts_ibfk_1` FOREIGN KEY (`prod_id`) REFERENCES `Products` (`prod_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=127 DEFAULT CHARSET=latin1 COMMENT='One or more accounts per product';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='One or more accounts per product';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -168,7 +168,7 @@ CREATE TABLE `ProductCategories` (
   `category_comment` varchar(100) NOT NULL DEFAULT '',
   `active` tinyint(4) NOT NULL DEFAULT '1',
   PRIMARY KEY (`category_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=latin1 COMMENT='Categories of product information';
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8 COMMENT='Categories of product information';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -183,7 +183,7 @@ CREATE TABLE `Products` (
   `login_id` tinyint(4) NOT NULL DEFAULT '0',
   `category_id` tinyint(4) NOT NULL DEFAULT '0',
   `prod_name` varchar(50) NOT NULL DEFAULT '',
-  `prod_comment` text NOT NULL,
+  `prod_comment` mediumtext NOT NULL,
   `modified_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `created_time` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
   `active` tinyint(4) NOT NULL DEFAULT '1',
@@ -192,7 +192,7 @@ CREATE TABLE `Products` (
   KEY `login_id` (`login_id`),
   CONSTRAINT `Products_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `ProductCategories` (`category_id`),
   CONSTRAINT `Products_ibfk_2` FOREIGN KEY (`login_id`) REFERENCES `Logins` (`login_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=127 DEFAULT CHARSET=latin1 COMMENT='Product information parent table';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Product information parent table';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -209,7 +209,7 @@ CREATE TABLE `Transactions` (
   `trans_date` date NOT NULL DEFAULT '0000-00-00',
   `accounting_date` date NOT NULL DEFAULT '0000-00-00',
   `trans_vendor` varchar(50) NOT NULL DEFAULT '',
-  `trans_comment` text,
+  `trans_comment` mediumtext,
   `check_number` smallint(6) DEFAULT NULL,
   `gas_miles` decimal(7,1) DEFAULT NULL,
   `gas_gallons` decimal(4,2)/*old*/ DEFAULT NULL,
@@ -220,10 +220,9 @@ CREATE TABLE `Transactions` (
   `exclude_from_budget` tinyint(4) NOT NULL DEFAULT '0',
   PRIMARY KEY (`trans_id`),
   KEY `login_id` (`login_id`),
-  KEY `import_id` (`import_id`),
   KEY `trans_status` (`trans_status`),
   CONSTRAINT `Transactions_ibfk_1` FOREIGN KEY (`login_id`) REFERENCES `Logins` (`login_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=10496 DEFAULT CHARSET=latin1 COMMENT='Transaction can have many ledger entries.';
+) ENGINE=InnoDB AUTO_INCREMENT=10514 DEFAULT CHARSET=utf8 COMMENT='Transaction can have many ledger entries.';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -238,7 +237,7 @@ CREATE TABLE `spreadsheet_import` (
   `trans_descr` varchar(100) NOT NULL DEFAULT '',
   `amount` decimal(9,2)/*old*/ DEFAULT NULL,
   `trans_vendor` varchar(100) NOT NULL DEFAULT '',
-  `trans_comment` text NOT NULL,
+  `trans_comment` mediumtext NOT NULL,
   `checking` decimal(9,2)/*old*/ DEFAULT NULL,
   `brokerage` decimal(9,2)/*old*/ DEFAULT NULL,
   `stock` decimal(9,2)/*old*/ DEFAULT NULL,
@@ -262,7 +261,7 @@ CREATE TABLE `spreadsheet_import` (
   `misc` decimal(9,2)/*old*/ DEFAULT NULL,
   `import_id` smallint(6) NOT NULL AUTO_INCREMENT,
   PRIMARY KEY (`import_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=679 DEFAULT CHARSET=latin1 PACK_KEYS=0 COMMENT='importing from accounting spreadsheets';
+) ENGINE=InnoDB AUTO_INCREMENT=679 DEFAULT CHARSET=utf8 PACK_KEYS=0 COMMENT='importing from accounting spreadsheets';
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -274,4 +273,4 @@ CREATE TABLE `spreadsheet_import` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2015-12-09 23:59:57
+-- Dump completed on 2015-12-12 22:25:52

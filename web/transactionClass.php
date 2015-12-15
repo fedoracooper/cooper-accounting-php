@@ -506,7 +506,7 @@ class Transaction
 		The repeat function can only be used when inserting a new record:
 		it will duplicate the record at a monthly interval.
 	*/
-	public function Save_repeat_transactions()
+	public function Save_repeat_transactions($checkAudits = true)
 	{
 		$repeat = $this->m_repeat_count;
 		if( $this->m_trans_id > -1 )
@@ -518,7 +518,7 @@ class Transaction
 		$error = '';
 		for( $i = 0; $i < $repeat; $i++ )
 		{
-			$error = $this->Save_transaction();
+			$error = $this->Save_transaction($checkAudits);
 
 			if( $error != '' )
 				return $error;
@@ -545,7 +545,7 @@ class Transaction
 	// This does an insert or update, depending on trans_id.
 	// Need to convert NULL values into strings, and dates into
 	// SQL-formatted dates.
-	private function Save_transaction()
+	private function Save_transaction($checkAudits)
 	{
 		$error = '';
 
@@ -570,10 +570,12 @@ class Transaction
 			*/
 
 		// Query the audit table to check for conflicts
-		$error = $this->Check_audits();
-		if ($error != '')
-		{
-			return $error;
+		if ($checkAudits) {
+			$error = $this->Check_audits();
+			if ($error != '')
+			{
+				return $error;
+			}
 		}
 		
 		$pdo = db_connect_pdo();

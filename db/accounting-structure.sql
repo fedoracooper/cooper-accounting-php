@@ -32,7 +32,7 @@ CREATE TABLE `AccountAudits` (
   PRIMARY KEY (`audit_id`),
   KEY `ledger_id` (`ledger_id`),
   CONSTRAINT `AccountAudits_ibfk_1` FOREIGN KEY (`ledger_id`) REFERENCES `LedgerEntries` (`ledger_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=630 DEFAULT CHARSET=utf8 ROW_FORMAT=COMPACT;
+) ENGINE=InnoDB AUTO_INCREMENT=636 DEFAULT CHARSET=utf8 ROW_FORMAT=COMPACT;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -101,7 +101,7 @@ CREATE TABLE `LedgerEntries` (
   KEY `trans_id` (`trans_id`),
   CONSTRAINT `LedgerEntries_ibfk_1` FOREIGN KEY (`trans_id`) REFERENCES `Transactions` (`trans_id`),
   CONSTRAINT `LedgerEntries_ibfk_2` FOREIGN KEY (`account_id`) REFERENCES `Accounts` (`account_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=24365 DEFAULT CHARSET=latin1 COMMENT='Adjustment to a single account';
+) ENGINE=InnoDB AUTO_INCREMENT=25572 DEFAULT CHARSET=latin1 COMMENT='Adjustment to a single account';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -135,67 +135,6 @@ CREATE TABLE `Logins` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `ProductAccounts`
---
-
-DROP TABLE IF EXISTS `ProductAccounts`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `ProductAccounts` (
-  `prod_account_id` smallint(6) NOT NULL AUTO_INCREMENT,
-  `prod_id` smallint(6) NOT NULL DEFAULT '0',
-  `user_name` varchar(50) NOT NULL DEFAULT '',
-  `password` varchar(50) NOT NULL DEFAULT '',
-  `email` varchar(100) NOT NULL DEFAULT '',
-  `serial_num` varchar(100) NOT NULL DEFAULT '',
-  `account_comment` varchar(100) NOT NULL DEFAULT '',
-  PRIMARY KEY (`prod_account_id`),
-  KEY `prod_id` (`prod_id`),
-  CONSTRAINT `ProductAccounts_ibfk_1` FOREIGN KEY (`prod_id`) REFERENCES `Products` (`prod_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='One or more accounts per product';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `ProductCategories`
---
-
-DROP TABLE IF EXISTS `ProductCategories`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `ProductCategories` (
-  `category_id` tinyint(4) NOT NULL AUTO_INCREMENT,
-  `category_name` varchar(50) NOT NULL DEFAULT '',
-  `category_comment` varchar(100) NOT NULL DEFAULT '',
-  `active` tinyint(4) NOT NULL DEFAULT '1',
-  PRIMARY KEY (`category_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8 COMMENT='Categories of product information';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `Products`
---
-
-DROP TABLE IF EXISTS `Products`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `Products` (
-  `prod_id` smallint(6) NOT NULL AUTO_INCREMENT,
-  `login_id` tinyint(4) NOT NULL DEFAULT '0',
-  `category_id` tinyint(4) NOT NULL DEFAULT '0',
-  `prod_name` varchar(50) NOT NULL DEFAULT '',
-  `prod_comment` mediumtext NOT NULL,
-  `modified_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `created_time` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `active` tinyint(4) NOT NULL DEFAULT '1',
-  PRIMARY KEY (`prod_id`),
-  KEY `category_id` (`category_id`),
-  KEY `login_id` (`login_id`),
-  CONSTRAINT `Products_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `ProductCategories` (`category_id`),
-  CONSTRAINT `Products_ibfk_2` FOREIGN KEY (`login_id`) REFERENCES `Logins` (`login_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Product information parent table';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
 -- Table structure for table `Transactions`
 --
 
@@ -222,7 +161,47 @@ CREATE TABLE `Transactions` (
   KEY `login_id` (`login_id`),
   KEY `trans_status` (`trans_status`),
   CONSTRAINT `Transactions_ibfk_1` FOREIGN KEY (`login_id`) REFERENCES `Logins` (`login_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=10514 DEFAULT CHARSET=utf8 COMMENT='Transaction can have many ledger entries.';
+) ENGINE=InnoDB AUTO_INCREMENT=11117 DEFAULT CHARSET=utf8 COMMENT='Transaction can have many ledger entries.';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `import_2002`
+--
+
+DROP TABLE IF EXISTS `import_2002`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `import_2002` (
+  `trans_id` int(11) NOT NULL AUTO_INCREMENT,
+  `trans_date` date NOT NULL,
+  `trans_type` smallint(6) NOT NULL,
+  `trans_descr` varchar(100) NOT NULL,
+  `account_name` varchar(100) DEFAULT NULL,
+  `amount` decimal(8,2) NOT NULL,
+  `vendor` varchar(100) DEFAULT NULL,
+  `credit_balance` decimal(8,2) NOT NULL,
+  `trans_comment` varchar(500) DEFAULT NULL,
+  `account_id1` int(11) DEFAULT NULL,
+  `account_id2` int(11) DEFAULT NULL,
+  `bank_balance` decimal(8,2) DEFAULT NULL,
+  PRIMARY KEY (`trans_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=511 DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `import_account_names`
+--
+
+DROP TABLE IF EXISTS `import_account_names`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `import_account_names` (
+  `account_id` int(11) NOT NULL,
+  `account_name` varchar(50) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `account_id2` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -273,4 +252,4 @@ CREATE TABLE `spreadsheet_import` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2015-12-12 22:25:52
+-- Dump completed on 2015-12-15  0:22:29

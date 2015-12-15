@@ -28,7 +28,6 @@ require ('accountClass.php');
 require ('accountSavingsClass.php');
 require ('transactionClass.php');
 require ('loginClass.php');
-require ('productAccountClass.php');
 require ('accountAuditClass.php');
 require ('budgetClass.php');
 

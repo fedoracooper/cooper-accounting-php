@@ -9,6 +9,7 @@
   and the "To Save" calculated amount.
 */
 
+	$current_page = 'account_details';
 	require('include.php');
 	
 	
@@ -276,6 +277,8 @@
     <input type='hidden' name='doAutoSink' value='1' />
     <input type='submit' name='doAutoSinkButton' value='Execute Auto Sink' <?= $disableSink ?>/>
   </form>
+
+<?php require('footer.php'); ?>
 
 </body>
 </html>

@@ -130,22 +130,22 @@
 			{
 				// User entered an amount or deleted an amount
 				//echo "amount: ". $_POST['amountL'][$i];
-				$subarr = array (
-					$_POST['ledgerL_id'][$i],
-					$_POST['accountL_id'][$i],
-					$_POST['amountL'][$i]
-				);
-				$ledgerL_list[] = $subarr;
+				$ledger = new LedgerEntry();
+				$ledger->ledgerId = $_POST['ledgerL_id'][$i];
+				$ledger->setAccountData($_POST['accountL_id'][$i]);
+				$ledger->amount = $_POST['amountL'][$i];
+
+				$ledgerL_list[] = $ledger;
 			}
 			if ($_POST['amountR'][$i] != ''
 				|| $_POST['ledgerR_id'][$i] > -1)
 			{
-				$subarr = array (
-					$_POST['ledgerR_id'][$i],
-					$_POST['accountR_id'][$i],
-					$_POST['amountR'][$i]
-				);
-				$ledgerR_list[] = $subarr;
+				$ledger = new LedgerEntry();
+				$ledger->ledgerId = $_POST['ledgerR_id'][$i];
+				$ledger->setAccountData($_POST['accountR_id'][$i]);
+				$ledger->amount = $_POST['amountR'][$i];
+
+				$ledgerR_list[] = $ledger;
 			}
 		}
 		//nl2br (print_r ($ledgerL_list));
@@ -650,30 +650,30 @@
 	for ($i=0; $i<5; $i++)
 	{
 		// LHS
-		$subarr = ArrVal ($listL, $i);
+		$ledger = GetLedger($listL, $i);
 		echo "	<tr>\n".
 			'		<td><input type="hidden" name="ledgerL_id[]"'.
-				" value=\"$subarr[0]\"> \n";
+				" value='". $ledger->ledgerId . "'> \n";
 		// Build account dropdown
 		$acct_drop = Build_dropdown ($acctL_list, 'accountL_id[]',
-			$subarr[1]);
+			$ledger->getAccountIdDebitString());
 		echo $acct_drop. "</td>\n".
-			"		<td><input type=\"text\" size=\"8\" maxlength=\"10\" ".
-			"name=\"amountL[]\" value=\"$subarr[2]\">&nbsp;&nbsp;&nbsp;</td> \n";
+			"		<td><input type='text' size='8' maxlength='10' ".
+			"name='amountL[]' value='". $ledger->amount . "'>&nbsp;&nbsp;&nbsp;</td> \n";
 
 		//RHS
 		for ($j=0; $j<=1; $j++)
 		{
-			// Get the subarray at index i & i+5
-			$subarr = ArrVal ($listR, $i + (5* $j));
-			echo "		<td><input type=\"hidden\" name=\"ledgerR_id[]\"".
-					" value=\"$subarr[0]\"> \n";
+			// Get the LedgerEntry at index i & i+5
+			$ledger = GetLedger($listR, $i + (5* $j));
+			echo "		<td><input type='hidden' name='ledgerR_id[]'".
+					" value='" . $ledger->ledgerId . "'> \n";
 			// Build account dropdown
 			$acct_drop = Build_dropdown ($acctR_list, 'accountR_id[]',
-				$subarr[1]);
+				$ledger->getAccountIdDebitString());
 			echo $acct_drop. "&nbsp;&nbsp;</td>\n".
-				"		<td><input type=\"text\" size=\"8\" maxlength=\"10\" ".
-				"name=\"amountR[]\" value=\"$subarr[2]\"></td> \n";
+				"		<td><input type='text' size='8' maxlength='10' ".
+				"name='amountR[]' value='" . $ledger->amount . "'></td> \n";
 		}
 
 		echo "	</tr> \n\n";

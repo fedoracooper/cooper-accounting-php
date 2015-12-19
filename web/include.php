@@ -27,6 +27,7 @@ date_default_timezone_set('America/New_York');
 require ('accountClass.php');
 require ('accountSavingsClass.php');
 require ('transactionClass.php');
+require ('ledgerEntryClass.php');
 require ('loginClass.php');
 require ('accountAuditClass.php');
 require ('budgetClass.php');
@@ -170,21 +171,17 @@ function Build_dropdown ($data_list, $dropdown_name, $selected_value = '',
 	return $html;
 }
 
-// Given an array & two indicies, do a lookup
-function ArrVal ($data, $x, $y = -1)
+// Given an array of LedgerEntry objects,
+// check to see if the given index exists.  If so,
+// return it; otherwise, return a default LedgerEntry.
+function GetLedger ($ledgerList, $x)
 {
-	if (array_key_exists ($x, $data))
+	if (array_key_exists ($x, $ledgerList))
 	{
-		$subarr = $data[$x];
-		if ($y == -1)
-			return $subarr;
-		elseif (array_key_exists ($y, $subarr))
-		{
-			// valid y index & value is found
-			return $subarr[$y];
-		}
+		return $ledgerList[$x];
 	}
-	return array (-1, -1, '');	//default empty array
+	
+	return new LedgerEntry();
 }
 
 

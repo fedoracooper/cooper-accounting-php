@@ -125,15 +125,20 @@
 	      } else {
           // Add dummy zero amount for parent account
           $sinkLedgerEntries = array();
-          $sinkLedgerEntries[0] = array(-1, $savingsParentId, 0.0);
+          $ledger = new LedgerEntry();
+          $ledger->accountId = $savingsParentId;
+          $ledger->amount = 0.0;
+          $sinkLedgerEntries[0] = $ledger;
           
           $sinkTransaction = createSinkTransaction($sinkLedgerEntries, $login_id, $endDate);
           $sinkParentMap[$savingsParentId] = $sinkTransaction;
         }
         
         // Add ledger entry:  0 = Ledger ID, 1 = Account ID, 2 = Amount
-        $sinkTransaction->get_ledgerL_list()[] = array(-1,
-          $accountSavings->savingsId, $accountSavings->getToSave());
+        $ledger = new LedgerEntry();
+        $ledger->accountId = $accountSavings->savingsId;
+        $ledger->amount = $accountSavings->getToSave();
+        $sinkTransaction->get_ledgerL_list()[] = $ledger;
         $sinkTransaction->get_account_savings()[] = $accountSavings;
         
         if (count($sinkTransaction->get_ledgerL_list()) >= 5) {
@@ -237,7 +242,7 @@
       "   <td></td>\n".
       "   <td></td>\n".
       "   <td class='numeric' style='font-weight: bold;'>".
-          format_currency($transaction->get_ledgerL_list()[0][2]) . "</td>\n".
+          format_currency($transaction->get_ledgerL_list()[0]->amount) . "</td>\n".
       " </tr>\n";
       
       foreach ($accountSavingsList as $accountSavings) {

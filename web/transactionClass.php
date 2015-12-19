@@ -338,37 +338,36 @@ class Transaction
 		$ledger_total = 0.0;	//total of LHS & RHS; must equal 0
 		$ledger_list = array_merge ($this->m_ledgerL_list, $this->m_ledgerR_list);
 		// 0=ledger_id, 1=account_id/account_debit, 2=amount
-		foreach ($ledger_list as $ledger_data)
+		foreach ($ledger_list as $ledgerEntry)
 		{
-			if ($ledger_data[1] == '-1' && $ledger_data[2] != '') {
+			if ($ledgerEntry->accountId == '-1' && $ledgerEntry->amount != '') {
 				// a number without an account has been specified
 				return $error = "You must select an account for your amount";
 			}
-			if ($ledger_data[0] < 0)
+			if ($ledgerEntry->ledgerId < 0)
 			{
 				// new ledger entry; need full verification
-				if (!is_numeric ($ledger_data[2]))
+				if (!is_numeric ($ledgerEntry->amount))
 				{
 					return $error = "You must enter a number for the amount '".
-						$ledger_data[2]. "'";
+						$ledgerEntry->amount. "'";
 				}
 			}
 			else
 			{
 				// Existing ledger entry
-				if (trim ($ledger_data[2]) != ''
-					&& !is_numeric ($ledger_data[2]))
+				if (trim ($ledgerEntry->amount) != ''
+					&& !is_numeric ($ledgerEntry->amount))
 				{
 					// Existing ledger with non-empty, non-numeric amount
 					return $error = "You must enter a numeric amount or no amount: '".
-						$ledger_data[2]. "'";
+						$ledgerEntry->amount. "'";
 				}
 			}
 			// Total up amounts multiplied by debit (1 or -1)
-			$accountArr = explode(',', $ledger_data[1]);
-			if (count ($accountArr) == 2) {
+			if ($ledgerEntry->debit != 0) {
 				// when deleting ledger entries, there may be no account
-				$ledger_total += ($ledger_data[2] * (float)$accountArr[1]);
+				$ledger_total += $ledgerEntry->getDebitAmount();
 			}
 		}
 
@@ -411,11 +410,11 @@ class Transaction
 	  
 	  $total = 0.0;
 	  foreach ($this->m_ledgerL_list as $ledgerEntry) {
-	    $total -= $ledgerEntry[2];
+	    $total -= $ledgerEntry->amount;
 	  }
 	  
 	  // Set total in the first entry
-	  $this->m_ledgerL_list[0][2] = $total;
+	  $this->m_ledgerL_list[0]->amount = $total;
 	}
 	
 	
@@ -488,13 +487,16 @@ class Transaction
 		// loop for each ledger entry
 		while ($row = $ps->fetch(PDO::FETCH_ASSOC))
 		{
-			$accountStr = $row['account_id']. ','. $row['account_debit'];
-			$subarr = array ($row['ledger_id'], $accountStr,
-				$row['ledger_amount']);
+			$ledger = new LedgerEntry();
+			$ledger->ledgerId = $row['ledger_id'];
+			$ledger->accountId = $row['account_id'];
+			$ledger->debit = $row['account_debit'];
+			$ledger->amount = $row['ledger_amount'];
+			
 			if ($row['equation_side'] == 'L')		// LHS ledger account
-				$this->m_ledgerL_list[] = $subarr;
+				$this->m_ledgerL_list[] = $ledger;
 			else	// RHS ledger account
-				$this->m_ledgerR_list[] = $subarr;
+				$this->m_ledgerR_list[] = $ledger;
 		}
 
 		$pdo = null;
@@ -674,32 +676,30 @@ class Transaction
 		// Combine the LHS & RHS lists
 		$ledger_list = array_merge ($this->m_ledgerL_list,
 			$this->m_ledgerR_list);
-		foreach ($ledger_list as $ledger_data)
+		foreach ($ledger_list as $ledger)
 		{
-			// 0=ledger_id, 1=account_id/account_debit, 2=amount
-			$accountArr = explode(',', $ledger_data[1]);
-			if ($ledger_data[0] == -1)
+			if ($ledger->ledgerId == -1)
 			{
 				// no ledger_id; new record.
 				$psInsert->bindParam(':trans_id', $this->m_trans_id, PDO::PARAM_INT);
-				$psInsert->bindParam(':account_id', $accountArr[0], PDO::PARAM_INT);
-				$psInsert->bindParam(':ledger_amount', $ledger_data[2]);
+				$psInsert->bindParam(':account_id', $ledger->accountId, PDO::PARAM_INT);
+				$psInsert->bindParam(':ledger_amount', $ledger->amount);
 				$ps = $psInsert;
 			}
 			else
 			{
-				if (trim ($ledger_data[2] == ''))
+				if (trim ($ledger->amount == ''))
 				{
 					// An existing ledger entry is being deleted
-					$psDelete->bindparam(':ledger_id', $ledger_data[0], PDO::PARAM_INT);
+					$psDelete->bindparam(':ledger_id', $ledger->ledgerId, PDO::PARAM_INT);
 					$ps = $psDelete;
 				}
 				else
 				{
 					// UPDATE an existing ledger entry
-					$psUpdate->bindParam(':account_id', $accountArr[0], PDO::PARAM_INT);
-					$psUpdate->bindParam(':ledger_amount', $ledger_data[2]);
-					$psUpdate->bindParam(':ledger_id', $ledger_data[0], PDO::PARAM_INT);
+					$psUpdate->bindParam(':account_id', $ledger->accountId, PDO::PARAM_INT);
+					$psUpdate->bindParam(':ledger_amount', $ledger->amount);
+					$psUpdate->bindParam(':ledger_id', $ledger->ledgerId, PDO::PARAM_INT);
 					$ps = $psUpdate;
 				}
 			}
@@ -736,17 +736,15 @@ class Transaction
 		$ledger_list = array_merge ($this->m_ledgerL_list,
 			$this->m_ledgerR_list);
 
-		foreach ($ledger_list as $ledger_data)
+		foreach ($ledger_list as $ledger)
 		{
 			if ($accounts != '')
 			{
 				$accounts .= ", ";
 			}
 
-			// 0=ledger_id, 1=account_id/account_debit, 2=amount
-			$accountArr = explode( ',', $ledger_data[ 1 ] );
 			// Store the account ID of every ledger ID in a SQL list
-			$accounts .= $accountArr[ 0 ];
+			$accounts .= $ledger->accountId;
 		}
 
 		$oldTrans = null;
@@ -857,15 +855,13 @@ class Transaction
 
 		$ledgerList = array_merge ($this->m_ledgerL_list,
 			$this->m_ledgerR_list);
-		foreach ($ledgerList as $ledgerItem)
+		foreach ($ledgerList as $ledger)
 		{
-			// 0=ledger_id, 1=account_id/account_debit, 2=amount
-			$accountArr = explode( ',', $ledgerItem[ 1 ] );
-			$itemAccountId = $accountArr[ 0 ];
+			$itemAccountId = $ledger->accountId;
 			if ($itemAccountId == $accountId)
 			{
 				// Return the amount for the matching account ID
-				return $ledgerItem[ 2 ];
+				return $ledger->amount;
 			}
 		}
 

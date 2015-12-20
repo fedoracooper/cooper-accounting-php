@@ -110,6 +110,9 @@
 				$accountSavings->savingsName = $savingsData[1];
 				$accountSavings->savingsParentId = $savingsData[3];
 				$savingsParentId = $savingsData[3];
+				// Debit flags (-1 or +1)
+				$savingsDebit = $savingsData[6];
+				$parentDebit = $savingsData[7];
 				$accountSavings->parentName = $savingsData[4];
 				
 				if (abs($accountSavings->getToSave()) < 1.0) {
@@ -127,6 +130,7 @@
 					$sinkLedgerEntries = array();
 					$ledger = new LedgerEntry();
 					$ledger->accountId = $savingsParentId;
+					$ledger->debit = $parentDebit;
 					$ledger->amount = 0.0;
 					$sinkLedgerEntries[0] = $ledger;
 
@@ -137,6 +141,7 @@
 				// Add ledger entry:  0 = Ledger ID, 1 = Account ID, 2 = Amount
 				$ledger = new LedgerEntry();
 				$ledger->accountId = $accountSavings->savingsId;
+				$ledger->debit = $savingsDebit;
 				$ledger->amount = $accountSavings->getToSave();
 				$sinkTransaction->get_ledgerL_list()[] = $ledger;
 				$sinkTransaction->get_account_savings()[] = $accountSavings;

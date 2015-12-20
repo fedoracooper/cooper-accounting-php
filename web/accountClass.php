@@ -970,10 +970,10 @@ class Account
 		
 		while ($row = $ps->fetch(PDO::FETCH_ASSOC))
 		{
-		  // Row:  account_id => AccountSavings object
+			// Row:  account_id => AccountSavings object
 			$accountSavings = new AccountSavings();
 			$accountSavings->accountName = $row['account_name'];
-		  $accountSavings->balance = $row['balance'];
+			$accountSavings->balance = $row['balance'];
 			$accountSavings->budget = $row['budget'];
 			$accountSavings->transactions = $row['transaction_sum'];
 			$accountSavings->savingsId = $row['savings_account_id'];
@@ -994,7 +994,9 @@ class Account
 
 		$sql = 'select a.account_id, ex.account_id as expense_account_id, '.
 		' a.account_name as savings_account_name, '.
+		' a.account_debit as savings_debit, '.
 		' a.account_parent_id, ap.account_name as parent_name, '.
+		' ap.account_debit as parent_debit, '.
 		' sum(IFNULL(CASE WHEN(tle.budget_date >= :min_date '.
 		'   and tle.budget_date <= :max_date '.
 		'   and tle.exclude_from_budget = 0) THEN tle.ledger_amount END, 0.0) '.
@@ -1032,7 +1034,9 @@ class Account
 				$row['account_id'],
 				$row['account_parent_id'],
 				$row['parent_name'],
-				$row['savings_balance']);
+				$row['savings_balance'],
+				$row['savings_debit'],
+				$row['parent_debit']);
 		}
 
 		return '';

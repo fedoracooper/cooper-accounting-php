@@ -344,6 +344,7 @@ class Transaction
 				// a number without an account has been specified
 				return $error = "You must select an account for your amount";
 			}
+			
 			if ($ledgerEntry->ledgerId < 0)
 			{
 				// new ledger entry; need full verification
@@ -364,11 +365,14 @@ class Transaction
 						$ledgerEntry->amount. "'";
 				}
 			}
-			// Total up amounts multiplied by debit (1 or -1)
-			if ($ledgerEntry->debit != 0) {
-				// when deleting ledger entries, there may be no account
-				$ledger_total += $ledgerEntry->getDebitAmount();
+			if ($ledgerEntry->accountId > 0 && $ledgerEntry->debit == 0) {
+				// Account ID without Account Debit flag; invalid!
+				return $error = "Account ID ". $ledgerEntry->accountId .
+					" specified without Debit flag.";
 			}
+				
+			// Total up amounts multiplied by debit (1 or -1)
+			$ledger_total += $ledgerEntry->getDebitAmount();
 		}
 
 		if (abs ($ledger_total) > .001)

@@ -3,13 +3,13 @@
 // Account Savings Class
 
 class AccountSavings {
-  public $accountName;
-  public $balance;
+	public $accountName;
+	public $balance;
 	public $budget;
 	public $transactions;
 	public $savingsId;
 	public $accountDescr;
-  private $saved = 0.0;
+	private $saved = 0.0;
 	private $toSave = 0.0;
 	private $budgetPercent = 0.0;
 	private $unspent = 0.0;
@@ -23,24 +23,24 @@ class AccountSavings {
 	  $this->saved = $saved;
 	
 		// unspent will be negative when over budget
-  	$unspent = $this->budget - $this->transactions - $this->saved;
-  	if ($setToSave) {
-  		if ($this->saved < 0.0) {
-  			// When already drawing from savings, toSave is always 0
-  			$this->toSave = 0.0;
-  		} else {
-  		  $this->toSave = $this->calculateToSave($unspent);
-  		}
-  		// if toSave is > 0, then subtract from unspent
-  		$unspent -= $this->toSave;
-  	}
+		$unspent = $this->budget - $this->transactions - $this->saved;
+		if ($setToSave) {
+			if ($this->saved < 0.0) {
+				// When already drawing from savings, toSave is always 0
+				$this->toSave = 0.0;
+			} else {
+			  $this->toSave = $this->calculateToSave($unspent);
+			}
+			// if toSave is > 0, then subtract from unspent
+			$unspent -= $this->toSave;
+		}
   	
-    $this->unspent = $unspent;
-    
-    // Calculate budget %
-  	if ($this->budget != 0.0) {
-  		$this->budgetPercent = $this->transactions / $this->budget * 100.0;
-  	}
+		$this->unspent = $unspent;
+		
+		// Calculate budget %
+		if ($this->budget != 0.0) {
+			$this->budgetPercent = $this->transactions / $this->budget * 100.0;
+		}
 
 	}
 	

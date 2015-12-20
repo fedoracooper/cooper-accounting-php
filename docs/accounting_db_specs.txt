@@ -2,6 +2,11 @@
 Cooper Blake
 Accounting Software database design
 
+SQL for finding invalid transactions:
+
+select trans_id, sum(ledger_amount * account_debit) from LedgerEntries le join Accounts a on a.account_id = le.account_id GROUP BY trans_id having abs(sum(ledger_amount * account_debit)) > 0.00;
+
+
 Budgets
 
 Database changes

@@ -24,9 +24,9 @@
 	$message = '';
 	
 	function createSinkTransaction($ledgerEntries, $loginId, $txDate) {
-	  $txDateString = $txDate->format('m/d/Y');
-	  $sinkTransaction = new Transaction();
-    $sinkTransaction->Init_transaction(
+		$txDateString = $txDate->format('m/d/Y');
+	  	$sinkTransaction = new Transaction();
+		$sinkTransaction->Init_transaction(
 			$loginId,
 			"EOM auto-sink",
 			$txDateString,
@@ -48,9 +48,9 @@
 			0.0,	//audit balance
 			$ledgerEntries,  // LHS
 			array() // RHS
-    );
+    	);
 
-    return $sinkTransaction;
+		return $sinkTransaction;
 	}
 
 
@@ -59,7 +59,7 @@
 	$startDate = new DateTime($_POST['start_date']);
 	$startDateText = $startDate->format(DISPLAY_DATE);
 	$endDate = new DateTime($_POST['end_date']);
-  $endDateText = $endDate->format(DISPLAY_DATE);
+	$endDateText = $endDate->format(DISPLAY_DATE);
 	$minDate = $startDate;
 	$activeOnly = 1;
 	$account_list = array();
@@ -74,9 +74,9 @@
 	$account = new Account();
 	$account->Load_account($account_id);
 	// This only works with RHS accounts (Expenses, Income)
-  if ($account->get_equation_side() == 'L') {
-    $error = "Account ". $account->get_account_name() . " is not an Expense account";
-  }
+	if ($account->get_equation_side() == 'L') {
+		$error = "Account ". $account->get_account_name() . " is not an Expense account";
+	}
 	
 	if ($error == '') {
 		$error = Account::Get_account_details($account_id, $startDate,
@@ -89,11 +89,11 @@
 			$endDate, $savings_list);
 	}
 
-  // Loop through data and aggregate into transactions of 5 entries or less
-  $sinkParentMap = array();
-  $transactions = array();
+	// Loop through data and aggregate into transactions of 5 entries or less
+	$sinkParentMap = array();
+	$transactions = array();
   
-  $savingsCount = 0;
+	$savingsCount = 0;
 	foreach ($account_list as $expense_account_id => $accountSavings)
 	{
 		if ($accountSavings->savingsId > 0) {
@@ -102,9 +102,9 @@
 			if (isset($savings_list[$expense_account_id])) {
 				$savingsData = $savings_list[$expense_account_id];
 
-  			// This is an expense account with a sinking / savings
-  			// account associated.
-  			// Set savingsBalance *before* setSaved, for calculation.
+	  			// This is an expense account with a sinking / savings
+	  			// account associated.
+	  			// Set savingsBalance *before* setSaved, for calculation.
 				$accountSavings->savingsBalance = $savingsData[5];
 				$accountSavings->setSaved($savingsData[0], true);
 				$accountSavings->savingsName = $savingsData[1];
@@ -117,41 +117,41 @@
 				  continue;
 				}
 				
-  			$savingsCount++;
+	  			$savingsCount++;
 				$sinkTransaction = null;
-	      // Check for transaction for this parent account
-	      if (isset($sinkParentMap[$savingsParentId])) {
-          $sinkTransaction = $sinkParentMap[$savingsParentId];
-	      } else {
-          // Add dummy zero amount for parent account
-          $sinkLedgerEntries = array();
-          $ledger = new LedgerEntry();
-          $ledger->accountId = $savingsParentId;
-          $ledger->amount = 0.0;
-          $sinkLedgerEntries[0] = $ledger;
-          
-          $sinkTransaction = createSinkTransaction($sinkLedgerEntries, $login_id, $endDate);
-          $sinkParentMap[$savingsParentId] = $sinkTransaction;
-        }
-        
-        // Add ledger entry:  0 = Ledger ID, 1 = Account ID, 2 = Amount
-        $ledger = new LedgerEntry();
-        $ledger->accountId = $accountSavings->savingsId;
-        $ledger->amount = $accountSavings->getToSave();
-        $sinkTransaction->get_ledgerL_list()[] = $ledger;
-        $sinkTransaction->get_account_savings()[] = $accountSavings;
-        
-        if (count($sinkTransaction->get_ledgerL_list()) >= 5) {
-          // Add completed transaction
-          $transactions[] = $sinkTransaction;
-          
-          // Clear map entry after processing
-          $sinkParentMap[$savingsParentId] = null;
-        }
+				// Check for transaction for this parent account
+				if (isset($sinkParentMap[$savingsParentId])) {
+					$sinkTransaction = $sinkParentMap[$savingsParentId];
+				} else {
+					// Add dummy zero amount for parent account
+					$sinkLedgerEntries = array();
+					$ledger = new LedgerEntry();
+					$ledger->accountId = $savingsParentId;
+					$ledger->amount = 0.0;
+					$sinkLedgerEntries[0] = $ledger;
+
+					$sinkTransaction = createSinkTransaction($sinkLedgerEntries, $login_id, $endDate);
+					$sinkParentMap[$savingsParentId] = $sinkTransaction;
+				}
+				
+				// Add ledger entry:  0 = Ledger ID, 1 = Account ID, 2 = Amount
+				$ledger = new LedgerEntry();
+				$ledger->accountId = $accountSavings->savingsId;
+				$ledger->amount = $accountSavings->getToSave();
+				$sinkTransaction->get_ledgerL_list()[] = $ledger;
+				$sinkTransaction->get_account_savings()[] = $accountSavings;
+				
+				if (count($sinkTransaction->get_ledgerL_list()) >= 5) {
+					// Add completed transaction
+					$transactions[] = $sinkTransaction;
+
+					// Clear map entry after processing
+					$sinkParentMap[$savingsParentId] = null;
+				}
 				
 			} else {
-			  // Savings account, but no savings this period
-			  $accountSavings->setSaved(0.0, true);
+				// Savings account, but no savings this period
+				$accountSavings->setSaved(0.0, true);
 			}
 			
 		} else {
@@ -159,47 +159,47 @@
 			$accountSavings->setSaved(0.0, false);
 		}
 
-  } // End record loop
-  
-  $nullCount = 0;
-  // Add transactions from the Parent Map (< 5 ledger entries)
-  foreach ($sinkParentMap as $parentAccountId => $sinkTransaction) {
-    if ($sinkTransaction == null) {
-      $nullCount++;
-    } else {
-      $transactions[] = $sinkTransaction;
-    }
-  }
+	} // End record loop
 
-  if ($nullCount > 0) {
-    $message .= "Found $nullCount null transactions.";
-  }
+	$nullCount = 0;
+	// Add transactions from the Parent Map (< 5 ledger entries)
+	foreach ($sinkParentMap as $parentAccountId => $sinkTransaction) {
+		if ($sinkTransaction == null) {
+			$nullCount++;
+		} else {
+			$transactions[] = $sinkTransaction;
+		}
+	}
+
+	if ($nullCount > 0) {
+		$message .= "Found $nullCount null transactions.";
+	}
   
-  $message = "Found $savingsCount savings account(s) for sinking across ".
-    count($transactions) . ' transaction(s).';
+	$message = "Found $savingsCount savings account(s) for sinking across ".
+	    count($transactions) . ' transaction(s).';
 
   
-  $count = 0;
-  // Final loop:  set Sinking Total and Validate.  Insert if needed.
-  foreach ($transactions as $transaction) {
-    $transaction->Calculate_sinking_total();
-    $error = $transaction->Validate();
-    if ($error != '') {
-      break;
-    }
+	$count = 0;
+	// Final loop:  set Sinking Total and Validate.  Insert if needed.
+	foreach ($transactions as $transaction) {
+		$transaction->Calculate_sinking_total();
+		$error = $transaction->Validate();
+		if ($error != '') {
+			break;
+		}
 
-    if ($doAutoSink == '1') {
-      $error = $transaction->Save_repeat_transactions();
-      if ($error != '') {
-        break;
-      }
-      $count++;
-    }
-  }
+		if ($doAutoSink == '1') {
+			$error = $transaction->Save_repeat_transactions();
+			if ($error != '') {
+				break;
+			}
+			$count++;
+		}
+	}
   
-  if ($count > 0) {
-    $message = "Successfully inserted $count transaction(s).";
-  }
+	if ($count > 0) {
+		$message = "Successfully inserted $count transaction(s).";
+	}
 ?>
 
 

@@ -32,7 +32,7 @@ CREATE TABLE `AccountAudits` (
   PRIMARY KEY (`audit_id`),
   KEY `ledger_id` (`ledger_id`),
   CONSTRAINT `AccountAudits_ibfk_1` FOREIGN KEY (`ledger_id`) REFERENCES `LedgerEntries` (`ledger_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=636 DEFAULT CHARSET=utf8 ROW_FORMAT=COMPACT;
+) ENGINE=InnoDB AUTO_INCREMENT=646 DEFAULT CHARSET=utf8 ROW_FORMAT=COMPACT;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -55,6 +55,7 @@ CREATE TABLE `Accounts` (
   `updated_time` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
   `savings_account_id` smallint(6) DEFAULT NULL,
   `is_savings` tinyint(4) NOT NULL DEFAULT '0',
+  `is_paycheck_sink` tinyint(4) NOT NULL DEFAULT '0',
   PRIMARY KEY (`account_id`),
   KEY `login_id` (`login_id`,`account_parent_id`),
   KEY `inactive` (`active`),
@@ -101,7 +102,7 @@ CREATE TABLE `LedgerEntries` (
   KEY `trans_id` (`trans_id`),
   CONSTRAINT `LedgerEntries_ibfk_1` FOREIGN KEY (`trans_id`) REFERENCES `Transactions` (`trans_id`),
   CONSTRAINT `LedgerEntries_ibfk_2` FOREIGN KEY (`account_id`) REFERENCES `Accounts` (`account_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=25572 DEFAULT CHARSET=latin1 COMMENT='Adjustment to a single account';
+) ENGINE=InnoDB AUTO_INCREMENT=28210 DEFAULT CHARSET=latin1 COMMENT='Adjustment to a single account';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -161,7 +162,7 @@ CREATE TABLE `Transactions` (
   KEY `login_id` (`login_id`),
   KEY `trans_status` (`trans_status`),
   CONSTRAINT `Transactions_ibfk_1` FOREIGN KEY (`login_id`) REFERENCES `Logins` (`login_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=11117 DEFAULT CHARSET=utf8 COMMENT='Transaction can have many ledger entries.';
+) ENGINE=InnoDB AUTO_INCREMENT=12422 DEFAULT CHARSET=utf8 COMMENT='Transaction can have many ledger entries.';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -201,7 +202,30 @@ CREATE TABLE `import_account_names` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `account_id2` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `import_simple`
+--
+
+DROP TABLE IF EXISTS `import_simple`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `import_simple` (
+  `trans_id` int(11) NOT NULL AUTO_INCREMENT,
+  `trans_date` date NOT NULL,
+  `trans_descr` varchar(100) NOT NULL,
+  `checking_amount` decimal(8,2) DEFAULT NULL,
+  `vendor` varchar(100) DEFAULT NULL,
+  `trans_comment` varchar(500) DEFAULT NULL,
+  `credit_amount` decimal(8,2) DEFAULT NULL,
+  `credit_balance` decimal(8,2) DEFAULT NULL,
+  `account_name` varchar(50) DEFAULT NULL,
+  `account_id1` int(11) DEFAULT NULL,
+  `account_id2` int(11) DEFAULT NULL,
+  PRIMARY KEY (`trans_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1534 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -252,4 +276,4 @@ CREATE TABLE `spreadsheet_import` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2015-12-15  0:22:29
+-- Dump completed on 2015-12-21 23:00:47

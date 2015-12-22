@@ -19,6 +19,7 @@ class Account
 	private	$m_equation_side		= 'R';	// 'L' or 'R'
 	private $m_budget_default		= 0.0;
 	private $m_is_savings			= 0;
+	private $m_is_paycheck_sink		= 0;
 	private $m_active			= 1;
 
 
@@ -59,6 +60,9 @@ class Account
 	public function get_active() {
 		return $this->m_active;
 	}
+	public function get_is_paycheck_sink() {
+		return $this->m_is_paycheck_sink;
+	}
 
 	// Initialize all the variables, with account_id being optional.
 	// This is called after an account save is posted, so it is assumed
@@ -73,6 +77,7 @@ class Account
 		$budget_default,
 		$savings_account_id,
 		$is_savings,
+		$is_paycheck_sink,
 		$account_id = -1,
 		$active = 1)
 	{
@@ -107,6 +112,7 @@ class Account
 			$this->m_account_id		= $account_id;
 			$this->m_active			= $active;
 			$this->m_is_savings		= $is_savings;
+			$this->m_is_paycheck_sink = $is_paycheck_sink;
 		}
 
 		return $error;
@@ -146,7 +152,8 @@ class Account
 		$this->m_account_debit		= $row['account_debit'];
 		$this->m_equation_side		= $row['equation_side'];
 		$this->m_budget_default	 	= $row['monthly_budget_default'];
-		$this->m_is_savings		= $row['is_savings'];
+		$this->m_is_savings			= $row['is_savings'];
+		$this->m_is_paycheck_sink	= $row['is_paycheck_sink'];
 		$this->m_active				= $row['active'];
 
 		$pdo = null;
@@ -198,10 +205,10 @@ class Account
 			// New account: perform an insert
 			$sql = "INSERT INTO Accounts \n".
 				"(login_id, account_parent_id, savings_account_id, ".
-				"account_name, account_descr, is_savings, ".
+				"account_name, account_descr, is_savings, is_paycheck_sink, ".
 				" account_debit, equation_side, monthly_budget_default, active) \n".
 				"VALUES (:login_id, :parent_id, :savings_account_id, ".
-				" :account_name, :account_descr, :is_savings, ".
+				" :account_name, :account_descr, :is_savings, :is_paycheck_sink, ".
 				" :account_debit, :equation_side, ".
 				" :budget_default, :active) ";
 			$ps = $pdo->prepare($sql);
@@ -219,6 +226,7 @@ class Account
 				"  equation_side = :equation_side, ".
 				"  monthly_budget_default = :budget_default, ".
 				"  is_savings = :is_savings, ".
+				"  is_paycheck_sink = :is_paycheck_sink, ".
 				"  active = :active \n".
 				"WHERE account_id = :account_id ";
 			$ps = $pdo->prepare($sql);
@@ -236,6 +244,7 @@ class Account
 		$ps->bindParam(':equation_side', $this->m_equation_side);
 		$ps->bindParam(':budget_default', $this->m_budget_default);
 		$ps->bindParam(':is_savings', $this->m_is_savings);
+		$ps->bindParam(':is_paycheck_sink', $this->m_is_paycheck_sink);
 		$ps->bindParam(':active', $this->m_active);
 		
 		$success = $ps->execute();

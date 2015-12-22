@@ -68,6 +68,10 @@
 		if (isset ($_POST['is_savings'])) {
 			$is_savings = 1;
 		}
+		$is_paycheck_sink = 0;
+		if (isset ($_POST['is_paycheck_sink'])) {
+			$is_paycheck_sink = 1;
+		}
 
 		$error = $account->Init_account (
 			$account_parent_id,
@@ -78,6 +82,7 @@
 			$_POST['monthly_budget'],
 			$_POST['savings_account_id'],
 			$is_savings,
+			$is_paycheck_sink,
 			$_POST['account_id'],
 			$active
 		);
@@ -148,10 +153,19 @@
 		$account->get_savings_account_id());
 	
 	// Active checkbox
-	if ($account->get_active() == 1)
+	if ($account->get_active() == 1) {
 		$active_txt = ' CHECKED';
-	else
+	}
+	else {
 		$active_txt = '';
+	}
+	if ($account->get_is_paycheck_sink() == 1) {
+		$is_paycheck_sink_txt = ' CHECKED';
+	}
+	else {
+		$is_paycheck_sink_txt = '';
+	}
+		
 
 	if ($account->get_is_savings() == 1) {
 		$is_savings_txt = ' CHECKED';
@@ -263,8 +277,14 @@
 
 	<tr>
 		<td></td>
-		<td>Is Savings Account:</td>
+		<td title="Typically a sub-account of a Checking account">Is Savings Account:</td>
 		<td><input type="checkbox" name="is_savings" value="1"<?= $is_savings_txt ?>></td>
+	</tr>
+	
+	<tr>
+		<td></td>
+		<td title="Savings account used to smooth out paycheck periods that are not monthly, such as bi-weekly">Is Paycheck Sinking Account:</td>
+		<td><input type="checkbox" name="is_paycheck_sink" value="1"<?= $is_paycheck_sink_txt ?>></td>
 	</tr>
 
 	<tr>

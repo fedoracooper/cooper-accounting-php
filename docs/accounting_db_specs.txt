@@ -2,6 +2,36 @@
 Cooper Blake
 Accounting Software database design
 
+Budget
+	- calculate total income to compare to budget total
+		Income + Paycheck Sinking
+			- exclude income marked exclude_from_budget
+			- paycheck sinking comes from budget on Accounts / is_paycheck_sinking
+			
+Sum the month of income:
+
+select sum(le.ledger_amount * a1.account_debit) * -1 as total_income
+from Accounts a1
+join LedgerEntries le ON le.account_id = a1.account_id
+join Transactions t ON t.trans_id = le.trans_id
+where ((a1.equation_side = 'R' and a1.account_debit = -1)
+  OR (a1.is_paycheck_sink = 1))
+  AND t.exclude_from_budget = 0
+  AND date_format(t.accounting_date, '%Y-%m') = '2015-11';
+  
+Get all income transactions:
+select a1.account_name, a1.account_id, t.trans_descr,
+le.ledger_amount * a1.account_debit * -1 as amount,
+t.accounting_date, t.trans_comment
+from Accounts a1
+join LedgerEntries le ON le.account_id = a1.account_id
+join Transactions t ON t.trans_id = le.trans_id
+where ((a1.equation_side = 'R' and a1.account_debit = -1)
+  OR (a1.is_paycheck_sink = 1))
+  AND t.exclude_from_budget = 0
+  AND date_format(t.accounting_date, '%Y-%m') = '2015-11';
+ 
+
 SQL for finding invalid transactions:
 
 select trans_id, sum(ledger_amount * account_debit) from LedgerEntries le join Accounts a on a.account_id = le.account_id GROUP BY trans_id having abs(sum(ledger_amount * account_debit)) > 0.00;

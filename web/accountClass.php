@@ -757,6 +757,45 @@ class Account
 		
 		return '';
 	}
+	
+	public static function Get_income(DateTime $budget_date, $login_id,
+			array &$income_list) {
+			
+		$sql = 'select a1.account_name, a1.account_id, t.trans_descr, '.
+			'le.ledger_amount * a1.account_debit * -1 as amount, '.
+			"t.accounting_date, t.trans_comment \n".
+			"from Accounts a1 \n".
+			"join LedgerEntries le ON le.account_id = a1.account_id \n".
+			"join Transactions t ON t.trans_id = le.trans_id \n".
+			"where ((a1.equation_side = 'R' and a1.account_debit = -1) ".
+			"  OR (a1.is_paycheck_sink = 1)) ".
+			"  AND t.exclude_from_budget = 0 ".
+			"  AND date_format(t.accounting_date, '%Y-%m') = :budget_month ".
+			"  AND t.login_id = :login_id ";
+			
+		$pdo = db_connect_pdo();
+		$ps = $pdo->prepare($sql);
+		$monthString = $budget_date->format('Y-m');
+		$ps->bindParam(':budget_month', $monthString);
+		$ps->bindParam(':login_id', $login_id);
+		$success = $ps->execute();
+		if (!$success) {
+			return get_pdo_error($ps);
+		}
+		
+		while ($row = $ps->fetch(PDO::FETCH_ASSOC)) {
+			$income = new IncomeEntry();
+			$income->accountId = $row['account_id'];
+			$income->accountName = $row['account_name'];
+			$income->transDescr = $row['trans_descr'];
+			$income->amount = $row['amount'];
+			$income->accountingDate = new DateTime($row['accounting_date']);
+			$income->comment = $row['trans_comment'];
+			$income_list[] = $income;
+		}
+		
+		return '';	
+	}
 
 	/**
 	 * Get a list of budgets for the given parent account ID.

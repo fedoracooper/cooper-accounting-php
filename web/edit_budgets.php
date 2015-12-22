@@ -115,6 +115,17 @@
 			$account_id, $budget_list);
 	}
 	
+	// Get income transactions
+	$income_list = array();  // pass by ref
+	if ($error == '') {
+		$error = Account::Get_income($budgetDate, $login_id, $income_list);
+	}
+	
+	// Get total income
+	$totalIncome = 0.0;
+	foreach ($income_list as $income) {
+		$totalIncome += $income->amount;
+	}
 ?>
 
 <html>
@@ -240,12 +251,41 @@
 	<td colspan="1" style="text-align: right;">
 		<input style="margin-top: 5px; margin-bottom: 5px;" type="submit" 
 		name="saveBudget" value="Save Budgets" />
-		</td>
-	<td><?php require('footer.php'); ?></td>
+	</td>
+</tr>
+
+<tr>
+	<th colspan="2">Income Account</th>
+	<th class="numeric">Amount</th>
+	<th class="numeric">Total</th>
+	<th>Transaction Description</th>
+</tr>
+
+<?php
+	foreach ($income_list as $income) {
+		echo "  <tr> <td>". $income->accountName . "</td><td></td> \n".
+		"<td class='numeric'>". format_currency($income->amount) . "</td> \n".
+		"<td></td> \n".
+		"<td>". $income->transDescr . "</td>\n".
+		"</tr> \n";
+	}
+	
+	$totalUnbudgeted = $totalIncome - $budgetTotal;
+	echo "<tr><td style='font-weight: bold;'>Total Income</td> <td></td> <td></td> ".
+		"<td class='total'>" . format_currency($totalIncome) . "</td> \n".
+		"</tr>";
+	echo "<tr><td style='font-weight: bold;'>Unbudgeted Amount</td> <td></td> <td></td> ".
+		"<td class='total'>" . format_currency($totalUnbudgeted) . "</td> \n".
+		"</tr>";
+?>
+<tr>
+	<td colspan="5"><?php require('footer.php'); ?></td>
 </tr>
 		
+
 </table>
 </form>
+
 
 </body>
 </html>

@@ -24,13 +24,14 @@ define( 'LONG_DATE',	'M j, Y g:i a' );	// Mon D, YYYY H:MM pm
 date_default_timezone_set('America/New_York');
 
 
+require ('accountAuditClass.php');
 require ('accountClass.php');
 require ('accountSavingsClass.php');
-require ('transactionClass.php');
+require ('budgetClass.php');
+require ('incomeEntryClass.php');
 require ('ledgerEntryClass.php');
 require ('loginClass.php');
-require ('accountAuditClass.php');
-require ('budgetClass.php');
+require ('transactionClass.php');
 
 $login_admin = 0;
 $login_id = -1;

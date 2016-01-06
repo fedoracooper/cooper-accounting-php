@@ -295,8 +295,13 @@ function format_currency ($amount)
 	$txt = '';
 	if (is_numeric ($amount))
 	{
+		if (abs($amount) < 0.01) {
+			// Fractional floating point error; set to 0
+			// to avoid spurious negative signs with 0.00.
+			$amount = 0.0;
+		}
 		$amount_str = number_format ($amount, 2);
-		if ($amount < 0)
+		if ($amount < 0.0)
 			$txt =  '<span style="color: red;">$'.
 				$amount_str. '</span>';
 		else

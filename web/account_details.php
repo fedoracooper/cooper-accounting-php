@@ -207,7 +207,10 @@
 		$balanceTotal += $accountSavings->balance;
 		$budgetTotal += $accountSavings->budget;
 		$transactionTotal += $accountSavings->transactions;
-		$unspentTotal += $accountSavings->getUnspent();
+		// Only add Unspent amount for budgets or expenses
+		if (!$showBalance || $accountSavings->budget != 0.0) {
+			$unspentTotal += $accountSavings->getUnspent();
+		}
 		$savedTotal += $accountSavings->getSaved();
 		$toSaveTotal += $accountSavings->getToSave();
 

@@ -25,8 +25,8 @@ class AccountSavings {
 		// unspent will be negative when over budget
 		$unspent = $this->budget - $this->transactions - $this->saved;
 		if ($setToSave) {
-			if ($this->saved < 0.0) {
-				// When already drawing from savings, toSave is always 0
+			if (abs($this->saved) > 0.001) {
+				// When already savings or drawing from savings, toSave is always 0
 				$this->toSave = 0.0;
 			} else {
 			  $this->toSave = $this->calculateToSave($unspent);

@@ -59,7 +59,7 @@ class Transaction
 		return $this->m_login_id;
 	}
 	public function get_trans_descr() {
-		return stripslashes ($this->m_trans_descr);
+		return htmlspecialchars($this->m_trans_descr);
 	}
 	public function get_trans_date() {
 		$return_date = '';
@@ -119,13 +119,13 @@ class Transaction
 		return $this->m_prior_month;
 	}
 	public function get_trans_vendor() {
-		return stripslashes ($this->m_trans_vendor);
+		return htmlspecialchars($this->m_trans_vendor);
 	}
 	public function get_trans_comment() {
 		if (is_null ($this->m_trans_comment))
-			return '';	// don't stripslashes if the value is NULL
+			return '';	// don't process if the value is NULL
 		else
-			return stripslashes ($this->m_trans_comment);
+			return htmlspecialchars($this->m_trans_comment);
 	}
 	public function get_check_number() {
 		if (is_null ($this->m_check_number))
@@ -449,16 +449,16 @@ class Transaction
 
 		$this->m_trans_id			= $trans_id;
 		$this->m_login_id			= $row['login_id'];
-		$this->m_trans_descr		= addslashes ($row['trans_descr']);
+		$this->m_trans_descr		= $row['trans_descr'];
 		// convert dates from yyyy-mm-dd to mm/dd/yyyy
 		$this->m_trans_time			= strtotime ($row['trans_date']);
 		$this->m_accounting_time	= strtotime ($row['accounting_date']);
 		$this->m_updated_time		= strtotime ($row['updated_time']);
-		$this->m_trans_vendor		= addslashes ($row['trans_vendor']);
+		$this->m_trans_vendor		= $row['trans_vendor'];
 		if (is_null ($row['trans_comment']))
 			$this->m_trans_comment = NULL;
 		else
-			$this->m_trans_comment	= addslashes ($row['trans_comment']);
+			$this->m_trans_comment	= $row['trans_comment'];
 		$this->m_check_number		= $row['check_number'];
 		$this->m_gas_miles			= $row['gas_miles'];
 		$this->m_gas_gallons		= $row['gas_gallons'];

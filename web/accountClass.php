@@ -341,8 +341,8 @@ class Account
 			// query all layers of accounts
 			$sql =
 				"SELECT a.account_id, ".
-				"  concat( ifnull( concat(a3.account_name, ':'), ''), ".
-				"    ifnull( concat( a2.account_name, ':'), ''), ".
+				"  concat( coalesce( a3.account_name || ':', ''), ".
+				"    coalesce( a2.account_name || ':', ''), ".
 				"    a.account_name) as account_display, ".
 				"  a.account_debit, a.active \n".
 				"FROM Accounts a \n".		// represents any account (top to bottom)
@@ -364,8 +364,8 @@ class Account
 				// ignore rows at the third tier
 				$sql .= "AND a3.account_id IS NULL ";
 			}
-			$sql .= "\n ORDER BY concat(ifnull( concat( a3.account_name, ':'), ''), ".
-				"    ifnull( concat( a2.account_name, ':'), ''), ".
+			$sql .= "\n ORDER BY concat(coalesce( a3.account_name || ':', ''), ".
+				"    coalesce( a2.account_name || ':', ''), ".
 				"    a.account_name) ";
 		}
 		else
@@ -502,7 +502,7 @@ class Account
 				"  as account_sum, $month_sql ".
 				"  year(t.accounting_date) as accounting_year \n".
 				"FROM Transactions t \n".
-				"INNER JOIN LedgerEntries le on le.trans_id = t.trans_id \n".
+				"INNER JOIN Ledger_Entries le on le.trans_id = t.trans_id \n".
 				"INNER JOIN Accounts a on a.account_id = le.account_id \n".
 				"LEFT JOIN Accounts a2 on a.account_parent_id = a2.account_id \n".
 				"WHERE (a.account_id = :account_id OR ".
@@ -614,7 +614,7 @@ class Account
 			"  sum(ledger_amount) as total_dollars, ".
 			"  year(accounting_date) as accounting_year \n".
 			"FROM Transactions t \n".
-			"INNER JOIN LedgerEntries le ON ".
+			"INNER JOIN Ledger_Entries le ON ".
 			"  le.trans_id = t.trans_id \n".
 			"INNER JOIN Accounts a ON ".
 			"  a.account_id = le.account_id ".
@@ -671,9 +671,9 @@ class Account
 			return 'End date is invalid.';
 
 		$sql = "SELECT sum( ledger_amount ) AS total_amount, ".
-			"  ifnull( a2.account_id, a.account_id ) as account_id, ".
-			"  min( ifnull( a2.account_name, a.account_name ) ) as name ".
-			"FROM LedgerEntries le \n".
+			"  coalesce( a2.account_id, a.account_id ) as account_id, ".
+			"  min( coalesce( a2.account_name, a.account_name ) ) as name ".
+			"FROM Ledger_Entries le \n".
 			"INNER JOIN Transactions t ON t.trans_id = le.trans_id \n".
 			"INNER JOIN Accounts a ON le.account_id = a.account_id \n".
 			"LEFT  JOIN Accounts a2 ON a.account_parent_id = a2.account_id ".
@@ -682,7 +682,7 @@ class Account
 			"  OR a2.account_parent_id= :account_id OR a.account_id = :account_id ) \n".
 			"  AND t.accounting_date >=  :start_sql ".
 			"  AND t.accounting_date <=  :end_sql \n".
-			"GROUP BY IFNULL( a2.account_id, a.account_id ) \n".
+			"GROUP BY coalesce( a2.account_id, a.account_id ) \n".
 			"ORDER BY total_amount DESC " ;
 
 		$pdo = db_connect_pdo();
@@ -732,7 +732,7 @@ class Account
 			. 'WHERE a.active = 1 '
 			. '  and (a.account_id = :account_id or a.account_parent_id = :account_id '
 			. '  or parent.account_parent_id = :account_id) '
-			. 'ORDER BY is_parent DESC, ifnull(parent.account_name, a.account_name), '
+			. 'ORDER BY is_parent DESC, coalesce(parent.account_name, a.account_name), '
 			. '  if(parent.account_name is null, \'\', a.account_name) ';
 	
 		$pdo = db_connect_pdo();
@@ -765,7 +765,7 @@ class Account
 			'le.ledger_amount * a1.account_debit * -1 as amount, '.
 			"t.accounting_date, t.trans_comment \n".
 			"from Accounts a1 \n".
-			"join LedgerEntries le ON le.account_id = a1.account_id \n".
+			"join Ledger_Entries le ON le.account_id = a1.account_id \n".
 			"join Transactions t ON t.trans_id = le.trans_id \n".
 			"where ((a1.equation_side = 'R' and a1.account_debit = -1) ".
 			"  OR (a1.is_paycheck_sink = 1)) ".
@@ -810,7 +810,7 @@ class Account
 		$error = '';
 		$sql = 'select account_id, budget, account_name from ('.
 			'SELECT parent.account_id, pb.budget_amount + '.
-			'  sum(ifnull(cb.budget_amount, 0.0)) as budget, '.
+			'  sum(coalesce(cb.budget_amount, 0.0)) as budget, '.
 			'  parent.account_name, 0 as is_parent '.
 			'FROM Accounts parent ' .
 			'inner join Budget pb ON pb.account_id = parent.account_id '.
@@ -895,13 +895,13 @@ class Account
 		$error = '';
 		$sql = 'SELECT sum(ledger_amount) * a.account_debit as balance, '.
 	'  sum(case when budget_date >= :start_date then '.
-	'    ifnull(ledger_amount, 0.0) else 0.0 end) * a.account_debit as transaction_sum, '.
+	'    coalesce(ledger_amount, 0.0) else 0.0 end) * a.account_debit as transaction_sum, '.
 	'  a.account_id, a.savings_account_id, '.
 	'  concat(parent.account_name, \':\', a.account_name) as account_name, '.
 	'  a.account_descr, '.
 	'  min(b.budget_amount) as budget '.
 	'FROM Accounts a '.
-	'LEFT JOIN LedgerEntries le ON le.account_id = a.account_id '.
+	'LEFT JOIN Ledger_Entries le ON le.account_id = a.account_id '.
 	'LEFT JOIN Budget b on b.account_id = a.account_id '.
 	'  and budget_month = :start_date '.
 	'LEFT JOIN Accounts parent on a.account_parent_id = parent.account_id '.
@@ -917,7 +917,7 @@ class Account
 	'   SELECT primary_checking_account_id from Logins '.
 	'   WHERE login_id = :login_id '.
 	'  ) '.
-	'GROUP BY a.account_id, a.account_name '.
+	'GROUP BY a.account_id, a.account_name, parent.account_name '.
 	'ORDER BY a.account_debit DESC, a.account_name ';
 		
 		$pdo = db_connect_pdo();
@@ -976,14 +976,14 @@ class Account
 		$activeFlag = $activeOnly ? 1 : 0;
 		$sql = 'SELECT sum(case when t.trans_id > 0 then ledger_amount else 0.0 end) as balance, '.
 			'  sum(case when budget_date >= :start_date then '.
-			'    ifnull(ledger_amount, 0.0) else 0.0 end) as transaction_sum, '.
+			'    coalesce(ledger_amount, 0.0) else 0.0 end) as transaction_sum, '.
 			'  a.account_id, a.savings_account_id, '.
 			'  case when parent.account_id is null then a.account_name else '.
 	 		'  concat(parent.account_name, \':\', a.account_name) end as account_name, '.
 			'  a.account_descr, '.
 			'  min(b.budget_amount) as budget '.
 			'FROM Accounts a '.
-			'LEFT JOIN LedgerEntries le ON le.account_id = a.account_id '.
+			'LEFT JOIN Ledger_Entries le ON le.account_id = a.account_id '.
 			'LEFT JOIN Budget b on b.account_id = a.account_id '.
 	 		'  and budget_month = :start_date '.
 			'LEFT JOIN Accounts parent on a.account_parent_id = parent.account_id '.
@@ -995,9 +995,9 @@ class Account
 			'WHERE (a.account_id = :account_id or '.
 			'  a.account_parent_id = :account_id or '.
 			'  parent.account_parent_id = :account_id) and a.active = :active '.
-			'GROUP BY a.account_id, a.account_name '.
-			'ORDER BY ifnull(parent.account_name, a.account_name), '.
-			'  if(parent.account_name is null, \'\', a.account_name) ';
+			'GROUP BY a.account_id, a.account_name, parent.account_id '.
+			'ORDER BY coalesce(parent.account_name, a.account_name), '.
+			'  CASE WHEN parent.account_name is null THEN \'\' ELSE a.account_name END ';
 		
 		$pdo = db_connect_pdo();
 		$ps = $pdo->prepare($sql);
@@ -1045,19 +1045,19 @@ class Account
 		' a.account_debit as savings_debit, '.
 		' a.account_parent_id, ap.account_name as parent_name, '.
 		' ap.account_debit as parent_debit, '.
-		' sum(IFNULL(CASE WHEN(tle.budget_date >= :min_date '.
+		' sum(coalesce(CASE WHEN(tle.budget_date >= :min_date '.
 		'   and tle.budget_date <= :max_date '.
 		'   and tle.exclude_from_budget = 0) THEN tle.ledger_amount END, 0.0) '.
     '   * a.account_debit) as savings_total, '.
-    ' sum(IFNULL(tle.ledger_amount, 0.0)) as savings_balance '.
+    ' sum(coalesce(tle.ledger_amount, 0.0)) as savings_balance '.
 		'FROM Accounts a '.
 		'INNER JOIN Accounts ex ON ex.savings_account_id = a.account_id '.
 		'INNER JOIN Accounts ap ON ap.account_id = a.account_parent_id '.
 		'LEFT JOIN (SELECT le.ledger_amount, le.account_id, t.budget_date, t.exclude_from_budget '.
-    '  FROM Transactions t JOIN LedgerEntries le ON le.trans_id = t.trans_id) as tle ON '.
+    '  FROM Transactions t JOIN Ledger_Entries le ON le.trans_id = t.trans_id) as tle ON '.
     '  tle.account_id = a.account_id '.
 		'WHERE a.login_id = :login_id  '.
-		'GROUP BY a.account_id, a.account_name, ex.account_id '.
+		'GROUP BY a.account_id, a.account_name, ex.account_id, ap.account_name, ap.account_debit '.
 		'ORDER BY a.account_parent_id, a.account_name';
 		
 		$pdo = db_connect_pdo();

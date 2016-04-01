@@ -475,7 +475,7 @@ class Transaction
 		// Load individual ledger entries
 		$sql = "SELECT le.ledger_id, le.account_id, le.ledger_amount, ".
 			" a.equation_side, a.account_debit \n".
-			"FROM LedgerEntries le \n".
+			"FROM Ledger_Entries le \n".
 			"INNER JOIN Accounts a ON ".
 			"	a.account_id = le.account_id ".
 			"WHERE le.trans_id= :trans_id ";
@@ -648,7 +648,7 @@ class Transaction
 		$success = $ps->execute();
 		$error = get_pdo_error($ps);
 		if ($error != '') {
-			return $error;
+			return $error . $ps->debugDumpParams();
 		}
 		
 		$ledger_inserts = 0;
@@ -656,21 +656,21 @@ class Transaction
 		if ($this->m_trans_id == -1)
 		{
 			// get id from the insert
-			$this->m_trans_id = get_auto_increment($pdo);
+			$this->m_trans_id = get_auto_increment($pdo, 'transactions_trans_id_seq');
 			if ($this->m_trans_id < 1) {
 				return 'Invalid auto_increment val: ' . $this->m_trans_id;
 			}
 		}
 		
 		// prepare all queries
-		$psInsert = $pdo->prepare("INSERT INTO LedgerEntries \n".
+		$psInsert = $pdo->prepare("INSERT INTO Ledger_Entries \n".
 			"(trans_id, account_id, ledger_amount) \n".
 			"VALUES(:trans_id, :account_id, :ledger_amount)");
 		
-		$psDelete = $pdo->prepare("DELETE from LedgerEntries \n".
+		$psDelete = $pdo->prepare("DELETE from Ledger_Entries \n".
 			"WHERE ledger_id = :ledger_id");
 		
-		$psUpdate = $pdo->prepare("UPDATE LedgerEntries \n".
+		$psUpdate = $pdo->prepare("UPDATE Ledger_Entries \n".
 						"SET account_id= :account_id, ".
 						" ledger_amount= :ledger_amount \n".
 						"WHERE ledger_id= :ledger_id ");
@@ -710,7 +710,7 @@ class Transaction
 			
 			$success = $ps->execute();
 			if (!$success) {
-				return get_pdo_error($ps);
+				return get_pdo_error($ps) . $ps->debugDumpParams();
 			}
 
 			$ledger_inserts += $ps->rowCount();
@@ -768,8 +768,8 @@ class Transaction
 		// Look for any audits that touch any accounts being updated, with
 		// an accounting date on or before the audit date
 		$sql = "SELECT aa.audit_date, a.account_name, le.account_id \n".
-			"FROM AccountAudits aa \n".
-			"INNER JOIN LedgerEntries le ON le.ledger_id = aa.ledger_id \n".
+			"FROM Account_Audits aa \n".
+			"INNER JOIN Ledger_Entries le ON le.ledger_id = aa.ledger_id \n".
 			"INNER JOIN Accounts a ON a.account_id = le.account_id \n".
 			"WHERE le.account_id IN( $accounts ) \n".
 			"	AND aa.audit_date >= :minDate ".
@@ -883,7 +883,7 @@ class Transaction
 		else
 		{
 			// Delete the ledger entries, then the transactions
-			$sql = "DELETE FROM LedgerEntries \n".
+			$sql = "DELETE FROM Ledger_Entries \n".
 				"WHERE trans_id = :trans_id ";
 			$pdo = db_connect_pdo();
 			$ps = $pdo->prepare($sql);
@@ -995,13 +995,13 @@ class Transaction
 			" t.budget_date, t.exclude_from_budget, ".
 			"  (ledger_amount * a.account_debit * :account_debit) as amount \n".
 			"FROM Transactions t \n".
-			"inner join LedgerEntries le on ".
+			"inner join Ledger_Entries le on ".
 			"	le.trans_id = t.trans_id ".
 			"inner join Accounts a on ".
 			"	le.account_id = a.account_id ".
 			"left join Accounts a2 on ".	// join the account's parent, if it exists
 			"	a.account_parent_id = a2.account_id \n".
-			"left join AccountAudits aa ON ".
+			"left join Account_Audits aa ON ".
 			"	aa.ledger_id = le.ledger_id ".
 			"	AND a.account_id = :account_id \n".	// audit record must match exact account
 			"WHERE (a.account_id = :account_id ".
@@ -1158,7 +1158,7 @@ class Transaction
 	{
 		$sql = "SELECT sum(ledger_amount * a.account_debit * $account_debit)".
 			" as balance \n".
-			"FROM LedgerEntries le \n".
+			"FROM Ledger_Entries le \n".
 			"INNER JOIN Transactions t on ".
 			"	le.trans_id = t.trans_id ".
 			"INNER JOIN Accounts a on ".

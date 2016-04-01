@@ -94,12 +94,7 @@ $navbar .= "	</tr>\n".
 
 // UTILITY FUNCTIONS
 //------------------------------------------------------------------------------
-function db_connect()
-{
-	$link = mysql_connect('localhost', 'accounting_user', 'accounting');
-	mysql_select_db('accounting');
-	return $link;
-}
+
 
 // Build an error message from the PDO object if there is
 // an error code.  Otherwise return an empty string.
@@ -122,15 +117,17 @@ function get_pdo_error(PDOStatement $pdo)
 // Return new PDO object, or a string error msg on failure.
 function db_connect_pdo()
 {
-	$host = 'localhost';
-	$db = 'accounting';
-	$user = 'accounting_user';
-	$pass = 'accounting';
+	$host = 'jumbo.db.elephantsql.com';
+	$port = '5432';
+	$db = 'fycuzlnu';
+	$user = 'fycuzlnu';
+	$pass = 'okIS3AvL3EacDVI7IrwWJha-pxBF2KBA';
 	try {
-		$pdo = new PDO("mysql:host=$host;dbname=$db", $user, $pass);
+		$pdo = new PDO("pgsql:host=$host;port=$port;dbname=$db", $user, $pass,
+		 array(PDO::ATTR_PERSISTENT => true));
 		return $pdo;
 	} catch (PDOException $ex) {
-		return 'Error connecting to PDO database: ' . $ex->getMessage();
+		die ('Error connecting to PDO database: ' . $ex->getMessage());
 	}
 }
 
@@ -215,12 +212,12 @@ function parse_date ($date_str)
 // Returns the last auto_increment value from the current connection.
 // If no value is found, it returns -1.
 // Note: this assumes that a db connection is already open
-function get_auto_increment($pdo)
+function get_auto_increment($pdo, $seq)
 {
 	// Find out the auto_increment value that was created
-	$sql = "SELECT last_insert_id() ";
-	//$pdo = db_connect_pdo();
+	$sql = "SELECT currval(:seq) ";
 	$ps = $pdo->prepare($sql);
+	$ps->bindParam(':seq', $seq);
 	$ps->execute();
 	$row = $ps->fetch();
 	if ($row != NULL)

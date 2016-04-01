@@ -134,7 +134,7 @@
 	$minDate = $startDate;
 	if ($showBalance) {
 		// when showing balance, we need to go back to the beginning.
-		$minDate = new DateTime('0000-00-00');
+		$minDate = new DateTime('0001-01-01');
 	}
 
 	// Build main data list

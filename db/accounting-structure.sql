@@ -16,254 +16,221 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `AccountAudits`
+-- Table structure for table AccountAudits
 --
 
-DROP TABLE IF EXISTS `AccountAudits`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `AccountAudits` (
-  `audit_id` int(11) NOT NULL AUTO_INCREMENT,
-  `ledger_id` int(11) NOT NULL DEFAULT '0',
-  `audit_date` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `account_balance` decimal(9,2)/*old*/ NOT NULL DEFAULT '0.00',
-  `audit_comment` mediumtext NOT NULL,
-  `updated_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`audit_id`),
-  KEY `ledger_id` (`ledger_id`),
-  CONSTRAINT `AccountAudits_ibfk_1` FOREIGN KEY (`ledger_id`) REFERENCES `LedgerEntries` (`ledger_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=646 DEFAULT CHARSET=utf8 ROW_FORMAT=COMPACT;
+CREATE TABLE acct.account_audits (
+  audit_id SERIAL NOT NULL constraint pk_account_audit PRIMARY KEY,
+  ledger_id int NOT NULL constraint fk_audit_ledger REFERENCES acct.ledger_entries(ledger_id),
+  audit_date timestamp NOT NULL,
+  account_balance decimal(9,2) NOT NULL,
+  audit_comment varchar(500) NOT NULL,
+  updated_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP);
+
+  CREATE INDEX ix_audit_ledger ON acct.account_audits(ledger_id);
+
+--
+-- Table structure for table Accounts
+--
+
+CREATE TABLE acct.accounts (
+  account_id SERIAL NOT NULL constraint pk_account PRIMARY KEY,
+  login_id smallint NOT NULL constraint fk_account_login REFERENCES acct.logins(login_id), 
+  account_parent_id smallint constraint fk_account_parent REFERENCES acct.accounts(account_id),
+  account_name varchar(25) NOT NULL,
+  account_descr varchar(50) NOT NULL,
+  account_debit smallint NOT NULL DEFAULT '1',
+  equation_side char(1) NOT NULL DEFAULT 'L',
+  monthly_budget_default decimal(8,2) NOT NULL DEFAULT '0.00',
+  active smallint NOT NULL DEFAULT '1',
+  updated_time timestamp NOT NULL DEFAULT current_timestamp, 
+  savings_account_id smallint DEFAULT NULL constraint fk_account_savings REFERENCES acct.accounts(account_id),
+  is_savings smallint NOT NULL DEFAULT '0',
+  is_paycheck_sink smallint NOT NULL DEFAULT '0');
+
+  create index ix_account_login ON acct.accounts(login_id,account_parent_id);
+  create index ix_account_parent ON acct.accounts(account_parent_id);
+  create index ix_account_savings ON acct.accounts(savings_account_id);
+); 
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `Accounts`
+-- Table structure for table Budget
 --
 
-DROP TABLE IF EXISTS `Accounts`;
+CREATE TABLE acct.budget (
+  budget_id SERIAL NOT NULL constraint pk_budget PRIMARY KEY,
+  account_id smallint NOT NULL constraint fk_budget_account REFERENCES acct.accounts(account_id),
+  budget_month date NOT NULL,
+  budget_amount decimal(8,2) NOT NULL,
+  updated_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  budget_comment varchar(500) DEFAULT NULL);
+
+  create UNIQUE INDEX uk_budget ON acct.budget (account_id,budget_month);
+
+--
+-- Table structure for table LedgerEntries
+--
+
+CREATE TABLE acct.ledger_entries (
+  ledger_id SERIAL NOT NULL constraint pk_ledger_entries PRIMARY KEY,
+  trans_id int NOT NULL constraint fk_ledger_trans REFERENCES acct.transactions(trans_id),
+  account_id smallint NOT NULL constraint fk_ledger_acccount REFERENCES acct.accounts(account_id),
+  ledger_amount decimal(9,2) NOT NULL);
+
+  create INDEX ix_ledger_trans ON acct.ledger_entries(trans_id);
+  create INDEX ix_ledger_account ON acct.ledger_entries(account_id);
+
+--
+-- Table structure for table Logins
+--
+
+
+CREATE TABLE acct.logins (
+  login_id SMALLSERIAL NOT NULL constraint pk_logins PRIMARY KEY,
+  login_user varchar(25) NOT NULL ,
+  login_password varchar(50) NOT NULL,
+  default_account_id smallint DEFAULT NULL,
+  default_summary1 smallint DEFAULT NULL,
+  default_summary2 smallint DEFAULT NULL,
+  car_account_id smallint DEFAULT NULL,
+  login_admin smallint NOT NULL DEFAULT '0',
+  display_name varchar(50) NOT NULL DEFAULT '',
+  bad_login_count smallint NOT NULL DEFAULT '0',
+  locked smallint NOT NULL DEFAULT '0',
+  active smallint NOT NULL DEFAULT '1',
+  primary_checking_account_id smallint DEFAULT NULL);
+
+  CREATE UNIQUE INDEX ix_login_user ON acct.logins(login_user);
+
+  -- TODO:  create constraints
+  CONSTRAINT Logins_ibfk_1 FOREIGN KEY (default_account_id) REFERENCES Accounts (account_id),
+  CONSTRAINT Logins_ibfk_2 FOREIGN KEY (primary_checking_account_id) REFERENCES Accounts (account_id)
+
+--
+-- Table structure for table Transactions
+--
+
+CREATE TABLE acct.transactions (
+  trans_id SERIAL NOT NULL constraint pk_transaction PRIMARY KEY,
+  login_id smallint NOT NULL constraint fk_tx_login REFERENCES acct.logins(login_id),
+  trans_descr varchar(100) NOT NULL DEFAULT '',
+  trans_date date NOT NULL,
+  accounting_date date NOT NULL,
+  trans_vendor varchar(50) NOT NULL DEFAULT '',
+  trans_comment varchar(500),
+  check_number smallint DEFAULT NULL,
+  gas_miles decimal(7,1) DEFAULT NULL,
+  gas_gallons decimal(4,2) DEFAULT NULL,
+  import_id smallint DEFAULT NULL,
+  updated_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  trans_status smallint NOT NULL DEFAULT '1',
+  budget_date date DEFAULT NULL,
+  exclude_from_budget smallint NOT NULL DEFAULT '0' );
+
+  create INDEX ix_tx_login ON acct.transactions(login_id);
+  create INDEX ix_tx_accounting_date ON acct.transactions(accounting_date);
+
+
+--
+-- Table structure for table import_2002
+--
+
+DROP TABLE IF EXISTS import_2002;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `Accounts` (
-  `account_id` smallint(6) NOT NULL AUTO_INCREMENT,
-  `login_id` tinyint(4) NOT NULL DEFAULT '0',
-  `account_parent_id` smallint(6) DEFAULT NULL,
-  `account_name` varchar(25) NOT NULL DEFAULT '',
-  `account_descr` varchar(50) NOT NULL DEFAULT '',
-  `account_debit` tinyint(4) NOT NULL DEFAULT '1',
-  `equation_side` char(1) NOT NULL DEFAULT 'L',
-  `monthly_budget_default` decimal(8,2) NOT NULL DEFAULT '0.00',
-  `active` tinyint(4) NOT NULL DEFAULT '1',
-  `updated_time` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
-  `savings_account_id` smallint(6) DEFAULT NULL,
-  `is_savings` tinyint(4) NOT NULL DEFAULT '0',
-  `is_paycheck_sink` tinyint(4) NOT NULL DEFAULT '0',
-  PRIMARY KEY (`account_id`),
-  KEY `login_id` (`login_id`,`account_parent_id`),
-  KEY `inactive` (`active`),
-  KEY `fk_savings_account_id` (`savings_account_id`),
-  CONSTRAINT `Accounts_ibfk_1` FOREIGN KEY (`login_id`) REFERENCES `Logins` (`login_id`),
-  CONSTRAINT `Accounts_ibfk_2` FOREIGN KEY (`login_id`) REFERENCES `Logins` (`login_id`),
-  CONSTRAINT `fk_savings_account_id` FOREIGN KEY (`savings_account_id`) REFERENCES `Accounts` (`account_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=238 DEFAULT CHARSET=utf8 COMMENT='Account_debit is 1 or -1 for math reasons.';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `Budget`
---
-
-DROP TABLE IF EXISTS `Budget`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `Budget` (
-  `budget_id` int(11) NOT NULL AUTO_INCREMENT,
-  `account_id` smallint(6) NOT NULL,
-  `budget_month` date NOT NULL,
-  `budget_amount` decimal(8,2) NOT NULL,
-  `updated_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `budget_comment` varchar(500) DEFAULT NULL,
-  PRIMARY KEY (`budget_id`),
-  UNIQUE KEY `budget_uk` (`account_id`,`budget_month`)
-) ENGINE=InnoDB AUTO_INCREMENT=1663 DEFAULT CHARSET=utf8;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `LedgerEntries`
---
-
-DROP TABLE IF EXISTS `LedgerEntries`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `LedgerEntries` (
-  `ledger_id` int(11) NOT NULL AUTO_INCREMENT,
-  `trans_id` int(11) NOT NULL DEFAULT '0',
-  `account_id` smallint(6) NOT NULL DEFAULT '0',
-  `ledger_amount` decimal(9,2) NOT NULL DEFAULT '0.00',
-  PRIMARY KEY (`ledger_id`),
-  KEY `account_id` (`account_id`),
-  KEY `trans_id` (`trans_id`),
-  CONSTRAINT `LedgerEntries_ibfk_1` FOREIGN KEY (`trans_id`) REFERENCES `Transactions` (`trans_id`),
-  CONSTRAINT `LedgerEntries_ibfk_2` FOREIGN KEY (`account_id`) REFERENCES `Accounts` (`account_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=28210 DEFAULT CHARSET=latin1 COMMENT='Adjustment to a single account';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `Logins`
---
-
-DROP TABLE IF EXISTS `Logins`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `Logins` (
-  `login_id` tinyint(4) NOT NULL AUTO_INCREMENT,
-  `login_user` varchar(25) NOT NULL DEFAULT '',
-  `login_password` varchar(50) NOT NULL DEFAULT '',
-  `default_account_id` smallint(6) DEFAULT NULL,
-  `default_summary1` smallint(6) DEFAULT NULL,
-  `default_summary2` smallint(6) DEFAULT NULL,
-  `car_account_id` smallint(6) DEFAULT NULL,
-  `login_admin` tinyint(4) NOT NULL DEFAULT '0',
-  `display_name` varchar(50) NOT NULL DEFAULT '',
-  `bad_login_count` tinyint(4) NOT NULL DEFAULT '0',
-  `locked` tinyint(1) NOT NULL DEFAULT '0',
-  `active` tinyint(4) NOT NULL DEFAULT '1',
-  `primary_checking_account_id` smallint(6) DEFAULT NULL,
-  PRIMARY KEY (`login_id`),
-  UNIQUE KEY `login_user` (`login_user`),
-  KEY `default_account_id` (`default_account_id`),
-  KEY `primary_checking_account_id` (`primary_checking_account_id`),
-  CONSTRAINT `Logins_ibfk_1` FOREIGN KEY (`default_account_id`) REFERENCES `Accounts` (`account_id`),
-  CONSTRAINT `Logins_ibfk_2` FOREIGN KEY (`primary_checking_account_id`) REFERENCES `Accounts` (`account_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8 COMMENT='Each login has its own set of accounts';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `Transactions`
---
-
-DROP TABLE IF EXISTS `Transactions`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `Transactions` (
-  `trans_id` int(11) NOT NULL AUTO_INCREMENT,
-  `login_id` tinyint(4) NOT NULL DEFAULT '0',
-  `trans_descr` varchar(100) NOT NULL DEFAULT '',
-  `trans_date` date NOT NULL DEFAULT '0000-00-00',
-  `accounting_date` date NOT NULL DEFAULT '0000-00-00',
-  `trans_vendor` varchar(50) NOT NULL DEFAULT '',
-  `trans_comment` mediumtext,
-  `check_number` smallint(6) DEFAULT NULL,
-  `gas_miles` decimal(7,1) DEFAULT NULL,
-  `gas_gallons` decimal(4,2)/*old*/ DEFAULT NULL,
-  `import_id` smallint(6) DEFAULT NULL,
-  `updated_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `trans_status` tinyint(4) NOT NULL DEFAULT '1',
-  `budget_date` date DEFAULT NULL,
-  `exclude_from_budget` tinyint(4) NOT NULL DEFAULT '0',
-  PRIMARY KEY (`trans_id`),
-  KEY `login_id` (`login_id`),
-  KEY `trans_status` (`trans_status`),
-  CONSTRAINT `Transactions_ibfk_1` FOREIGN KEY (`login_id`) REFERENCES `Logins` (`login_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=12422 DEFAULT CHARSET=utf8 COMMENT='Transaction can have many ledger entries.';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `import_2002`
---
-
-DROP TABLE IF EXISTS `import_2002`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `import_2002` (
-  `trans_id` int(11) NOT NULL AUTO_INCREMENT,
-  `trans_date` date NOT NULL,
-  `trans_type` smallint(6) NOT NULL,
-  `trans_descr` varchar(100) NOT NULL,
-  `account_name` varchar(100) DEFAULT NULL,
-  `amount` decimal(8,2) NOT NULL,
-  `vendor` varchar(100) DEFAULT NULL,
-  `credit_balance` decimal(8,2) NOT NULL,
-  `trans_comment` varchar(500) DEFAULT NULL,
-  `account_id1` int(11) DEFAULT NULL,
-  `account_id2` int(11) DEFAULT NULL,
-  `bank_balance` decimal(8,2) DEFAULT NULL,
-  PRIMARY KEY (`trans_id`)
+CREATE TABLE import_2002 (
+  trans_id int(11) NOT NULL AUTO_INCREMENT,
+  trans_date date NOT NULL,
+  trans_type smallint NOT NULL,
+  trans_descr varchar(100) NOT NULL,
+  account_name varchar(100) DEFAULT NULL,
+  amount decimal(8,2) NOT NULL,
+  vendor varchar(100) DEFAULT NULL,
+  credit_balance decimal(8,2) NOT NULL,
+  trans_comment varchar(500) DEFAULT NULL,
+  account_id1 int(11) DEFAULT NULL,
+  account_id2 int(11) DEFAULT NULL,
+  bank_balance decimal(8,2) DEFAULT NULL,
+  PRIMARY KEY (trans_id)
 ) ENGINE=InnoDB AUTO_INCREMENT=511 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `import_account_names`
+-- Table structure for table import_account_names
 --
 
-DROP TABLE IF EXISTS `import_account_names`;
+DROP TABLE IF EXISTS import_account_names;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `import_account_names` (
-  `account_id` int(11) NOT NULL,
-  `account_name` varchar(50) NOT NULL,
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `account_id2` int(11) DEFAULT NULL,
-  PRIMARY KEY (`id`)
+CREATE TABLE import_account_names (
+  account_id int(11) NOT NULL,
+  account_name varchar(50) NOT NULL,
+  id int(11) NOT NULL AUTO_INCREMENT,
+  account_id2 int(11) DEFAULT NULL,
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `import_simple`
+-- Table structure for table import_simple
 --
 
-DROP TABLE IF EXISTS `import_simple`;
+DROP TABLE IF EXISTS import_simple;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `import_simple` (
-  `trans_id` int(11) NOT NULL AUTO_INCREMENT,
-  `trans_date` date NOT NULL,
-  `trans_descr` varchar(100) NOT NULL,
-  `checking_amount` decimal(8,2) DEFAULT NULL,
-  `vendor` varchar(100) DEFAULT NULL,
-  `trans_comment` varchar(500) DEFAULT NULL,
-  `credit_amount` decimal(8,2) DEFAULT NULL,
-  `credit_balance` decimal(8,2) DEFAULT NULL,
-  `account_name` varchar(50) DEFAULT NULL,
-  `account_id1` int(11) DEFAULT NULL,
-  `account_id2` int(11) DEFAULT NULL,
-  PRIMARY KEY (`trans_id`)
+CREATE TABLE import_simple (
+  trans_id int(11) NOT NULL AUTO_INCREMENT,
+  trans_date date NOT NULL,
+  trans_descr varchar(100) NOT NULL,
+  checking_amount decimal(8,2) DEFAULT NULL,
+  vendor varchar(100) DEFAULT NULL,
+  trans_comment varchar(500) DEFAULT NULL,
+  credit_amount decimal(8,2) DEFAULT NULL,
+  credit_balance decimal(8,2) DEFAULT NULL,
+  account_name varchar(50) DEFAULT NULL,
+  account_id1 int(11) DEFAULT NULL,
+  account_id2 int(11) DEFAULT NULL,
+  PRIMARY KEY (trans_id)
 ) ENGINE=InnoDB AUTO_INCREMENT=1534 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `spreadsheet_import`
+-- Table structure for table spreadsheet_import
 --
 
-DROP TABLE IF EXISTS `spreadsheet_import`;
+DROP TABLE IF EXISTS spreadsheet_import;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `spreadsheet_import` (
-  `trans_date` date NOT NULL DEFAULT '0000-00-00',
-  `trans_descr` varchar(100) NOT NULL DEFAULT '',
-  `amount` decimal(9,2)/*old*/ DEFAULT NULL,
-  `trans_vendor` varchar(100) NOT NULL DEFAULT '',
-  `trans_comment` mediumtext NOT NULL,
-  `checking` decimal(9,2)/*old*/ DEFAULT NULL,
-  `brokerage` decimal(9,2)/*old*/ DEFAULT NULL,
-  `stock` decimal(9,2)/*old*/ DEFAULT NULL,
-  `insurance` decimal(9,2)/*old*/ DEFAULT NULL,
-  `ascent_expense` decimal(9,2)/*old*/ DEFAULT NULL,
-  `paypal` decimal(9,2)/*old*/ DEFAULT NULL,
-  `chase` decimal(9,2)/*old*/ DEFAULT NULL,
-  `discover` decimal(9,2)/*old*/ DEFAULT NULL,
-  `best_buy` decimal(9,2)/*old*/ DEFAULT NULL,
-  `tax_owed` decimal(9,2)/*old*/ DEFAULT NULL,
-  `paycheck` decimal(9,2)/*old*/ DEFAULT NULL,
-  `other_income` decimal(9,2)/*old*/ DEFAULT NULL,
-  `tax` decimal(9,2)/*old*/ DEFAULT NULL,
-  `bills` decimal(9,2)/*old*/ DEFAULT NULL,
-  `cars` decimal(9,2)/*old*/ DEFAULT NULL,
-  `groceries` decimal(9,2)/*old*/ DEFAULT NULL,
-  `food` decimal(9,2)/*old*/ DEFAULT NULL,
-  `home` decimal(9,2)/*old*/ DEFAULT NULL,
-  `electronics` decimal(9,2)/*old*/ DEFAULT NULL,
-  `software` decimal(9,2)/*old*/ DEFAULT NULL,
-  `misc` decimal(9,2)/*old*/ DEFAULT NULL,
-  `import_id` smallint(6) NOT NULL AUTO_INCREMENT,
-  PRIMARY KEY (`import_id`)
+CREATE TABLE spreadsheet_import (
+  trans_date date NOT NULL DEFAULT '0000-00-00',
+  trans_descr varchar(100) NOT NULL DEFAULT '',
+  amount decimal(9,2)/*old*/ DEFAULT NULL,
+  trans_vendor varchar(100) NOT NULL DEFAULT '',
+  trans_comment mediumtext NOT NULL,
+  checking decimal(9,2)/*old*/ DEFAULT NULL,
+  brokerage decimal(9,2)/*old*/ DEFAULT NULL,
+  stock decimal(9,2)/*old*/ DEFAULT NULL,
+  insurance decimal(9,2)/*old*/ DEFAULT NULL,
+  ascent_expense decimal(9,2)/*old*/ DEFAULT NULL,
+  paypal decimal(9,2)/*old*/ DEFAULT NULL,
+  chase decimal(9,2)/*old*/ DEFAULT NULL,
+  discover decimal(9,2)/*old*/ DEFAULT NULL,
+  best_buy decimal(9,2)/*old*/ DEFAULT NULL,
+  tax_owed decimal(9,2)/*old*/ DEFAULT NULL,
+  paycheck decimal(9,2)/*old*/ DEFAULT NULL,
+  other_income decimal(9,2)/*old*/ DEFAULT NULL,
+  tax decimal(9,2)/*old*/ DEFAULT NULL,
+  bills decimal(9,2)/*old*/ DEFAULT NULL,
+  cars decimal(9,2)/*old*/ DEFAULT NULL,
+  groceries decimal(9,2)/*old*/ DEFAULT NULL,
+  food decimal(9,2)/*old*/ DEFAULT NULL,
+  home decimal(9,2)/*old*/ DEFAULT NULL,
+  electronics decimal(9,2)/*old*/ DEFAULT NULL,
+  software decimal(9,2)/*old*/ DEFAULT NULL,
+  misc decimal(9,2)/*old*/ DEFAULT NULL,
+  import_id smallint NOT NULL AUTO_INCREMENT,
+  PRIMARY KEY (import_id)
 ) ENGINE=InnoDB AUTO_INCREMENT=679 DEFAULT CHARSET=utf8 PACK_KEYS=0 COMMENT='importing from accounting spreadsheets';
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;

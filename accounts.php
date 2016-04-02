@@ -1,4 +1,4 @@
-<?
+<?php
 /*
 	Accounts management page
 	Created 9/27/2004 by Cooper Blake

@@ -1,4 +1,4 @@
-<?
+<?php
 	/*	Account Audit Class
 		Created 7/2/2006
 		Purpose:  Capture a bit of auditing information

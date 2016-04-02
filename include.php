@@ -1,4 +1,4 @@
-<?
+<?php
 /*	Accounting Include file
 	Created 9/22/2004 by Cooper Blake
 

@@ -1,4 +1,4 @@
-<?
+<?php
 /*	Account Audit edit screen
 	Created 7/2/2006 by Cooper Blake
 	Purpose:  Add, update, or delete an account audit record.  An audit record

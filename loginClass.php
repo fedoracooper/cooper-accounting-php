@@ -1,4 +1,4 @@
-<?
+<?php
 /*
 	Login class
 	Created 11/17/2004 by Cooper Blake

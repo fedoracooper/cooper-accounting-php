@@ -1,4 +1,4 @@
-<?
+<?php
 /*
 	Login management page
 	Created 11/17/2004 by Cooper Blake

@@ -1,4 +1,4 @@
-<?
+<?php
 	$current_page = 'index';
 	require('include.php');
 	if (!isset ($_SESSION['login_id']))

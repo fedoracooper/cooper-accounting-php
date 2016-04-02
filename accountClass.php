@@ -1,4 +1,4 @@
-<?
+<?php
 /*	Account Class
 	Created 10/11/2004 (pulled out of include.php)
 */

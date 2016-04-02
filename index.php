@@ -306,7 +306,7 @@
 	</tr>
 </table>
 
-<?
+<?php
 	if ($error != '')
 		echo "<div class='error'>$error</div> \n";
 	if ($warning != '') {
@@ -361,7 +361,7 @@
 	</tr>
 -->
 
-<?
+<?php
 	$last_trans_id = -1;
 	$next_trans = NULL;
 	$tr_style = '';
@@ -559,7 +559,7 @@
 <table class="transaction">
 	<tr>
 		<td colspan="2" style="font-weight: bold;">
-			<a name="edit_trans" id="edit_trans"><?
+			<a name="edit_trans" id="edit_trans"><?php
 			if ($trans->get_trans_id() < 0)
 				echo "New Transaction";
 			else
@@ -569,7 +569,7 @@
 		<td colspan="1">Repeat months:</td>
 		<td colspan="1"><input type="text" size="2" maxlength="2" name="repeat_count"
 			value="<?= $trans->get_repeat_count() ?>"></td>
-		<td class="info" colspan="3"><?
+		<td class="info" colspan="3"><?php
 			if ($trans->get_trans_id() >= 0)
 				echo "last modified " . $trans->get_updated_time() ?></td>
 	</tr>
@@ -626,7 +626,7 @@
 		<th>RHS $</th>
 	</tr>
 
-<?
+<?php
 	$show_inactive = 0;
 	// only show inactive accounts when editing
 	if ($editClick == 1)
@@ -685,7 +685,7 @@
 	<tr class="padded-row">
 		<td style="padding-left: 25px;">&nbsp;</td>
 		<td><input type="submit" name="save" value="Save transaction"></td>
-<?
+<?php
 	if ($trans->get_trans_id() > -1)
 	{
 		// currently editing; show delete button

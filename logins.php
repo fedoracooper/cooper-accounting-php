@@ -161,7 +161,7 @@
 	<tr>
 		<td>Login account:</td>
 		<td><?= $login_input ?></td>
-		<td><?
+		<td><?php
 			if ($fixed_login_id == -1)
 				echo '<input type="submit" name="select" value="Edit">';
 			?></td>
@@ -235,7 +235,7 @@
 	<tr>
 		<td></td>
 		<td><input type="submit" name="save" value="Save"></td>
-		<td><?
+		<td><?php
 			if ($fixed_login_id == -1)
 			{
 				echo '<input type="submit" name="delete" onClick="return confirmDelete()" '.

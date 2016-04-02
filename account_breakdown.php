@@ -150,7 +150,7 @@
 
 	</tr>
 
-<?
+<?php
 	// First loop through data: calculate totals
 	$grand_total = 0.0;
 	$abs_total = 0.0;

@@ -234,7 +234,7 @@
 
 <table>
 	<tr>
-		<td colspan="2"><?
+		<td colspan="2"><?php
 			if ($account->get_account_id() == -1)
 				echo "New";
 			else
@@ -308,7 +308,7 @@
 		<td></td>
 		<td></td>
 		<td><input type="submit" name="save" value="Save account"></td>
-<?
+<?php
 	if ($account->get_account_id() > -1)
 	{
 		// Editing an account: delete button

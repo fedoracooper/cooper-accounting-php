@@ -122,7 +122,7 @@
 </table>
 </form>
 
-<?
+<?php
 	// left border for right-most column
 	$td_style = 'style="border-left: 1px solid black;"';
 	$c_style = 'style="border-left: 2px solid black; "';	// center divider
@@ -141,7 +141,7 @@
 		<th style="text-align: center;">YTD %</th>
 	</tr>
 
-<?
+<?php
 	// Loop through summary list
 	// (YYYY-MM) => (month, year, account1_sum, account2_sum,
 	//		account1_ytd, account2_ytd)
@@ -297,7 +297,7 @@
 		<th>Avg miles / tank</th>
 	</tr>
 
-<?
+<?php
 		//	array (account_name, accounting_year, num_records, total_miles, 
 		//		total_gallons, total_dollars)
 	foreach ($fuel_list as $fuel_data)

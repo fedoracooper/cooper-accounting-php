@@ -96,7 +96,7 @@ if ($error != '')
 <body>
 <table style="margin-top: 5px;">
 	<tr>
-		<td><h3>Account Audit <?
+		<td><h3>Account Audit <?php
 		$audit_id = $audit->get_audit_id();
 		if ($audit_id < 0)
 		{
@@ -144,7 +144,7 @@ if ($error != '')
 	<tr>
 		<td>&nbsp;</td>
 		<td><input type="submit" name="save" value="Save audit record">
-		&nbsp;&nbsp;&nbsp;&nbsp;<?
+		&nbsp;&nbsp;&nbsp;&nbsp;<?php
 	if ($audit->get_audit_id() > -1)
 	{
 		// This audit record has been stored in DB; allow delete

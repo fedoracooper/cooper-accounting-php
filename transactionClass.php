@@ -621,6 +621,7 @@ class Transaction
 				" gas_gallons = :gas_gallons, ".
 				" trans_status = :status, ".
 				" budget_date = :budget_date, ".
+				" updated_time = current_timestamp, ".
 				" exclude_from_budget = :exclude_budget \n ".
 				"WHERE trans_id = :trans_id ";
 			$ps = $pdo->prepare($sql);

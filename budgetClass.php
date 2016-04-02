@@ -69,7 +69,8 @@ class Budget {
 		} else {
 			// UPDATE
 			$sql = 'UPDATE Budget set budget_amount = :budget_amount, '
-				. 'budget_comment = :budget_comment '
+				. 'budget_comment = :budget_comment, '
+				. 'updated_time = current_timestamp '
 				. 'WHERE budget_id = :budget_id';
 			
 			if ($ps == NULL) {

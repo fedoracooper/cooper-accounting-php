@@ -167,7 +167,8 @@ class Account
 		
 		// Only update when the budget has changed
 		$sql = 'UPDATE Accounts '.
-				'SET monthly_budget_default = :budget_default '.
+				'SET monthly_budget_default = :budget_default, '.
+				'  updated_time = current_timestamp '.
 				'WHERE account_id = :account_id '.
 				'  AND monthly_budget_default <> :budget_default';
 
@@ -233,6 +234,7 @@ $execTime += $t2 - $t1;
 				"  monthly_budget_default = :budget_default, ".
 				"  is_savings = :is_savings, ".
 				"  is_paycheck_sink = :is_paycheck_sink, ".
+				"  updated_time = current_timestamp, ".
 				"  active = :active \n".
 				"WHERE account_id = :account_id ";
 			$ps = $pdo->prepare($sql);
@@ -255,7 +257,9 @@ $execTime += $t2 - $t1;
 		
 		$success = $ps->execute();
 		if (!$success) {
-			return get_pdo_error($ps);
+			$error = get_pdo_error($ps);
+			$pdo->rollBack();
+			return $error;
 		}
 		
 		if ($this->m_account_id == -1)
@@ -491,8 +495,8 @@ $readTime += $t6 - $t5;
 		// SQL statement: group the summary by month & year (once per account)
 		for ($i = 0; $i < 2; $i++)
 		{
-			$group_sql = "month(t.accounting_date), year(t.accounting_date) ";
-			$month_sql = "month(t.accounting_date) as accounting_month, ";
+			$group_sql = "extract(MONTH FROM t.accounting_date), extract(YEAR FROM t.accounting_date) ";
+			$month_sql = "extract(MONTH FROM t.accounting_date) as accounting_month, ";
 			if ($i == 0 || $i == 2)
 			{
 				$account_id = $account1_id;
@@ -506,14 +510,14 @@ $readTime += $t6 - $t5;
 			if ($i == 2 || $i == 3)
 			{
 				// yearly summary
-				$group_sql = "year(t.accounting_date) \n";
+				$group_sql = "extract(YEAR FROM t.accounting_date) \n";
 				// count as month 13, as this sorts after december
 				$month_sql = "13 as accounting_month, ";
 			}
 
 			$sql = "SELECT sum(ledger_amount * a.account_debit * :account_debit) ".
 				"  as account_sum, $month_sql ".
-				"  year(t.accounting_date) as accounting_year \n".
+				"  extract(YEAR FROM t.accounting_date) as accounting_year \n".
 				"FROM Transactions t \n".
 				"INNER JOIN Ledger_Entries le on le.trans_id = t.trans_id \n".
 				"INNER JOIN Accounts a on a.account_id = le.account_id \n".
@@ -524,7 +528,7 @@ $readTime += $t6 - $t5;
 				"  and t.accounting_date >= :start_date_sql ".
 				"  and t.accounting_date <= :end_date_sql \n".
 				"GROUP BY $group_sql \n".
-				"ORDER BY year(accounting_date) ASC, month(accounting_date) ASC ";
+				"ORDER BY extract(YEAR FROM accounting_date) ASC, extract(MONTH FROM accounting_date) ASC ";
 
 			$ps = $pdo->prepare($sql);
 			$ps->bindParam(':account_debit', $account_debit);
@@ -625,7 +629,7 @@ $readTime += $t6 - $t5;
 			"  count(*) as cnt, sum(gas_miles) as total_miles, ".
 			"  sum(gas_gallons) as total_gallons, ".
 			"  sum(ledger_amount) as total_dollars, ".
-			"  year(accounting_date) as accounting_year \n".
+			"  extract(YEAR FROM accounting_date) as accounting_year \n".
 			"FROM Transactions t \n".
 			"INNER JOIN Ledger_Entries le ON ".
 			"  le.trans_id = t.trans_id \n".
@@ -633,8 +637,8 @@ $readTime += $t6 - $t5;
 			"  a.account_id = le.account_id ".
 			"  AND a.account_parent_id = :parent_id \n".
 			"WHERE gas_gallons > 0 AND gas_miles > 0 \n".
-			"GROUP BY a.account_id, year(t.accounting_date) \n".
-			"ORDER BY year(accounting_date) DESC, a.account_name ";
+			"GROUP BY a.account_id, extract(YEAR FROM t.accounting_date) \n".
+			"ORDER BY extract(YEAR FROM accounting_date) DESC, a.account_name ";
 		$pdo = db_connect_pdo();
 		$ps = $pdo->prepare($sql);
 		$ps->bindParam(':parent_id', $_SESSION['car_account_id']);

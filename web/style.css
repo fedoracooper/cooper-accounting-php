@@ -1,0 +1,188 @@
+body {
+	font-size: 11pt;
+}
+
+.numeric {
+	text-align: right;
+}
+
+td.total {
+	text-align: right;
+	font-weight: bold;
+}
+
+tr.padded-row td {
+	padding-top: 5px;
+	padding-right: 25px;
+}
+
+input {
+	font-size: 9pt;
+}
+
+a
+{
+	font-size: 10pt;
+	font-family: Arial, sans-serif;
+	color: #222299;
+	text-decoration: none;
+}
+
+a:active
+{
+	color: #FF2222;
+}
+
+a:hover
+{
+	background-color: #FFFF99;
+}
+
+a:focus
+{
+	color: #FF2222;
+}
+
+h3
+{
+	font-family: Arial, sans-serif;
+}
+
+th
+{
+	color: #5555CC;
+	text-align: left;
+	padding: 2px;
+	border-bottom: 1px solid black;
+}
+
+.error
+{
+	color: red;
+	width: 500px;
+}
+
+.message
+{
+	color: orange;
+	font-weight: bold;
+	width: 500px;
+	padding-bottom:  5px;
+}
+
+.currency
+{
+	text-align: right;
+}
+
+.indented-block
+{
+	margin-left: 50px;
+	width: 400px;
+}
+
+div.bottom
+{
+	padding-left: 50px;
+	padding-top: 10px;
+}
+
+.fixed-width
+{
+	font-family: Courier New;
+}
+
+.info
+{
+	text-align: right;
+	font-style: italic;
+	color: #DD5555;
+}
+
+
+table.trans-table
+{
+	border: 1px solid black;
+	margin-top: 8px;
+	margin-bottom: 5px;
+}
+table.trans-table tr
+{
+	/* background-color: #EEEEFF; */
+
+}
+table.trans-table td
+{
+	padding-right: 8px;
+	vertical-align: top;
+}
+
+table.summary-form td
+{
+	padding-right: 6px;
+}
+
+table.summary-list
+{
+	margin-left: 20px;
+	border: 1px solid black;
+}
+table.summary-list td
+{
+	padding-right: 10px;
+	padding-left: 10px;
+	vertical-align: top;
+}
+table.summary-list th
+{
+	padding-right: 5px;
+	padding-left: 5px;
+}
+
+table.budget-list
+{
+	margin-left: 20px;
+	border: 1px solid black;
+}
+table.budget-list td
+{
+	padding-right: 10px;
+	padding-left: 10px;
+	vertical-align: top;
+}
+table.budget-list th
+{
+	padding-right: 5px;
+	padding-left: 5px;
+}
+table.budget-list td input
+{
+	text-align: right;
+}
+
+table.transaction
+{
+	border-left: 1px solid black;
+	border-right: 1px solid black;
+	border-top: 1px solid black;
+}
+
+
+table.navbar
+{
+	border-bottom: 1px solid black;
+	/* background-color: #CADDEC; */
+}
+
+table.navbar tr
+{
+
+}
+
+table.navbar td
+{
+	padding-left: 10px;
+	padding-right: 10px;
+/*	font-weight: bold;	*/
+
+}

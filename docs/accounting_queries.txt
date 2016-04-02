@@ -1,0 +1,154 @@
+10/2/2004
+Cooper Blake
+Accounting database import from spreadsheet
+
+TO-DO:
+  Create summary row on transaction list if there are any
+pending account transactions that are not visible because the
+accounting date is different.
+
+insert into transactions
+(login_id, trans_descr, trans_date, accounting_date,
+trans_vendor, trans_comment, import_id)
+
+SELECT 1, trans_descr, trans_date, trans_date,
+  trans_vendor, trans_comment, import_id
+FROM spreadsheet_import
+
+
+insert into ledgerEntries
+(trans_id, account_id, ledger_amount)
+select t.trans_id, 61, si.tax_owed
+from spreadsheet_import si
+inner join transactions t on
+  t.import_id = si.import_id
+where tax_owed <> 0
+
+where checking = 0
+and brokerage = 0
+and stock = 0
+and insurance = 0
+and ascent_expense = 0
+and paypal = 0
+and chase = 0
+and discover = 0
+and best_buy =0
+and tax_owed = 0
+and paycheck = 0
+and other_income = 0
+and  tax = 0
+and bills = 0
+and cars = 0
+and groceries = 0
+and food = 0
+and home = 0
+and electronics = 0
+and software = 0
+and misc = 0
+
+
+update ledgerEntries le
+inner join transactions t
+  on le.trans_id = t.trans_id
+set le.account_id = 26
+where trans_descr
+LIKE  '%gas%' AND trans_descr NOT 
+LIKE  '%bill%' AND ( trans_descr
+LIKE  '%honda%' OR trans_descr
+LIKE  '%civic%' )
+and le.account_id = 24
+
+
+
+update ledgerEntries le
+inner join transactions t
+  on le.trans_id = t.trans_id
+set le.account_id = 25
+where trans_descr
+LIKE  '%gas%' AND trans_descr NOT 
+LIKE  '%bill%' AND ( trans_descr
+LIKE  '%elise%' OR trans_descr
+LIKE  '%lotus%' )
+and le.account_id = 24
+
+
+update ledgerEntries le
+inner join transactions t 
+ ON le.trans_id = t.trans_id
+set le.account_id = 62
+WHERE trans_date <  '2003-12-28' AND account_id =11
+
+
+
+SELECT  * 
+FROM transactions t
+INNER  JOIN ledgerEntries le ON le.trans_id = t.trans_id
+WHERE trans_descr
+LIKE  '%gas%' AND trans_descr NOT 
+LIKE  '%bill%' AND ( trans_descr
+LIKE  '%elise%' OR trans_descr
+LIKE  '%lotus%' ) AND le.account_id =24
+
+
+
+
+SELECT t.trans_id, trans_descr, sum( ledger_amount * account_debit )  AS total
+FROM transactions t
+INNER  JOIN ledgerEntries le ON le.trans_id = t.trans_id
+INNER  JOIN accounts a ON a.account_id = le.account_id
+GROUP  BY t.trans_id, t.trans_descr
+HAVING abs( sum( ledger_amount * account_debit )  )  > 0.0001
+
+
+
+
+
+select (checking + brokerage + stock + insurance
++ ascent_expense + paypal - chase - discover
+- best_buy - tax_owed - paycheck - other_income
++ tax + bills + cars + groceries + food
++ home + electronics + software + misc) as total,
+si.*
+
+from spreadsheet_import si
+where abs(checking + brokerage + stock + insurance
++ ascent_expense + paypal - chase - discover
+- best_buy - tax_owed - paycheck - other_income
++ tax + bills + cars + groceries + food
++ home + electronics + software + misc) > 0.00
+
+
+
+select *
+from spreadsheet_import
+where checking = 0
+and brokerage = 0
+and stock = 0
+and insurance = 0
+and ascent_expense = 0
+and paypal = 0
+and chase = 0
+and discover = 0
+and best_buy =0
+and tax_owed = 0
+and paycheck = 0
+and other_income = 0
+and  tax = 0
+and bills = 0
+and cars = 0
+and groceries = 0
+and food = 0
+and home = 0
+and electronics = 0
+and software = 0
+and misc = 0
+
+
+SELECT trans_date, min( import_id )  AS import_id, max(import_id) as import_id2
+FROM  `spreadsheet_import` 
+GROUP  BY trans_date
+HAVING count(  *  )  >1 AND sum( amount )  =0
+
+
+
+34, 35, 252, 253, 282, 283, 306, 307, 308, 309

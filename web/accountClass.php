@@ -733,7 +733,7 @@ class Account
 			. '  and (a.account_id = :account_id or a.account_parent_id = :account_id '
 			. '  or parent.account_parent_id = :account_id) '
 			. 'ORDER BY is_parent DESC, coalesce(parent.account_name, a.account_name), '
-			. '  if(parent.account_name is null, \'\', a.account_name) ';
+			. '  CASE WHEN parent.account_name is null THEN \'\' ELSE a.account_name END ';
 	
 		$pdo = db_connect_pdo();
 		$ps = $pdo->prepare($sql);
@@ -770,7 +770,7 @@ class Account
 			"where ((a1.equation_side = 'R' and a1.account_debit = -1) ".
 			"  OR (a1.is_paycheck_sink = 1)) ".
 			"  AND t.exclude_from_budget = 0 ".
-			"  AND date_format(t.accounting_date, '%Y-%m') = :budget_month ".
+			"  AND TO_CHAR(t.accounting_date, 'YYYY-MM') = :budget_month ".
 			"  AND t.login_id = :login_id ";
 			
 		$pdo = db_connect_pdo();

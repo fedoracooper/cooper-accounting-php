@@ -117,14 +117,28 @@ function get_pdo_error(PDOStatement $pdo)
 // Return new PDO object, or a string error msg on failure.
 function db_connect_pdo()
 {
+	// Re-use PDO connection for each request on the page.
+	// Under high latency, new connections cost about 0.6 seconds each!
+	global $pdo, $connTime, $sqlCount;
+	$sqlCount++;
+	if ($pdo != NULL) {
+		return $pdo;
+	}
+	
+	$start = microtime(true);
 	$host = 'jumbo.db.elephantsql.com';
 	$port = '5432';
 	$db = 'fycuzlnu';
 	$user = 'fycuzlnu';
 	$pass = 'okIS3AvL3EacDVI7IrwWJha-pxBF2KBA';
 	try {
+		// Note:  ATTR_PERSISTENT = true improves performance under high latency,
+		// but has frequent problems with stale connections.
 		$pdo = new PDO("pgsql:host=$host;port=$port;dbname=$db", $user, $pass,
-		 array(PDO::ATTR_PERSISTENT => true));
+		 array(PDO::ATTR_PERSISTENT => false));
+		 
+		$connTime += microtime(true) - $start;
+		
 		return $pdo;
 	} catch (PDOException $ex) {
 		die ('Error connecting to PDO database: ' . $ex->getMessage());

@@ -23,6 +23,14 @@ define( 'LONG_DATE',	'M j, Y g:i a' );	// Mon D, YYYY H:MM pm
 // Setup timezone
 date_default_timezone_set('America/New_York');
 
+// Global variables for performance metrics
+$connTime = 0.0;
+$execTime = 0.0;
+$readTime = 0.0;
+$txTime = 0.0;
+$sqlCount = 0;
+$pdo = NULL;
+
 
 require ('accountAuditClass.php');
 require ('accountClass.php');
@@ -32,6 +40,7 @@ require ('incomeEntryClass.php');
 require ('ledgerEntryClass.php');
 require ('loginClass.php');
 require ('transactionClass.php');
+
 
 $login_admin = 0;
 $login_id = -1;

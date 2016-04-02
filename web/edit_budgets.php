@@ -66,6 +66,12 @@
 		$defaultBudgets = $_POST['defaultBudgets'];
 		$budgetComments = $_POST['budgetComments'];
 		
+		$pdo = db_connect_pdo();
+$t1 = microtime(true);
+		$pdo->beginTransaction();
+$t2 = microtime(true);
+		$ps = NULL;
+		
 		for ($i = 0; $i < count($accountIds); $i++) {
 			$accountId = $accountIds[$i];
 			$newBudget = $newBudgets[$i];
@@ -80,7 +86,7 @@
 			// update budget
 			$budget = new Budget();
 			$budget->Init_budget($accountId, $budgetDate, $newBudget, $comments, $budgetId);
-			$error = $budget->Save();
+			$error = $budget->Save($pdo, $ps);
 			if ($error != '') {
 				break;
 			}
@@ -88,16 +94,25 @@
 			// update default budget
 			$account = new Account();
 			$account->Init_for_budget_update($accountId, $defaultBudget);
-			$error = $account->Update_budget_default();
+			$error = $account->Update_budget_default($pdo, $ps);
 			if ($error != '') {
 				break;
 			}
 		}
 		
 		if ($error == '') {
+$t3 = microtime(true);
+			$pdo->commit();
+$t4 = microtime(true);
+$txTime += $t2 - $t1 + $t4 - $t3;
 			$message = 'Successfully saved ' . count($accountIds).
 			' budget record(s)';
+		} else {
+			// $pdo->rollBack();
 		}
+		
+		$pdo = NULL;
+		$ps = NULL;
 	}
 
 	$budgetDateText = $budgetDate->format('m/Y');

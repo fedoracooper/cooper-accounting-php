@@ -945,7 +945,9 @@ class Transaction
 		$pdo = db_connect_pdo();
 		$ps = $pdo->prepare($sql);
 		$ps->bindParam(':account_id', $account_id);
+$t1 = microtime(true);
 		$success = $ps->execute();
+$t2 = microtime(true);
 		
 		if (!$success) {
 			echo get_pdo_error($ps);
@@ -1019,7 +1021,12 @@ class Transaction
 		$ps->bindParam(':account_id', $account_id);
 		$ps->bindParam(':start_date_sql', $start_date_sql);
 		$ps->bindParam(':end_date_sql', $end_date_sql);
+$t3 = microtime(true);
 		$success = $ps->execute();
+$t4 = microtime(true);
+
+global $execTime, $readTime;
+$execTime += $t2 - $t1 + $t4 - $t3;
 		
 		if (!$success) {
 			echo get_pdo_error($ps);
@@ -1080,6 +1087,9 @@ class Transaction
 				break;
 			}
 		}
+		
+$t5 = microtime(true);
+$readTime += $t5 - $t4; 
 
 		// The array order must be reversed (by the array key)
 		krsort ($trans_list);

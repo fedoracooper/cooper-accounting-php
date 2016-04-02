@@ -46,9 +46,12 @@ class Budget {
 		$this->m_updated_time = $updated_time;
 	}
 	
-	public function Save() {
+	/* Insert or update the budget.
+	   Takes a PDO connection, which must be initialized, and a Prepared Statement,
+	   which should be non-null on the second and later invocations for efficiency.
+	 */
+	public function Save($pdo, &$ps) {
 		
-		$pdo = db_connect_pdo();
 		if ($this->m_budget_id < 1) {
 			// INSERT
 			$sql = 'INSERT INTO Budget (account_id, budget_month, budget_amount,'
@@ -56,7 +59,9 @@ class Budget {
 				. 'VALUES (:account_id, :budget_month, :budget_amount, '
 				. ' :budget_comment)';
 			
-			$ps = $pdo->prepare($sql);
+			if ($ps == NULL) {
+				$ps = $pdo->prepare($sql);
+			}
 			$ps->bindParam(':account_id', $this->m_account_id);
 			$dateString = $this->m_budget_month->format('Y-m-d');
 			$ps->bindParam(':budget_month', $dateString);
@@ -67,14 +72,20 @@ class Budget {
 				. 'budget_comment = :budget_comment '
 				. 'WHERE budget_id = :budget_id';
 			
-			$ps = $pdo->prepare($sql);
+			if ($ps == NULL) {
+				$ps = $pdo->prepare($sql);
+			}
 			$ps->bindParam(':budget_id', $this->m_budget_id);
 		}
 
 		$ps->bindParam(':budget_amount', $this->m_budget_amount);
 		$ps->bindParam(':budget_comment', $this->m_budget_comment, PDO::PARAM_STR);
+$t2 = microtime(true);
 		
 		$success = $ps->execute();
+$t3 = microtime(true);
+global $execTime;
+$execTime += $t3 - $t2;
 		if (!$success) {
 			return get_pdo_error($ps);
 		}

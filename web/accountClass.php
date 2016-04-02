@@ -160,7 +160,7 @@ class Account
 		return '';
 	}
 	
-	public function Update_budget_default() {
+	public function Update_budget_default($pdo) {
 		if ($this->m_account_id< 1) {
 			return 'Cannot update budget default without account ID';
 		}
@@ -170,11 +170,17 @@ class Account
 				'SET monthly_budget_default = :budget_default '.
 				'WHERE account_id = :account_id '.
 				'  AND monthly_budget_default <> :budget_default';
-		$pdo = db_connect_pdo();
+
 		$ps = $pdo->prepare($sql);
 		$ps->bindParam(':account_id', $this->m_account_id);
 		$ps->bindParam(':budget_default', $this->m_budget_default);
+		
+$t1 = microtime(true);
 		$success = $ps->execute();
+$t2 = microtime(true);
+global $execTime;
+$execTime += $t2 - $t1;
+
 		if (!$success) {
 			return get_pdo_error($ps);
 		}
@@ -386,14 +392,15 @@ class Account
 			}
 			$sql.= "\n ORDER BY a.account_name ";
 		}
-
 		$pdo = db_connect_pdo();
 		$ps = $pdo->prepare($sql);
 		$ps->bindParam(':login_id', $login_id);
+$t4 = microtime(true);
 		if ($use_parent) {
 			$ps->bindParam(':account_parent_id', $account_parent_id);
 		}
 		$success = $ps->execute();
+$t5 = microtime(true);
 		if (!$success) {
 			echo get_pdo_error($ps);
 			return;
@@ -414,6 +421,12 @@ class Account
 			$account_list[$key] = $account_display;
 		}
 		$pdo = null;
+		
+$t6 = microtime(true);
+global $execTime, $readTime;
+//$connTime += $t2 - $t1;
+$execTime += $t5 - $t4;
+$readTime += $t6 - $t5;
 
 		return $account_list;
 	}

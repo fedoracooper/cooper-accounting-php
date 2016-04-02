@@ -4,16 +4,6 @@
 -- ------------------------------------------------------
 -- Server version	10.0.21-MariaDB
 
-/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
-/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
-/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!40101 SET NAMES utf8 */;
-/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
-/*!40103 SET TIME_ZONE='+00:00' */;
-/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
-/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
-/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
-/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
 -- Table structure for table AccountAudits
@@ -34,7 +24,7 @@ CREATE TABLE acct.account_audits (
 --
 
 CREATE TABLE acct.accounts (
-  account_id SERIAL NOT NULL constraint pk_account PRIMARY KEY,
+  account_id SMALLSERIAL NOT NULL constraint pk_account PRIMARY KEY,
   login_id smallint NOT NULL constraint fk_account_login REFERENCES acct.logins(login_id), 
   account_parent_id smallint constraint fk_account_parent REFERENCES acct.accounts(account_id),
   account_name varchar(25) NOT NULL,
@@ -128,7 +118,7 @@ CREATE TABLE acct.transactions (
   budget_date date DEFAULT NULL,
   exclude_from_budget smallint NOT NULL DEFAULT '0' );
 
-  create INDEX ix_tx_login ON acct.transactions(login_id);
+  -- create INDEX ix_tx_login ON acct.transactions(login_id);
   create INDEX ix_tx_accounting_date ON acct.transactions(accounting_date);
 
 

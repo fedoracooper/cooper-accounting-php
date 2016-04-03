@@ -9,6 +9,14 @@
 -- Table structure for table AccountAudits
 --
 
+CREATE TABLE acct.login_audit (
+  login_audit_id serial NOT NULL constraint pk_login_audit PRIMARY KEY,
+  login_user varchar(25) NOT NULL,
+  ip_address varchar(15) NOT NULL,
+  event_time timestamp NOT NULL DEFAULT current_timestamp,
+  login_success char(1) NOT NULL),
+  account_locked char(1) NOT NULL);
+
 CREATE TABLE acct.account_audits (
   audit_id SERIAL NOT NULL constraint pk_account_audit PRIMARY KEY,
   ledger_id int NOT NULL constraint fk_audit_ledger REFERENCES acct.ledger_entries(ledger_id),

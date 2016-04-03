@@ -387,6 +387,26 @@ class Login
 		return $error;
 	}
 
+	public static function Insert_login_audit($pdo, $login_user, $success, $locked) {
+		$sql = 'INSERT INTO login_audit(login_user, ip_address, login_success, account_locked) '.
+			'VALUES(:login_user, :ip_address, :login_success, :account_locked)';
+		$ps = $pdo->prepare($sql);
+
+		$successChar = $success ? 'Y' : 'N';
+		$lockedChar = $locked ? 'Y' : 'N';
+		$ps->bindParam(':login_user', $login_user);
+		$ps->bindParam(':ip_address', $_SERVER['REMOTE_ADDR']);
+		$ps->bindParam(':login_success', $successChar);
+		$ps->bindParam(':account_locked', $lockedChar);
+
+		$result = $ps->execute();
+		if (!$success) {
+			return get_pdo_error($ps);
+		}
+
+		return '';
+	}
+		
 
 	// Get the login id from the give login_user, or NULL
 	// if the user isn't found.
@@ -457,6 +477,12 @@ class Login
 
 				$result = true;
 
+				$auditResult = Login::Insert_login_audit($pdo, $user, true, false);
+				if ($auditResult != '') {
+					$pdo->rollBack();
+					return $auditResult;
+				}
+
 				// on success, wipe the bad login count
 				self::Set_bad_login_count($pdo, $user, 0);
 			}
@@ -468,6 +494,7 @@ class Login
 
 			// find the relevant user login_id
 			$login_id = self::Find_login_id($pdo, $user);
+			$is_locked = false;
 
 			if (is_numeric($login_id) && $login_id > 0)
 			{
@@ -481,6 +508,7 @@ class Login
 				if ($bad_count >= self::$MAX_AUTH_FAILURES)
 				{
 					$result = "The account '$user' has been locked!";
+					$is_locked = true;
 				}
 
 				if ($error != '')
@@ -492,6 +520,13 @@ class Login
 			{
 				$result = "Problem finding login_id: " . $login_id;
 			}
+
+			$auditResult = Login::Insert_login_audit($pdo, $user, false, $is_locked);
+			if ($auditResult != '') {
+				$pdo->rollBack();
+				return $auditResult;
+			}
+
 		}  // End bad login
 		
 		$pdo->commit();

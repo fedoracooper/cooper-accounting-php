@@ -365,12 +365,21 @@ class Login
 		{
 			$locked = 1;
 		}
-		$sql = "UPDATE Logins SET bad_login_count = :count, locked = :locked ".
+		$lastLoginField = 'last_login';
+		$lastIpField = 'last_login_ip';
+		if ($count > 0) {
+			// different fields for login time & IP address
+			$lastLoginField = 'last_login_failure';
+			$lastIpField = 'last_failure_ip';
+		}
+		$sql = "UPDATE Logins SET bad_login_count = :count, locked = :locked, ".
+			" $lastLoginField = current_timestamp, $lastIpField = :last_login_ip ".
 			"WHERE login_user = :login_user ";
 		$ps = $pdo->prepare($sql);
 		$ps->bindParam(':count', $count);
 		$ps->bindParam(':locked', $locked);
 		$ps->bindParam(':login_user', $login_user);
+		$ps->bindParam(':last_login_ip', $_SERVER['REMOTE_ADDR']);
 		
 		$success = $ps->execute();
 		if (!$success) {

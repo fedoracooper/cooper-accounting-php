@@ -97,7 +97,11 @@ CREATE TABLE acct.logins (
   bad_login_count smallint NOT NULL DEFAULT '0',
   locked smallint NOT NULL DEFAULT '0',
   active smallint NOT NULL DEFAULT '1',
-  primary_checking_account_id smallint DEFAULT NULL);
+  primary_checking_account_id smallint DEFAULT NULL,
+  last_login timestamp,
+  last_login_ip varchar(15),
+  last_login_failure timestamp,
+  last_failure_ip varchar(15) );
 
   CREATE UNIQUE INDEX ix_login_user ON acct.logins(login_user);
 

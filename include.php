@@ -133,18 +133,39 @@ function db_connect_pdo()
 	if ($pdo != NULL) {
 		return $pdo;
 	}
+
+	// Get DB connection string injected from Cloud Foundry or Apache
+	$dbUrl = $_SERVER['DATABASE_URL'];
+	// Postgres URL style:  postgres://user:password@host:port/database
+	// First, split by colon
+	$dbFields = explode(':', $dbUrl);
+	// Further split 2 more strings
+	$passHost = explode('@', $dbFields[2]);
+	$portDb = explode('/', $dbFields[3]);
+	if (count($dbFields) != 4) {
+		die("Unable to parse DATABASE_URL: $dbUrl");
+	}
+
+	$protocol = $dbFields[0]; 
+	$prefix = NULL;
+	if ($protocol == 'postgres') {
+		$prefix = 'pgsql';  // PDO driver name for Postgres
+	}
+	$host = $passHost[1];
+	$port = $portDb[0];
+	$db = $portDb[1];
+	$user = substr($dbFields[1], 2); // Skip '//' before username
+	$pass = $passHost[0];
+
+	$pdoDsn = "$prefix:host=$host;port=$port;dbname=$db";
+	//error_log("PDO DSN: '$pdoDsn'");
 	
 	$start = microtime(true);
-	$host = 'jumbo.db.elephantsql.com';
-	$port = '5432';
-	$db = 'fycuzlnu';
-	$user = 'fycuzlnu';
-	$pass = 'okIS3AvL3EacDVI7IrwWJha-pxBF2KBA';
 	try {
 		// Note:  ATTR_PERSISTENT = true improves performance under high latency,
 		// but has frequent problems with stale connections.
-		$pdo = new PDO("pgsql:host=$host;port=$port;dbname=$db", $user, $pass,
-		 array(PDO::ATTR_PERSISTENT => false));
+		$pdo = new PDO($pdoDsn, $user, $pass,
+		   array(PDO::ATTR_PERSISTENT => false));
 		 
 		$connTime += microtime(true) - $start;
 		

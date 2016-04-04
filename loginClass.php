@@ -354,6 +354,17 @@ class Login
 		return $login_list;
 	}
 
+	public static function Get_client_ip() {
+		$remote = $_SERVER['REMOTE_ADDR'];
+		if (isset($_SERVER["HTTP_X_CLIENT_IP"])) {
+			// Forwarded through a proxy; get original IP
+			$xClient = $_SERVER["HTTP_X_CLIENT_IP"];
+			$remote .= " <- $xClient";
+		}
+
+		return $remote;
+	}
+
 
 	// Set the bad_login_count for the given user login_user.  Update
 	// the locked flag to 0 when $count is 0, or 1 when we exceed
@@ -379,7 +390,7 @@ class Login
 		$ps->bindParam(':count', $count);
 		$ps->bindParam(':locked', $locked);
 		$ps->bindParam(':login_user', $login_user);
-		$ps->bindParam(':last_login_ip', $_SERVER['REMOTE_ADDR']);
+		$ps->bindParam(':last_login_ip', Login::Get_client_ip());
 		
 		$success = $ps->execute();
 		if (!$success) {
@@ -404,7 +415,7 @@ class Login
 		$successChar = $success ? 'Y' : 'N';
 		$lockedChar = $locked ? 'Y' : 'N';
 		$ps->bindParam(':login_user', $login_user);
-		$ps->bindParam(':ip_address', $_SERVER['REMOTE_ADDR']);
+		$ps->bindParam(':ip_address', Login::Get_client_ip());
 		$ps->bindParam(':login_success', $successChar);
 		$ps->bindParam(':account_locked', $lockedChar);
 

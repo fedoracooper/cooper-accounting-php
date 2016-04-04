@@ -12,7 +12,7 @@
 CREATE TABLE acct.login_audit (
   login_audit_id serial NOT NULL constraint pk_login_audit PRIMARY KEY,
   login_user varchar(25) NOT NULL,
-  ip_address varchar(15) NOT NULL,
+  ip_address varchar(100) NOT NULL,
   event_time timestamp NOT NULL DEFAULT current_timestamp,
   login_success char(1) NOT NULL),
   account_locked char(1) NOT NULL);
@@ -99,9 +99,9 @@ CREATE TABLE acct.logins (
   active smallint NOT NULL DEFAULT '1',
   primary_checking_account_id smallint DEFAULT NULL,
   last_login timestamp,
-  last_login_ip varchar(15),
+  last_login_ip varchar(100),
   last_login_failure timestamp,
-  last_failure_ip varchar(15) );
+  last_failure_ip varchar(100) );
 
   CREATE UNIQUE INDEX ix_login_user ON acct.logins(login_user);
 

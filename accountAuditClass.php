@@ -32,7 +32,7 @@ class AccountAudit
 		// Query the database for the account name
 		$sql = "SELECT a.account_name, t.accounting_date \n".
 			"FROM Accounts a \n".
-			"INNER JOIN LedgerEntries le ON le.account_id = a.account_id \n".
+			"INNER JOIN Ledger_Entries le ON le.account_id = a.account_id \n".
 			"INNER JOIN Transactions t ON t.trans_id = le.trans_id \n".
 			"WHERE le.ledger_id = :ledger_id ";
 		$pdo = db_connect_pdo();
@@ -148,9 +148,9 @@ class AccountAudit
 		$sql = "SELECT t.accounting_date as min_date, t.trans_id as min_trans_id, ".
 			" t2.accounting_date as max_date, t2.trans_id as max_trans_id ".
 			"FROM Transactions t \n".
-			"INNER JOIN LedgerEntries le ON ".
+			"INNER JOIN Ledger_Entries le ON ".
 			"	t.trans_id = le.trans_id \n".
-			"LEFT JOIN LedgerEntries le2 ON ".
+			"LEFT JOIN Ledger_Entries le2 ON ".
 			"	le2.account_id = le.account_id ".
 			"	AND le2.ledger_id <> le.ledger_id \n".
 			"LEFT JOIN Transactions t2 ON ".
@@ -159,7 +159,7 @@ class AccountAudit
 			"			AND t2.trans_id > t.trans_id ) ".
 			"		OR( t2.accounting_date > t.accounting_date ) ) \n".
 			"WHERE le.ledger_id = :ledger_id ".
-			"ORDER BY ifnull( t2.accounting_date, '2999-01-01' ), t2.trans_id \n".
+			"ORDER BY coalesce( t2.accounting_date, '2999-01-01' ), t2.trans_id \n".
 			"LIMIT 1 ";
 
 		$pdo = db_connect_pdo();
@@ -182,8 +182,8 @@ class AccountAudit
 
 	public function Load_account_audit( $audit_id )
 	{
-		$sql = "SELECT aa.*, a.account_name from AccountAudits aa \n".
-			"INNER JOIN LedgerEntries le ON le.ledger_id = aa.ledger_id \n".
+		$sql = "SELECT aa.*, a.account_name from Account_Audits aa \n".
+			"INNER JOIN Ledger_Entries le ON le.ledger_id = aa.ledger_id \n".
 			"INNER JOIN Accounts a ON a.account_id = le.account_id \n".
 			"WHERE aa.audit_id = :audit_id ";
 
@@ -267,7 +267,7 @@ class AccountAudit
 		if ($this->m_audit_id > -1)
 		{
 			// Update an existing record (date & comment)
-			$sql = "UPDATE AccountAudits \n".
+			$sql = "UPDATE Account_Audits \n".
 				"SET audit_date = :audit_date, ".
 				"  audit_comment = :audit_comment \n".
 				"WHERE audit_id = :audit_id ";
@@ -280,7 +280,7 @@ class AccountAudit
 		else
 		{
 			$sql = 
-				"INSERT INTO AccountAudits \n".
+				"INSERT INTO Account_Audits \n".
 				"( ledger_id, audit_date, account_balance, audit_comment ) \n".
 				"VALUES( :ledger_id, :audit_date, :account_balance, ".
 				":audit_comment ) ";
@@ -306,7 +306,7 @@ class AccountAudit
 		if ($this->m_audit_id < 0)
 		{
 			// Update the primary key
-			$this->m_audit_id = get_auto_increment($pdo);
+			$this->m_audit_id = get_auto_increment($pdo, 'account_audits_audit_id_seq');
 		}
 		
 		$pdo->commit();
@@ -327,7 +327,7 @@ class AccountAudit
 			return "Unable to delete audit record; not yet initialized.";
 		}
 
-		$sql = "DELETE FROM AccountAudits ".
+		$sql = "DELETE FROM Account_Audits ".
 			"WHERE audit_id = :audit_id ";
 
 		$pdo = db_connect_pdo();

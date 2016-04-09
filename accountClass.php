@@ -265,7 +265,7 @@ $execTime += $t2 - $t1;
 		if ($this->m_account_id == -1)
 		{
 			// find the id just created in the insert
-			$this->m_account_id = get_auto_increment($pdo);
+			$this->m_account_id = get_auto_increment($pdo, 'accounts_account_id_seq');
 		}
 
 		$pdo->commit();

@@ -44,18 +44,15 @@
 
 		if (isset ($_POST['prev_month']))
 		{
-			// go to last whole month
-			$dateArr['mon'] --;
-			$dateArr['mday'] = 1;
-			$dateArr2['mday'] = 0;
+			// Back 30 days
+			$dateArr['mday'] -= 30;
+			$dateArr2['mday'] -= 30;
 		}
 		elseif (isset ($_POST['next_month']))
 		{
-			// next whole month
-			$dateArr['mon'] ++;
-			$dateArr['mday'] = 1;
-			$dateArr2['mon'] += 2;
-			$dateArr2['mday'] = 0;
+			// Plus 30 days
+			$dateArr['mday'] += 30;
+			$dateArr2['mday'] += 30;
 		}
 
 		// Set session vars

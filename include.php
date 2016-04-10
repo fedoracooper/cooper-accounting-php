@@ -226,6 +226,16 @@ function GetLedger ($ledgerList, $x)
 	return new LedgerEntry();
 }
 
+// Parse date in SQL style:  YYYY-MM-DDDD and return UNIX timestamp.
+function parse_sql_date($date_str) {
+	$dateObj = DateTime::createFromFormat('Y-m-d', $date_str);
+	if ($dateObj == FALSE) {
+		return -1;
+	}
+
+	return $dateObj->getTimestamp();
+	
+}
 
 // Expects a date string of the format mm/dd/yy
 // Returns the timestamp value or -1 when invalid

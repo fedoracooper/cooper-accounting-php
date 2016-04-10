@@ -79,8 +79,8 @@
 		$dateArr['mon'], $dateArr['mday'], $dateArr['year']);
 	$end_time = mktime (0, 0, 0,
 		$dateArr2['mon'], $dateArr2['mday'], $dateArr2['year']);
-	$start_date	= date ('n/j/Y', $start_time);
-	$end_date	= date ('n/j/Y', $end_time);
+	$start_date	= date (SQL_DATE, $start_time);
+	$end_date	= date (SQL_DATE, $end_time);
 
 	$excludeBudgetCheck = '';
 	$priorMonthCheck = '';
@@ -318,9 +318,9 @@
 	<tr>
 		<td><?= $acct_dropdown ?></td>
 		<td>From: </td>
-		<td><input type="text" size="10" maxlength="10" name="start_date" value="<?= $start_date ?>"></td>
+		<td><input type="date" min="1980-01-01" max="2100-01-01" name="start_date" value="<?= $start_date ?>"></td>
 		<td>To: </td>
-		<td><input type="text" size="10" maxlength="10" name="end_date" value="<?= $end_date ?>"></td>
+		<td><input type="date" min="1980-01-01" max="2100-01-01" name="end_date" value="<?= $end_date ?>"></td>
 		<td>Search: </td>
 		<td><input type="text" size="10" maxlength="20" name="search_text"
 			value="<?= $search_text ?>"></td>
@@ -329,7 +329,7 @@
 	<tr>
 		<td>Rev. period: <?= $period_dropdown ?></td>
 		<td>Limit: </td>
-		<td><input type="text" size="3" maxlength="3" name="limit" value="<?= $limit ?>"></td>
+		<td><input type="number" min="1" max="999" name="limit" value="<?= $limit ?>"></td>
 		<td></td>
 		<td colspan="2"><input type="submit" value="<" name="prev_month"> &nbsp;
 		<input type="submit" value=">" name="next_month"></td>
@@ -575,21 +575,21 @@
 		<td>Date:</td>
 		<td><input type="hidden" name="trans_id" value="<?=
 				$trans->get_trans_id() ?>">
-			<input type="text" size="10" maxlength="10" name="trans_date"
+			<input type="date" min="1980-01-01" max="2100-01-01" name="trans_date"
 			id="trans_date"
 			value="<?= $trans->get_trans_date() ?>"></td>
 		<td>Accounting date:</td>
-		<td><input type="text" size="10" maxlength="10" name="accounting_date"
+		<td><input type="text" min="1980-01-01" max="2100-01-01" name="accounting_date"
 			id="accounting_date"
 			value="<?= $trans->get_accounting_date() ?>"></td>
 		<td style="width: 90px;">Check #:</td>
-		<td><input type="text" size="4" maxlength="4" name="check_number"
+		<td><input type="number" min="1" max="9999" name="check_number"
 			value="<?= $trans->get_check_number() ?>"></td>
 		<td>Miles:</td>
-		<td><input type="text" size="7" maxlength="9" name="gas_miles"
+		<td><input type="number" min="0" max="9999" step="0.1" name="gas_miles"
 			value="<?= $trans->get_gas_miles_trimmed() ?>"></td>
 		<td>Gallons:</td>
-		<td><input type="text" size="5" maxlength="5" name="gas_gallons"
+		<td><input type="number" min="0" max="99" step="0.01" name="gas_gallons"
 			value="<?= $trans->get_gas_gallons() ?>"></td>
 	</tr>
 
@@ -655,8 +655,8 @@
 		$acct_drop = Build_dropdown ($acctL_list, 'accountL_id[]',
 			$ledger->getAccountIdDebitString());
 		echo $acct_drop. "</td>\n".
-			"		<td><input type='text' size='8' maxlength='10' ".
-			"name='amountL[]' value='". $ledger->amount . "'>&nbsp;&nbsp;&nbsp;</td> \n";
+			"		<td><input type='number' min='-99999999' max='9999999' ".
+			"step='0.01' name='amountL[]' value='". $ledger->amount . "'>&nbsp;&nbsp;&nbsp;</td> \n";
 
 		//RHS
 		for ($j=0; $j<=1; $j++)
@@ -669,8 +669,8 @@
 			$acct_drop = Build_dropdown ($acctR_list, 'accountR_id[]',
 				$ledger->getAccountIdDebitString());
 			echo $acct_drop. "&nbsp;&nbsp;</td>\n".
-				"		<td><input type='text' size='8' maxlength='10' ".
-				"name='amountR[]' value='" . $ledger->amount . "'></td> \n";
+				"		<td><input type='number' min='-99999999' max='9999999' ".
+				"step='0.01' name='amountR[]' value='" . $ledger->amount . "'></td> \n";
 		}
 
 		echo "	</tr> \n\n";

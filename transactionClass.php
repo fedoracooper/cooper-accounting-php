@@ -66,7 +66,7 @@ class Transaction
 		if ($this->m_trans_time == -1)
 			return $this->m_trans_str;
 		else
-			return date (DISPLAY_DATE, $this->m_trans_time);
+			return date (SQL_DATE, $this->m_trans_time);
 	}
 	public function get_trans_date_sql() {
 		// mySQL-formatted date
@@ -92,7 +92,7 @@ class Transaction
 				return date ('m/d/y', $this->m_accounting_time);
 			else
 				// normal date
-				return date (DISPLAY_DATE, $this->m_accounting_time);
+				return date (SQL_DATE, $this->m_accounting_time);
 		}
 	}
 	public function get_accounting_date_sql() {
@@ -270,12 +270,12 @@ class Transaction
 
 		//truncate comment to 1000 chars
 		$trans_comment = substr ($trans_comment, 0, 1000);
-		$trans_time	= parse_date ($trans_date);
+		$trans_time	= parse_sql_date ($trans_date);
 		if (trim ($accounting_date) == '')
 		{	// no accounting date; set it to transaction date
 			$accounting_date = $trans_date;
 		}
-		$accounting_time	= parse_date ($accounting_date);
+		$accounting_time	= parse_sql_date ($accounting_date);
 
 		
 		$this->m_login_id			= $login_id;
@@ -924,8 +924,8 @@ class Transaction
 
 		// VALIDATION
 		$error = '';
-		$start_time	= parse_date ($start_date);
-		$end_time	= parse_date ($end_date);
+		$start_time	= parse_sql_date ($start_date);
+		$end_time	= parse_sql_date ($end_date);
 		if ($start_time == -1)
 			$error = 'Invalid start date';
 		elseif ($end_time == -1)
@@ -964,8 +964,8 @@ $t2 = microtime(true);
 			return $trans_list;	//empty list
 
 		// Convert to mysql dates
-		$start_date_sql = convert_date ($start_date, 1);
-		$end_date_sql = convert_date ($end_date, 1);
+		$start_date_sql = $start_date;
+		$end_date_sql = $end_date;
 
 		$search_text_sql = '';
 		if( $search_text != '' )

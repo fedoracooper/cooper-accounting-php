@@ -2,6 +2,10 @@ body {
 	font-size: 11pt;
 }
 
+.memo {
+	width: 200px;
+}
+
 #tx-form div {
 	padding-top: 4px;
 	padding-bottom: 4px;

@@ -131,15 +131,16 @@
 			
 			$ledger = new LedgerEntry();
 			$ledger->ledgerId = $_POST['ledger_id'][$i];
+			$ledger->memo = $_POST['ledger_memo'][$i];
 			$ledger->setAccountData($_POST['account_id'][$i]);
-			$error = $ledger->setDebitCredit($_POST['amountDebit'][$i],
+			$ledgerError = $ledger->setDebitCredit($_POST['amountDebit'][$i],
 				$_POST['amountCredit'][$i]);
-			if ($error != '') {
-				// Invalid ledger entry
-				break;
-			}
 			$ledger_list[] = $ledger;
 			
+			if ($ledgerError != '') {
+				// Don't overwrite previous error unless non-empty.
+				$error = $ledgerError;
+			}
 		}	// End Ledger Entry for loop
 		
 		//nl2br (print_r ($ledgerL_list));
@@ -153,29 +154,30 @@
 			$excludeBudget = 1;
 		}
 		
+		$trans->Init_transaction (
+			$_SESSION['login_id'],
+			$_POST['trans_descr'],
+			$_POST['trans_date'],
+			$_POST['accounting_date'],
+			$_POST['trans_vendor'],
+			$_POST['trans_comment'],
+			$_POST['check_number'],
+			$_POST['gas_miles'],
+			$_POST['gas_gallons'],
+			$_POST['trans_status'],
+			$priorMonth,
+			$excludeBudget,
+			$_POST['trans_id'],
+			$_POST['repeat_count'],
+			'',		//account display
+			NULL,	//ledger amt
+			-1,		//ledger ID
+			-1,		//audit ID
+			0.0,	//audit balance
+			$ledger_list	// Debits + Credits
+		);
+		
 		if ($error == '') {
-			$trans->Init_transaction (
-				$_SESSION['login_id'],
-				$_POST['trans_descr'],
-				$_POST['trans_date'],
-				$_POST['accounting_date'],
-				$_POST['trans_vendor'],
-				$_POST['trans_comment'],
-				$_POST['check_number'],
-				$_POST['gas_miles'],
-				$_POST['gas_gallons'],
-				$_POST['trans_status'],
-				$priorMonth,
-				$excludeBudget,
-				$_POST['trans_id'],
-				$_POST['repeat_count'],
-				'',		//account display
-				NULL,	//ledger amt
-				-1,		//ledger ID
-				-1,		//audit ID
-				0.0,	//audit balance
-				$ledger_list	// Debits + Credits
-			);
 			$error = $trans->Validate();
 		}
 
@@ -216,7 +218,28 @@
 <head>
 	<title>Account Ledger</title>
 	<link href="style.css" rel="stylesheet" type="text/css">
+	<script src="https://code.jquery.com/jquery-2.2.3.js" ></script>
 	<script language="javascript" type="text/javascript">
+		
+		$(document).ready(function() {
+	
+			$(".delete-ledger").click(function() {
+				if ($(".ledger-row").length <= 2) {
+					alert("At least two Ledger Entries are required");
+					return;
+				}
+				// Delete current ledger row (button -> td -> tr)
+				$(this).parent().parent().remove();
+			});
+			
+			$("#new-ledger").click(function() {
+				// Copy first data row and append to the table.
+				var newRow = $(".ledger-row").first().clone(true).appendTo($("#ledger-table"));
+				// Clear existing input values from new row
+				newRow.find("input").val("");
+			});
+			
+		});
 
 		function confirmDelete()
 		{
@@ -453,7 +476,7 @@
 		$miles = $trans_item->get_gas_miles(false);	 //get numeric form
 		$gall = $trans_item->get_gas_gallons();
 		if ($trans_item->get_check_number() != '') {
-			$other = 'chk #'. $trans_item->get_check_number();
+			$other = '#'. $trans_item->get_check_number();
 		}
 		elseif ($miles != '' && $gall != '') {
 			$mpg = round ((float)$miles / (float)$gall, 1);
@@ -573,48 +596,51 @@
 		</div>
 
 		<div id="tx2">
-		<label class="lhs">Date: </label> <input type="hidden" name="trans_id" value="<?=
-				$trans->get_trans_id() ?>">
-			<input type="date" min="1980-01-01" max="2100-01-01" name="trans_date"
-			id="trans_date"
-			value="<?= $trans->get_trans_date() ?>">
-		<label> Accounting date: </label> <input type="date" min="1980-01-01" max="2100-01-01" name="accounting_date"
-			id="accounting_date"
-			value="<?= $trans->get_accounting_date() ?>">
-		<label>Number: </label> <input type="number" min="1" max="9999" name="check_number"
-			value="<?= $trans->get_check_number() ?>">
-		<label>Miles: </label>  <input type="number" min="0" max="9999" step="0.1" name="gas_miles"
-			value="<?= $trans->get_gas_miles_trimmed() ?>">
-		<label>Gallons: </label> <input type="number" min="0" max="99" step="0.01" name="gas_gallons"
-			value="<?= $trans->get_gas_gallons() ?>">
+			<label class="lhs">Date: </label> <input type="hidden" name="trans_id" value="<?=
+					$trans->get_trans_id() ?>">
+				<input type="date" min="1980-01-01" max="2100-01-01" name="trans_date"
+				id="trans_date"
+				value="<?= $trans->get_trans_date() ?>">
+			<label> Accounting date: </label> <input type="date" min="1980-01-01" max="2100-01-01" name="accounting_date"
+				id="accounting_date"
+				value="<?= $trans->get_accounting_date() ?>">
 		</div>
-
-		<div id="tx3">
-		<label class="lhs"> Description: </label> <input type="text" size="50" maxlength="50" name="trans_descr"
-			value="<?= $trans->get_trans_descr() ?>">
-		<label> Vendor: </label> <input type="text" size="50" maxlength="50" name="trans_vendor"
-			value="<?= $trans->get_trans_vendor() ?>">
+		
+		<div id="tx3">			
+			<label class="lhs">Number: </label> <input type="number" min="1" max="9999" name="check_number"
+				value="<?= $trans->get_check_number() ?>">
+			<label>Miles: </label>  <input type="number" min="0" max="9999" step="0.1" name="gas_miles"
+				value="<?= $trans->get_gas_miles_trimmed() ?>">
+			<label>Gallons: </label> <input type="number" min="0" max="99" step="0.01" name="gas_gallons"
+				value="<?= $trans->get_gas_gallons() ?>">
 		</div>
 
 		<div id="tx4">
-		<label class="lhs"> Comment:</label>
-		<textarea name="trans_comment" rows="2" cols="50"
-			><?= $trans->get_trans_comment() ?></textarea>
-		<label for="prior_month">Budget for prior month: </label> <input type="checkbox" id="prior_month" name="prior_month" value="1" <?= $priorMonthCheck ?>/>
-		<label for="exclude_budget">Exclude from budget: </label>
-			<input type="checkbox" id="exclude_budget" name="exclude_budget" value="1" <?= $excludeBudgetCheck ?>/> 
+			<label class="lhs"> Description: </label> <input type="text" size="50" maxlength="50" name="trans_descr"
+				value="<?= $trans->get_trans_descr() ?>">
+			<label> Vendor: </label> <input type="text" size="50" maxlength="50" name="trans_vendor"
+				value="<?= $trans->get_trans_vendor() ?>">
+		</div>
+
+		<div id="tx5">
+			<label class="lhs"> Comment:</label>
+			<textarea name="trans_comment" rows="2" cols="50"
+				><?= $trans->get_trans_comment() ?></textarea>
+			<label for="prior_month">Budget for prior month: </label> <input type="checkbox" id="prior_month" name="prior_month" value="1" <?= $priorMonthCheck ?>/>
+			<label for="exclude_budget">Exclude from budget: </label>
+				<input type="checkbox" id="exclude_budget" name="exclude_budget" value="1" <?= $excludeBudgetCheck ?>/> 
 		</div>
 	</fieldset>
 
 	<fieldset>
 		<legend>Ledger Entries </legend>
 	<table id="ledger-table"> 
-	<tr>
-		<th>Memo</th>
-		<th>Account</th>
-		<th>Debit Amount</th>
-		<th>Credit Amount</th>
-	</tr>
+		<tr>
+			<th>Memo</th>
+			<th>Account</th>
+			<th>Debit Amount</th>
+			<th>Credit Amount</th>
+		</tr>
 
 <?php
 
@@ -639,8 +665,8 @@
 	{
 		// LHS
 		$ledger = GetLedger($ledgers, $i);
-		echo "	<tr>\n".
-			'		<td><input type="text" maxlength="50" name="ledger_memo[]" '.
+		echo "	<tr class='ledger-row'>\n".
+			'		<td><input type="text" class="memo" maxlength="50" name="ledger_memo[]" '.
 				"value='". $ledger->memo . "' /> </td> \n";
 		echo '		<td><input type="hidden" name="ledger_id[]"'.
 				" value='". $ledger->ledgerId . "' /> \n";
@@ -652,10 +678,13 @@
 			"step='0.01' name='amountDebit[]' value='". $ledger->getDebit() . "' /> </td> \n";
 		echo "		<td><input type='number' min='0.0' max='9999999' ".
 			"step='0.01' name='amountCredit[]' value='". $ledger->getCredit() . "' /> </td> \n";
+		echo "		<td><button class='delete-ledger'> Remove </button></td> \n";
 		echo "	</tr> \n\n";
 	}
 ?>
 	</table>
+	
+	<button id="new-ledger"> Add Ledger Entry </button>
 	</fieldset>
 </div>  <!-- tx-form -->
 		

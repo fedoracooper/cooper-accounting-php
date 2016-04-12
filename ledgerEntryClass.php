@@ -86,7 +86,7 @@ class LedgerEntry {
 			// Debit account / negative amount = Positive Credit
 			return $this->amount * -1.0;
 		} else {
-			return 0.0;
+			return '';
 		}
 	}
 	

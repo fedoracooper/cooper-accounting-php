@@ -752,6 +752,12 @@ class Transaction
 			}
 
 			// Store the account ID of every ledger ID in a SQL list
+			
+			// Prevent SQL injection by checking data type!
+			if (!is_numeric($ledger->accountId)) {
+				return "Unable to check audits with non-numeric accountId:"
+					. $ledger->accountId;
+			}
 			$accounts .= $ledger->accountId;
 		}
 

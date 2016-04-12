@@ -552,131 +552,110 @@
 </form>
 
 
+<div id="tx-form">
 <form method="post" action="index.php" name="editForm">
-<table class="transaction">
-	<tr>
-		<td colspan="2" style="font-weight: bold;">
-			<a name="edit_trans" id="edit_trans"><?php
+	<fieldset> <legend> <a "edit_trans" id="edit_trans"><?php
 			if ($trans->get_trans_id() < 0)
 				echo "New Transaction";
 			else
 				echo "Edit Transaction (". $trans->get_trans_id(). ")";
-			?></a></td>
-		<td colspan="1"><?= $status_dropdown ?></td>
-		<td colspan="1">Repeat months:</td>
-		<td colspan="1"><input type="text" size="2" maxlength="2" name="repeat_count"
-			value="<?= $trans->get_repeat_count() ?>"></td>
-		<td class="info" colspan="3"><?php
-			if ($trans->get_trans_id() >= 0)
-				echo "last modified " . $trans->get_updated_time() ?></td>
-	</tr>
+			?></a> </legend>
+		<div id="tx1">
+			<label class="lhs">Status:</label> <?= $status_dropdown ?>
+			<label>Repeat months: </label><input type="number" min="1" max="12" step="1" name="repeat_count"
+			value="<?= $trans->get_repeat_count() ?>">
 
-	<tr>
-		<td>Date:</td>
-		<td><input type="hidden" name="trans_id" value="<?=
+			<div class="info"><?php
+				if ($trans->get_trans_id() >= 0)
+					echo "last modified " . $trans->get_updated_time() ?></div>
+		</div>
+
+		<div id="tx2">
+		<label class="lhs">Date: </label> <input type="hidden" name="trans_id" value="<?=
 				$trans->get_trans_id() ?>">
 			<input type="date" min="1980-01-01" max="2100-01-01" name="trans_date"
 			id="trans_date"
-			value="<?= $trans->get_trans_date() ?>"></td>
-		<td>Accounting date:</td>
-		<td><input type="text" min="1980-01-01" max="2100-01-01" name="accounting_date"
+			value="<?= $trans->get_trans_date() ?>">
+		<label> Accounting date: </label> <input type="date" min="1980-01-01" max="2100-01-01" name="accounting_date"
 			id="accounting_date"
-			value="<?= $trans->get_accounting_date() ?>"></td>
-		<td style="width: 90px;">Check #:</td>
-		<td><input type="number" min="1" max="9999" name="check_number"
-			value="<?= $trans->get_check_number() ?>"></td>
-		<td>Miles:</td>
-		<td><input type="number" min="0" max="9999" step="0.1" name="gas_miles"
-			value="<?= $trans->get_gas_miles_trimmed() ?>"></td>
-		<td>Gallons:</td>
-		<td><input type="number" min="0" max="99" step="0.01" name="gas_gallons"
-			value="<?= $trans->get_gas_gallons() ?>"></td>
-	</tr>
+			value="<?= $trans->get_accounting_date() ?>">
+		<label>Number: </label> <input type="number" min="1" max="9999" name="check_number"
+			value="<?= $trans->get_check_number() ?>">
+		<label>Miles: </label>  <input type="number" min="0" max="9999" step="0.1" name="gas_miles"
+			value="<?= $trans->get_gas_miles_trimmed() ?>">
+		<label>Gallons: </label> <input type="number" min="0" max="99" step="0.01" name="gas_gallons"
+			value="<?= $trans->get_gas_gallons() ?>">
+		</div>
 
-	<tr>
-		<td>Description:</td>
-		<td colspan="3"><input type="text" size="50" maxlength="50" name="trans_descr"
-			value="<?= $trans->get_trans_descr() ?>"></td>
-		<td>Vendor:</td>
-		<td colspan="5"><input type="text" size="50" maxlength="50" name="trans_vendor"
-			value="<?= $trans->get_trans_vendor() ?>"></td>
-	</tr>
+		<div id="tx3">
+		<label class="lhs"> Description: </label> <input type="text" size="50" maxlength="50" name="trans_descr"
+			value="<?= $trans->get_trans_descr() ?>">
+		<label> Vendor: </label> <input type="text" size="50" maxlength="50" name="trans_vendor"
+			value="<?= $trans->get_trans_vendor() ?>">
+		</div>
 
-	<tr>
-		<td>Comment:</td>
-		<td colspan="3"><textarea name="trans_comment" rows="2" cols="50"
-			><?= $trans->get_trans_comment() ?></textarea></td>
-		<td colspan="2">Budget for prior month: <br/>
-			Exclude from budget: </td>
-		<td><input type="checkbox" name="prior_month" value="1" <?= $priorMonthCheck ?>/><br />
-			<input type="checkbox" name="exclude_budget" value="1" <?= $excludeBudgetCheck ?>/> </td>
-	</tr>
-</table>
+		<div id="tx4">
+		<label class="lhs"> Comment:</label>
+		<textarea name="trans_comment" rows="2" cols="50"
+			><?= $trans->get_trans_comment() ?></textarea>
+		<label for="prior_month">Budget for prior month: </label> <input type="checkbox" id="prior_month" name="prior_month" value="1" <?= $priorMonthCheck ?>/>
+		<label for="exclude_budget">Exclude from budget: </label>
+			<input type="checkbox" id="exclude_budget" name="exclude_budget" value="1" <?= $excludeBudgetCheck ?>/> 
+		</div>
+	</fieldset>
 
-<table style="border: 1px solid black;">
+	<fieldset>
+		<legend>Ledger Entries </legend>
+	<table id="ledger-table"> 
 	<tr>
-		<th>LHS Accounts</th>
-		<th>LHS $</th>
-		<th>RHS Accounts</th>
-		<th>RHS $</th>
-		<th>RHS Accounts</th>
-		<th>RHS $</th>
+		<th>Memo</th>
+		<th>Account</th>
+		<th>Debit Amount</th>
+		<th>Credit Amount</th>
 	</tr>
 
 <?php
+
 	$show_inactive = 0;
 	// only show inactive accounts when editing
-	if ($editClick == 1)
+	if ($editClick == 1) {
 		$show_inactive = 1;
+	}
 	// Transaction dropdowns (account_id,account_debit as the key)
-	$acctL_list = Account::Get_account_list ($_SESSION['login_id'], 'L',
+	$accountList = Account::Get_account_list ($_SESSION['login_id'], '',
 		-1, false, true, $show_inactive);
-	$acctL_list = array ('-1' => '--Select--') + $acctL_list;
+	$accountList = array ('-1' => '--Select--') + $accountList;
 
-	$acctR_list = Account::Get_account_list ($_SESSION['login_id'], 'R',
-		-1, false, true, $show_inactive);
-	$acctR_list = array ('-1' => '--Select--') + $acctR_list;
+	// Get all the values from the LHS & RHS LedgerEntry objects
+	$ledgers = $trans->get_ledger_list();
 
-	// Get all the values from the LHS & RHS arrays
-	// 0=ledger_id, 1=account_id/account_debit, 2=amount
-	$j = 0;
-	$listL = $trans->get_ledgerL_list();
-	$listR = $trans->get_ledgerR_list();
+	// Figure out number of Ledger Entries needed.
+	// Default:  2
+	$rowCount = max(2, count($ledgers));
 
-	// create 5 rows of ledger adjustments (1 LHS column, 2 RHS columns)
-	for ($i=0; $i<5; $i++)
+	for ($i = 0; $i < $rowCount; $i++)
 	{
 		// LHS
-		$ledger = GetLedger($listL, $i);
+		$ledger = GetLedger($ledgers, $i);
 		echo "	<tr>\n".
-			'		<td><input type="hidden" name="ledgerL_id[]"'.
-				" value='". $ledger->ledgerId . "'> \n";
+			'		<td><input type="text" maxlength="50" name="ledger_memo[]" '.
+				"value='". $ledger->memo . "' /> </td> \n";
+		echo '		<td><input type="hidden" name="ledger_id[]"'.
+				" value='". $ledger->ledgerId . "' /> \n";
 		// Build account dropdown
-		$acct_drop = Build_dropdown ($acctL_list, 'accountL_id[]',
+		$acct_drop = Build_dropdown ($accountList, 'account_id[]',
 			$ledger->getAccountIdDebitString());
 		echo $acct_drop. "</td>\n".
-			"		<td><input type='number' min='-99999999' max='9999999' ".
-			"step='0.01' name='amountL[]' value='". $ledger->amount . "'>&nbsp;&nbsp;&nbsp;</td> \n";
-
-		//RHS
-		for ($j=0; $j<=1; $j++)
-		{
-			// Get the LedgerEntry at index i & i+5
-			$ledger = GetLedger($listR, $i + (5* $j));
-			echo "		<td><input type='hidden' name='ledgerR_id[]'".
-					" value='" . $ledger->ledgerId . "'> \n";
-			// Build account dropdown
-			$acct_drop = Build_dropdown ($acctR_list, 'accountR_id[]',
-				$ledger->getAccountIdDebitString());
-			echo $acct_drop. "&nbsp;&nbsp;</td>\n".
-				"		<td><input type='number' min='-99999999' max='9999999' ".
-				"step='0.01' name='amountR[]' value='" . $ledger->amount . "'></td> \n";
-		}
-
+			"		<td><input type='number' min='0.0' max='9999999' ".
+			"step='0.01' name='amountDebit[]' value='". $ledger->getDebit() . "' /> </td> \n";
+		echo "		<td><input type='number' min='0.0' max='9999999' ".
+			"step='0.01' name='amountCredit[]' value='". $ledger->getCredit() . "' /> </td> \n";
 		echo "	</tr> \n\n";
 	}
 ?>
-</table>
+	</table>
+	</fieldset>
+</div>  <!-- tx-form -->
 		
 <table style="float: left;">
 	<tr class="padded-row">

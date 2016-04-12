@@ -233,6 +233,11 @@ class Transaction
 	public function get_ledgerR_list() {
 		return $this->m_ledgerR_list;
 	}
+
+	public function get_ledger_list() {
+		return array_merge($this->m_ledgerL_list, $this->m_ledgerR_list);
+	}
+
 	public function set_account_savings($account_savings) {
 	  $this->m_account_savings = $account_savings;
 	}
@@ -336,7 +341,7 @@ class Transaction
 		$error = '';
 
 		$ledger_total = 0.0;	//total of LHS & RHS; must equal 0
-		$ledger_list = array_merge ($this->m_ledgerL_list, $this->m_ledgerR_list);
+		$ledger_list = $this->get_ledger_list();
 		// 0=ledger_id, 1=account_id/account_debit, 2=amount
 		foreach ($ledger_list as $ledgerEntry)
 		{
@@ -679,8 +684,7 @@ class Transaction
 
 		// insert the individual ledger entries
 		// Combine the LHS & RHS lists
-		$ledger_list = array_merge ($this->m_ledgerL_list,
-			$this->m_ledgerR_list);
+		$ledger_list = $this->get_ledger_list();
 		foreach ($ledger_list as $ledger)
 		{
 			if ($ledger->ledgerId == -1)
@@ -738,8 +742,7 @@ class Transaction
 
 		// Loop through the ledger entries
 		$accounts = '';
-		$ledger_list = array_merge ($this->m_ledgerL_list,
-			$this->m_ledgerR_list);
+		$ledger_list = $this->get_ledger_list();
 
 		foreach ($ledger_list as $ledger)
 		{
@@ -858,8 +861,7 @@ class Transaction
 			return null;
 		}
 
-		$ledgerList = array_merge ($this->m_ledgerL_list,
-			$this->m_ledgerR_list);
+		$ledgerList = $this->get_ledger_list();
 		foreach ($ledgerList as $ledger)
 		{
 			$itemAccountId = $ledger->accountId;

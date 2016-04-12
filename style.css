@@ -2,6 +2,22 @@ body {
 	font-size: 11pt;
 }
 
+#tx-form div {
+	padding-top: 4px;
+	padding-bottom: 4px;
+}
+
+label {
+	padding-left: 15px;
+	padding-right: 6px;
+}
+
+label.lhs {
+	padding-left: 0px;
+	width: 100px;
+	display: inline-block;
+}
+
 .numeric {
 	text-align: right;
 }
@@ -94,6 +110,7 @@ div.bottom
 
 .info
 {
+	float: right;
 	text-align: right;
 	font-style: italic;
 	color: #DD5555;

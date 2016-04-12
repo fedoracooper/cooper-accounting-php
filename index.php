@@ -678,13 +678,13 @@
 			"step='0.01' name='amountDebit[]' value='". $ledger->getDebit() . "' /> </td> \n";
 		echo "		<td><input type='number' min='0.0' max='9999999' ".
 			"step='0.01' name='amountCredit[]' value='". $ledger->getCredit() . "' /> </td> \n";
-		echo "		<td><button class='delete-ledger'> Remove </button></td> \n";
+		echo "		<td><button type='button' class='delete-ledger'> Remove </button></td> \n";
 		echo "	</tr> \n\n";
 	}
 ?>
 	</table>
 	
-	<button id="new-ledger"> Add Ledger Entry </button>
+	<button type="button" id="new-ledger"> Add Ledger Entry </button>
 	</fieldset>
 </div>  <!-- tx-form -->
 		

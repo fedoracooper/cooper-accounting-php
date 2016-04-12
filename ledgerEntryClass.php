@@ -30,7 +30,9 @@ class LedgerEntry {
 			// Credit account / negative amount = Positive Debit
 			return $this->amount * -1.0;
 		} else {
-			return '';
+			// Zero amount corner-case:  return as Debit.  This is arbitrary,
+			// but we can have a zero-dollar ledger entry.
+			return 0.0;
 		}
 	}
 	
@@ -50,6 +52,8 @@ class LedgerEntry {
 		
 		if (is_numeric($debit) && is_numeric($credit)) {
 			if ($debit != 0.0 && $credit != 0.0) {
+				// Save debit amount and display error
+				$this->setDebitCredit($debit, '');
 				return "Cannot specify Debit Amount and Credit Amount for the same ledger entry";
 			}
 		}

@@ -229,7 +229,7 @@ function GetLedger ($ledgerList, $x)
 
 // Parse date in SQL style:  YYYY-MM-DDDD and return UNIX timestamp.
 function parse_sql_date($date_str) {
-	$dateObj = DateTime::createFromFormat('Y-m-d', $date_str);
+	$dateObj = DateTime::createFromFormat(SQL_DATE, $date_str);
 	if ($dateObj == FALSE) {
 		return -1;
 	}
@@ -290,37 +290,20 @@ function get_auto_increment($pdo, $seq)
 // mode = 1  - normal -> mysql
 // mode = 2  - mysql -> normal
 // Returns empty string on failure
+// Updated to accept date in *any* format
 function convert_date ($dateStr, $mode)
 {
-	$newDate = '';
-	$seperator = '/';
-	if ($mode == 2)
-		$seperator = '-';
-	$dateArr = explode($seperator, $dateStr);
-	if (count ($dateArr) < 3)
-		return '';
-
-	if ($mode == 1)
-	{
-		// convert to mysql date
-		$newDate = $dateArr[2]. '-' .
-			$dateArr[0]. '-'.
-			$dateArr[1];
+	$dateObj = new DateTime($dateStr);
+	if ($mode == 1) {
+		return $dateObj->format(SQL_DATE);
+	} elseif ($mode == 2) {
+		return $dateObj->format(DISPLAY_DATE);
 	}
-	else
-	{
-		// convert to normal date
-		$newDate = $dateArr[1]. '/'.
-			$dateArr[2]. '/'.
-			$dateArr[0];
-	}
-
-	return $newDate;
 }
 
 // Convert a DateTime object into a SQL String
 function dateTimeToSQL(DateTime $dateTime) {
-	return $dateTime->format('Y-m-d');
+	return $dateTime->format(SQL_DATE);
 }
 
 // Adds specified number of months to UNIX timestamp.

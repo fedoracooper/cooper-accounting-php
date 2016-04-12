@@ -1067,8 +1067,8 @@ $execTime += $t2 - $t1 + $t4 - $t3;
 			$trans->Init_transaction (
 				$_SESSION['login_id'],
 				$row['trans_descr'],
-				convert_date ($row['trans_date'], 2),
-				convert_date ($row['accounting_date'], 2),
+				convert_date ($row['trans_date'], 1),
+				convert_date ($row['accounting_date'], 1),
 				$row['trans_vendor'],
 				$row['trans_comment'],
 				$row['check_number'],

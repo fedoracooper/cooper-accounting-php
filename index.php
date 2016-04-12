@@ -329,7 +329,7 @@
 	<tr>
 		<td>Rev. period: <?= $period_dropdown ?></td>
 		<td>Limit: </td>
-		<td><input type="number" min="1" max="999" name="limit" value="<?= $limit ?>"></td>
+		<td><input type="number" min="0" max="999" name="limit" value="<?= $limit ?>"></td>
 		<td></td>
 		<td colspan="2"><input type="submit" value="<" name="prev_month"> &nbsp;
 		<input type="submit" value=">" name="next_month"></td>

@@ -118,33 +118,30 @@
 	if ($mode != '')
 	{
 		// Build the ledger lists
-		$ledgerL_list = array();
-		$ledgerR_list = array();
-		for ($i=0; $i<10; $i++)
+		$ledger_list = array();
+		$numRows = count($_POST['account_id']);
+		
+		for ($i=0; $i < $numRows; $i++)
 		{
-			if ($i < 5 &&
-				($_POST['amountL'][$i] != '' || $_POST['ledgerL_id'][$i] > -1))
-			{
-				// User entered an amount or deleted an amount
-				//echo "amount: ". $_POST['amountL'][$i];
-				$ledger = new LedgerEntry();
-				$ledger->ledgerId = $_POST['ledgerL_id'][$i];
-				$ledger->setAccountData($_POST['accountL_id'][$i]);
-				$ledger->amount = $_POST['amountL'][$i];
-
-				$ledgerL_list[] = $ledger;
+			$accountId = $_POST['account_id'][$i];
+			if (is_numeric($accountId) && $accountId < 0) {
+				// Ignore rows with no account selection
+				continue;
 			}
-			if ($_POST['amountR'][$i] != ''
-				|| $_POST['ledgerR_id'][$i] > -1)
-			{
-				$ledger = new LedgerEntry();
-				$ledger->ledgerId = $_POST['ledgerR_id'][$i];
-				$ledger->setAccountData($_POST['accountR_id'][$i]);
-				$ledger->amount = $_POST['amountR'][$i];
-
-				$ledgerR_list[] = $ledger;
+			
+			$ledger = new LedgerEntry();
+			$ledger->ledgerId = $_POST['ledger_id'][$i];
+			$ledger->setAccountData($_POST['account_id'][$i]);
+			$error = $ledger->setDebitCredit($_POST['amountDebit'][$i],
+				$_POST['amountCredit'][$i]);
+			if ($error != '') {
+				// Invalid ledger entry
+				break;
 			}
-		}
+			$ledger_list[] = $ledger;
+			
+		}	// End Ledger Entry for loop
+		
 		//nl2br (print_r ($ledgerL_list));
 		//nl2br (print_r ($ledgerR_list));
 		$excludeBudget = 0;
@@ -155,37 +152,41 @@
 		if (isset($_POST['exclude_budget'])) {
 			$excludeBudget = 1;
 		}
-		$trans->Init_transaction (
-			$_SESSION['login_id'],
-			$_POST['trans_descr'],
-			$_POST['trans_date'],
-			$_POST['accounting_date'],
-			$_POST['trans_vendor'],
-			$_POST['trans_comment'],
-			$_POST['check_number'],
-			$_POST['gas_miles'],
-			$_POST['gas_gallons'],
-			$_POST['trans_status'],
-			$priorMonth,
-			$excludeBudget,
-			$_POST['trans_id'],
-			$_POST['repeat_count'],
-			'',		//account display
-			NULL,	//ledger amt
-			-1,		//ledger ID
-			-1,		//audit ID
-			0.0,	//audit balance
-			$ledgerL_list,
-			$ledgerR_list
-		);
-		$error = $trans->Validate();
+		
+		if ($error == '') {
+			$trans->Init_transaction (
+				$_SESSION['login_id'],
+				$_POST['trans_descr'],
+				$_POST['trans_date'],
+				$_POST['accounting_date'],
+				$_POST['trans_vendor'],
+				$_POST['trans_comment'],
+				$_POST['check_number'],
+				$_POST['gas_miles'],
+				$_POST['gas_gallons'],
+				$_POST['trans_status'],
+				$priorMonth,
+				$excludeBudget,
+				$_POST['trans_id'],
+				$_POST['repeat_count'],
+				'',		//account display
+				NULL,	//ledger amt
+				-1,		//ledger ID
+				-1,		//audit ID
+				0.0,	//audit balance
+				$ledger_list	// Debits + Credits
+			);
+			$error = $trans->Validate();
+		}
 
 		if ($error == '')
 		{
-			if ($mode == 'save')
+			if ($mode == 'save') {
 				$error = $trans->Save_repeat_transactions();
-			else
+			}
+			else {
 				$error = $trans->Delete_transaction();
+			}
 		}
 
 		if ($error == '')
@@ -204,9 +205,10 @@
 	$search_text = stripslashes( $search_text );
 	$sel_account = new Account ();
 	$sel_account->Load_account ($sel_account_id);
-	if ($error1 != '')
+	if ($error1 != '') {
 		// an error occurred before calling transaction list
 		$error = $error1;
+	}
 ?>
 
 

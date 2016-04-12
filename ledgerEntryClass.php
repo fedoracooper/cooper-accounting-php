@@ -20,6 +20,8 @@ class LedgerEntry {
 		return $this->accountId . ','. $this->debit;
 	}
 
+	/* Get Debit Amount.  Never negative; returns empty string
+	 * for Credit Ledger Entries. */
 	public function getDebit() {
 		if ($this->debit > 0 && $this->amount > 0.0) {
 			// Debit account / positive amount
@@ -28,10 +30,54 @@ class LedgerEntry {
 			// Credit account / negative amount = Positive Debit
 			return $this->amount * -1.0;
 		} else {
-			return 0.0;
+			return '';
 		}
 	}
+	
+	/*
+		Set the Debit Amount and Credit Amount values from the UI.
+		Only one of these values can be non-zero.  Negative values
+		are not allowed, only Debit or Credit.  This will set the
+		single amount field with the appropriate sign, depending on
+		the account type and the field used.
+		
+		Returns an error string if input is invalid.
+	*/
+	public function setDebitCredit($debit, $credit) {
+		if ($this->debit == 0) {
+			return "Error:  credit flag not initialized";
+		}
+		
+		if (is_numeric($debit) && is_numeric($credit)) {
+			if ($debit != 0.0 && $credit != 0.0) {
+				return "Cannot specify Debit Amount and Credit Amount for the same ledger entry";
+			}
+		}
+		if (is_numeric($debit)) {
+			if ($debit < 0.0) {
+				return "Amounts cannot be negative.  Use either Debit or Credit column";
+			} else {
+				// Debit to a Credit account is stored as a negative value
+				$invert = ($this->debit > 0) ? 1.0 : -1.0;
+				$this->amount = $debit * $invert;
+			}
+		} elseif (is_numeric($credit)) {
+			if ($credit < 0.0) {
+				return "Amounts cannot be negative.  Use either Debit or Credit column";
+			} else {
+				// Credit to a Debit account is stored as a negative value
+				$invert = ($this->debit > 0) ? -1.0 : 1.0;
+				$this->amount = $credit * $invert;
+			}
+		} else {
+			return "No valid Debit or Credit amount set";
+		}
+		
+		return '';
+	}
 
+	/* Get Credit Amount.  Never negative; returns empty string
+	 * for Debit Ledger Entries. */
 	public function getCredit() {
 		if ($this->debit < 0 && $this->amount > 0.0) {
 			// Credit account / positive amount

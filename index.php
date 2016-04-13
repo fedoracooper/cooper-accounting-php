@@ -244,6 +244,9 @@
 			// Initialize change handler, then invoke now	
 			$("select[name='account_id[]']").change(handleAccountSelect).change();
 			
+			// Bind Copy button to function
+			$("#copyButton").click(copyTransaction);
+			
 		});
 
 
@@ -296,7 +299,7 @@
 			editTrans.innerHTML = 'New Transaction (copy)';
 
 			// 2. Wipe out trans_id hidden field
-			$("#trans_id).val("-1");
+			$("#trans_id").val("-1");
 
 			// 3. Wipe out ledger ID values
 			$("input[name='ledger_id[]']").val("-1");
@@ -716,7 +719,7 @@
 		echo '<td><input type="submit" name="delete" id="deleteButton" '.
 			"onClick=\"return confirmDelete()\" value=\"Delete transaction\" /></td>\n".
 			"<td><input type=\"submit\" value=\"Cancel\" name=\"cancel\" id=\"cancelButton\" /></td>\n" .
-			"<td><input type=\"button\" id=\"copyButton\" value=\"Copy\" onclick=\"copyTransaction()\" /></td>\n";
+			"<td><input type=\"button\" id=\"copyButton\" value=\"Copy\" /></td>\n";
 	}
 		echo '<td>';
 		echo '</td>';

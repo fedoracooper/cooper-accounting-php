@@ -113,6 +113,8 @@
 		$mode = 'save';
 	elseif (isset ($_POST['delete']))
 		$mode = 'delete';
+		
+	$deleteLedgerIdArray = array();
 
 	// Save or Delete
 	if ($mode != '')
@@ -608,6 +610,13 @@
 
 <div id="tx-form">
 <form method="post" action="index.php" name="editForm" id="editForm">
+	<?php
+		// Create ledger entry deletion inputs, for failed deletion submit.
+		foreach ($deleteLedgerIdArray as $deleteLedgerId) {
+			echo "	<input type='hidden' name='delete_ledger_id[]' value='"
+						+ $deleteLedgerId + "' /> \n");			
+		}
+	?>
 	<fieldset> <legend> <a "edit_trans" id="edit_trans"><?php
 			if ($trans->get_trans_id() < 0)
 				echo "New Transaction";
@@ -694,6 +703,10 @@
 	{
 		// LHS
 		$ledger = GetLedger($ledgers, $i);
+		if ($ledger->toDelete) {
+			// Skip ledgers being deleted (failed submit)
+			continue;
+		}
 		echo "	<tr class='ledger-row'>\n".
 			'		<td><input type="text" class="memo" maxlength="50" name="ledger_memo[]" '.
 				"value=\"". $ledger->getMemo() . "\" /> </td> \n";

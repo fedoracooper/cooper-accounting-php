@@ -61,7 +61,9 @@ class LedgerEntry {
 				return "Cannot specify Debit Amount and Credit Amount for the same ledger entry";
 			}
 		} elseif (!is_numeric($debit) && !is_numeric($credit)) {
-			return "Debit or Credit Amount must be specified for each Ledger Entry";
+			// No valid amount; pass debit value through to subsequent validation
+			$this->amount = $debit;
+			return '';
 		}
 		
 		// Default to zero value.  Both debit & credit can be specified,

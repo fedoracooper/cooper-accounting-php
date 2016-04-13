@@ -123,12 +123,6 @@
 		
 		for ($i=0; $i < $numRows; $i++)
 		{
-			$accountId = $_POST['account_id'][$i];
-			if (is_numeric($accountId) && $accountId < 0) {
-				// Ignore rows with no account selection
-				continue;
-			}
-			
 			$ledger = new LedgerEntry();
 			$ledgerIdRaw = $_POST['ledger_id'][$i];
 			// If ledgerId is blank, convert to -1 for downstream processing.
@@ -144,6 +138,18 @@
 				$error = $ledgerError;
 			}
 		}	// End Ledger Entry for loop
+		
+		if (isset($_POST['delete_ledger_id'])) {
+			// Loop through deleted ledger entry rows
+			$deleteLedgerIdArray = $_POST['delete_ledger_id'];
+			for ($i = 0; $i < count($deleteLedgerIdArray); $i++) {
+				// Deletion is detected by a ledger ID with amount set to empty string
+				$ledger = new LedgerEntry();
+				$ledger->amount = '';
+				$ledger->ledgerId = $deleteLedgerIdArray[$i];
+				$ledger_list[] = $ledger;
+			}
+		}
 		
 		//nl2br (print_r ($ledgerL_list));
 		//nl2br (print_r ($ledgerR_list));
@@ -230,8 +236,16 @@
 					alert("At least two Ledger Entries are required");
 					return;
 				}
-				// Delete current ledger row (button -> td -> tr)
-				$(this).parent().parent().remove();
+				// Look for existing ledger_id; save to hidden field if present.
+				// button -> td -> tr
+				var row = $(this).parent().parent();
+				var ledgerId = row.find("input[name='ledger_id[]']").val();
+				if ($.isNumeric(ledgerId) && ledgerId > 0) {
+					// Found a real ledger id; copy the whole hidden input
+					$("#editForm").append("<input type='hidden' name='delete_ledger_id[]' value='"
+						+ ledgerId + "' /> ");
+				}
+				row.remove();
 			});
 			
 			$("#new-ledger").click(function() {
@@ -598,7 +612,7 @@
 
 
 <div id="tx-form">
-<form method="post" action="index.php" name="editForm">
+<form method="post" action="index.php" name="editForm" id="editForm">
 	<fieldset> <legend> <a "edit_trans" id="edit_trans"><?php
 			if ($trans->get_trans_id() < 0)
 				echo "New Transaction";
@@ -688,8 +702,7 @@
 		echo "	<tr class='ledger-row'>\n".
 			'		<td><input type="text" class="memo" maxlength="50" name="ledger_memo[]" '.
 				"value=\"". $ledger->getMemo() . "\" /> </td> \n";
-		echo '		<td><input type="hidden" name="ledger_id[]"'.
-				" value='". $ledger->ledgerId . "' /> \n";
+		echo '		<td><input type="hidden" name="ledger_id[]" value="' . $ledger->ledgerId . "\" /> \n";
 		// Build account dropdown
 		$acct_drop = Build_dropdown ($accountList, 'account_id[]',
 			$ledger->getAccountIdDebitString());

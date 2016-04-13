@@ -1114,16 +1114,16 @@ $readTime += $t5 - $t4;
 			{	// Only do period totals for RHS accounts (revenue & expenses)
 				// The min_date for the total depends on each transaction;
 				// It is the first of the month or first of the year of the accounting date.
-				$start_date_arr = explode ('/', $trans->get_accounting_date(false));
+				$start_date_arr = getdate($trans->m_accounting_time);
 				switch ($total_period)
 				{
 					case 'month':
 						// total starting from 1st of start_date month
-						$start_date_total = $start_date_arr[2]. '-'. $start_date_arr[0].
+						$start_date_total = $start_date_arr['year']. '-'. $start_date_arr['mon'].
 							'-01';
 						break;
 					case 'year':
-						$start_date_total = $start_date_arr[2]. '-01-01';
+						$start_date_total = $start_date_arr['year']. '-01-01';
 						break;
 					case 'visible':
 						// filter by visible dates
@@ -1175,7 +1175,7 @@ $readTime += $t5 - $t4;
 	private function Set_trans_balance ($account_id, $account_debit,
 		$min_date)
 	{
-		$sql = "SELECT sum(ledger_amount * a.account_debit * $account_debit)".
+		$sql = "SELECT sum(ledger_amount * a.account_debit * :account_debit)".
 			" as balance \n".
 			"FROM Ledger_Entries le \n".
 			"INNER JOIN Transactions t on ".
@@ -1195,13 +1195,17 @@ $readTime += $t5 - $t4;
 		if (!is_null ($min_date))
 		{
 			// doing a period total, so add a minimum accounting date
-			$sql.= "\n	AND t.accounting_date >= '$min_date' ";
+			$sql.= "\n	AND t.accounting_date >= :min_date ";
 		}
 		// Time the query
 		$time = microtime(true);
 		$pdo = db_connect_pdo();
 		$ps = $pdo->prepare($sql);
+		$ps->bindParam(':account_debit', $account_debit);
 		$ps->bindParam(':account_id', $account_id);
+		if (!is_null($min_date)) {
+			$ps->bindParam(':min_date', $min_date);
+		}
 		$accounting_date_val = $this->get_accounting_date_sql();
 		$ps->bindParam(':accounting_date', $accounting_date_val);
 		$ps->bindParam(':trans_id', $this->m_trans_id);

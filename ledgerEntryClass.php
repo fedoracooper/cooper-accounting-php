@@ -23,6 +23,12 @@ class LedgerEntry {
 	/* Get Debit Amount.  Never negative; returns empty string
 	 * for Credit Ledger Entries. */
 	public function getDebit() {
+		// Zero amount corner-case:  return as Debit.  This is arbitrary,
+		// but we can have a zero-dollar ledger entry.
+		if ($this->amount == 0.0) {
+			return 0.0;
+		}
+
 		if ($this->debit > 0 && $this->amount > 0.0) {
 			// Debit account / positive amount
 			return $this->amount;
@@ -30,9 +36,7 @@ class LedgerEntry {
 			// Credit account / negative amount = Positive Debit
 			return $this->amount * -1.0;
 		} else {
-			// Zero amount corner-case:  return as Debit.  This is arbitrary,
-			// but we can have a zero-dollar ledger entry.
-			return 0.0;
+			return '';
 		}
 	}
 	

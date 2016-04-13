@@ -12,6 +12,7 @@
 	$current_page = 'account_details';
 	require('include.php');
 	
+	$MAX_LEDGER_ENTRIES_PER_TX = 10;
 	
 	if (!isset ($_SESSION['login_id']))
 	{
@@ -24,7 +25,7 @@
 	$message = '';
 	
 	function createSinkTransaction($ledgerEntries, $loginId, $txDate) {
-		$txDateString = $txDate->format('m/d/Y');
+		$txDateString = $txDate->format(SQL_DATE);
 	  	$sinkTransaction = new Transaction();
 		$sinkTransaction->Init_transaction(
 			$loginId,
@@ -57,9 +58,9 @@
 	// Get POST params
 	$account_id = $_POST['account_id'];
 	$startDate = new DateTime($_POST['start_date']);
-	$startDateText = $startDate->format(DISPLAY_DATE);
+	$startDateText = $startDate->format(SQL_DATE);
 	$endDate = new DateTime($_POST['end_date']);
-	$endDateText = $endDate->format(DISPLAY_DATE);
+	$endDateText = $endDate->format(SQL_DATE);
 	$minDate = $startDate;
 	$activeOnly = 1;
 	$account_list = array();
@@ -89,7 +90,7 @@
 			$endDate, $savings_list);
 	}
 
-	// Loop through data and aggregate into transactions of 5 entries or less
+	// Loop through data and aggregate into transactions of MAX_LEDGER_ENTRIES_PER_TX entries or less
 	$sinkParentMap = array();
 	$transactions = array();
   
@@ -146,7 +147,7 @@
 				$sinkTransaction->get_ledgerL_list()[] = $ledger;
 				$sinkTransaction->get_account_savings()[] = $accountSavings;
 				
-				if (count($sinkTransaction->get_ledgerL_list()) >= 5) {
+				if (count($sinkTransaction->get_ledgerL_list()) >= $MAX_LEDGER_ENTRIES_PER_TX) {
 					// Add completed transaction
 					$transactions[] = $sinkTransaction;
 
@@ -167,7 +168,7 @@
 	} // End record loop
 
 	$nullCount = 0;
-	// Add transactions from the Parent Map (< 5 ledger entries)
+	// Add transactions from the Parent Map (< $MAX_LEDGER_ENTRIES_PER_TX ledger entries)
 	foreach ($sinkParentMap as $parentAccountId => $sinkTransaction) {
 		if ($sinkTransaction == null) {
 			$nullCount++;

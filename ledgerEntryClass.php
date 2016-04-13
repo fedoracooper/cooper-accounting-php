@@ -81,7 +81,7 @@ class LedgerEntry {
 		
 		if ($this->toDelete) {
 			// skip most validation for deletion
-			if ($this->ledgerId > 0) {
+			if ($this->ledgerId <= 0) {
 				return 'No ledger ID provided for ledger entry deletion';
 			} else {
 				return '';

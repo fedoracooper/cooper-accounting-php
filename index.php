@@ -238,8 +238,33 @@
 				// Clear existing input values from new row
 				newRow.find("input").val("");
 			});
+		
+			// Initialize change handler, then invoke now	
+			$("select[name='account_id[]']").change(handleAccountSelect).change();
 			
 		});
+
+
+		// Highlight positive side of Ledger Entry in green (Debit or Credit)
+		function handleAccountSelect() {
+			// Reset box shadows on Debit & Credit
+			$(this).parent().parent().find("input[type='number']").css("box-shadow", "none");
+
+			// Value is account_id,debit
+			var valueArray = $(this).val().split(",");
+			if (valueArray.length != 2) {
+				// No valid selection; return w/ no highlighting
+				return;
+			}
+
+			var debit = valueArray[1];
+			var fieldSelector = debit > 0 ? "input[name='amountDebit[]']" 
+				: "input[name='amountCredit[]']";
+			// select -> td -> tr -> find input on this row
+			var field = $(this).parent().parent().find(fieldSelector);
+			field.css("box-shadow", "0 0 5px #00FF00");
+		}
+
 
 		function confirmDelete()
 		{

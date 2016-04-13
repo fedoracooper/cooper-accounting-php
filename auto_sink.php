@@ -131,7 +131,7 @@
 					$ledger = new LedgerEntry();
 					$ledger->accountId = $savingsParentId;
 					$ledger->debit = $parentDebit;
-					$ledger->amount = 0.0;
+					$ledger->setAmount(0.0);
 					$sinkLedgerEntries[0] = $ledger;
 
 					$sinkTransaction = createSinkTransaction($sinkLedgerEntries, $login_id, $endDate);
@@ -142,7 +142,7 @@
 				$ledger = new LedgerEntry();
 				$ledger->accountId = $accountSavings->savingsId;
 				$ledger->debit = $savingsDebit;
-				$ledger->amount = $accountSavings->getToSave();
+				$ledger->setAmount($accountSavings->getToSave());
 				$sinkTransaction->get_ledgerL_list()[] = $ledger;
 				$sinkTransaction->get_account_savings()[] = $accountSavings;
 				
@@ -247,7 +247,7 @@
       "   <td></td>\n".
       "   <td></td>\n".
       "   <td class='numeric' style='font-weight: bold;'>".
-          format_currency($transaction->get_ledgerL_list()[0]->amount) . "</td>\n".
+          format_currency($transaction->get_ledgerL_list()[0]->getAmount()) . "</td>\n".
       " </tr>\n";
       
       foreach ($accountSavingsList as $accountSavings) {

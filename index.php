@@ -129,14 +129,9 @@
 			$ledger->ledgerId = is_numeric($ledgerIdRaw) ? $ledgerIdRaw : -1;
 			$ledger->memo = $_POST['ledger_memo'][$i];
 			$ledger->setAccountData($_POST['account_id'][$i]);
-			$ledgerError = $ledger->setDebitCredit($_POST['amountDebit'][$i],
-				$_POST['amountCredit'][$i]);
+			$ledger->debitAmount = $_POST['amountDebit'][$i];
+			$ledger->creditAmount = $_POST['amountCredit'][$i];
 			$ledger_list[] = $ledger;
-			
-			if ($ledgerError != '') {
-				// Don't overwrite previous error unless non-empty.
-				$error = $ledgerError;
-			}
 		}	// End Ledger Entry for loop
 		
 		if (isset($_POST['delete_ledger_id'])) {
@@ -145,7 +140,7 @@
 			for ($i = 0; $i < count($deleteLedgerIdArray); $i++) {
 				// Deletion is detected by a ledger ID with amount set to empty string
 				$ledger = new LedgerEntry();
-				$ledger->amount = '';
+				$ledger->toDelete = true;
 				$ledger->ledgerId = $deleteLedgerIdArray[$i];
 				$ledger_list[] = $ledger;
 			}

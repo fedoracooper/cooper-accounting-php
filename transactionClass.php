@@ -340,49 +340,32 @@ class Transaction
   public function Validate() {
 		$error = '';
 
-		$ledger_total = 0.0;	//total of LHS & RHS; must equal 0
+		$debit_total = 0.0;	// Debits & Credits must match
+		$credit_total = 0.0;
 		$ledger_list = $this->get_ledger_list();
 		// 0=ledger_id, 1=account_id/account_debit, 2=amount
 		foreach ($ledger_list as $ledgerEntry)
 		{
-			if ($ledgerEntry->accountId == '-1' && $ledgerEntry->amount != '') {
-				// a number without an account has been specified
-				return $error = "You must select an account for your amount";
+			$error = $ledgerEntry->validate();
+			if ($error != '') {
+				return $error;
 			}
 			
-			if ($ledgerEntry->ledgerId < 0)
-			{
-				// new ledger entry; need full verification
-				if (!is_numeric ($ledgerEntry->amount))
-				{
-					return $error = "You must enter a number for the amount '".
-						$ledgerEntry->amount. "'";
-				}
-			}
-			else
-			{
-				// Existing ledger entry
-				if (trim ($ledgerEntry->amount) != ''
-					&& !is_numeric ($ledgerEntry->amount))
-				{
-					// Existing ledger with non-empty, non-numeric amount
-					return $error = "You must enter a numeric amount or no amount: '".
-						$ledgerEntry->amount. "'";
-				}
-			}
 			if ($ledgerEntry->accountId > 0 && $ledgerEntry->debit == 0) {
 				// Account ID without Account Debit flag; invalid!
 				return $error = "Account ID ". $ledgerEntry->accountId .
 					" specified without Debit flag.";
 			}
 				
-			// Total up amounts multiplied by debit (1 or -1)
-			$ledger_total += $ledgerEntry->getDebitAmount();
+			// Total up amounts
+			$debit_total += $ledgerEntry->debitAmount();
+			$credit_total += $ledgerEntry->creditAmount();
 		}
 
-		if (abs ($ledger_total) > .001)
-			$error = "Transaction must total to zero; it currently totals \$".
-				round($ledger_total, 3);
+		$amountDiff = $debit_total - $credit_total;
+		if ($amountDiff > .001)
+			$error = "Debits and Credits must be equal; current difference: \$".
+				round($amountDiff, 3);
 		elseif (trim ($this->m_trans_descr) == '')
 			$error = 'You must enter a description of the transaction';
 		elseif (!is_numeric ($this->m_repeat_count)) {
@@ -416,14 +399,13 @@ class Transaction
 	// When auto sinking, calculate the ledger entry amount of the
 	// parent account, which will be the first ledger entry.
 	public function Calculate_sinking_total() {
-	  
 	  $total = 0.0;
 	  foreach ($this->m_ledgerL_list as $ledgerEntry) {
-	    $total -= $ledgerEntry->amount;
+	    $total -= $ledgerEntry->getAmount();
 	  }
 	  
 	  // Set total in the first entry
-	  $this->m_ledgerL_list[0]->amount = $total;
+	  $this->m_ledgerL_list[0]->setAmount($total);
 	}
 	
 	
@@ -500,7 +482,7 @@ class Transaction
 			$ledger->ledgerId = $row['ledger_id'];
 			$ledger->accountId = $row['account_id'];
 			$ledger->debit = $row['account_debit'];
-			$ledger->amount = $row['ledger_amount'];
+			$ledger->setAmount($row['ledger_amount']);
 			$ledger->memo = $row['memo'];
 			
 			if ($row['equation_side'] == 'L')		// LHS ledger account
@@ -694,13 +676,13 @@ class Transaction
 				// no ledger_id; new record.
 				$psInsert->bindParam(':trans_id', $this->m_trans_id, PDO::PARAM_INT);
 				$psInsert->bindParam(':account_id', $ledger->accountId, PDO::PARAM_INT);
-				$psInsert->bindParam(':ledger_amount', $ledger->amount);
+				$psInsert->bindParam(':ledger_amount', $ledger->getAmount());
 				$psInsert->bindParam(':memo', $ledger->memo);
 				$ps = $psInsert;
 			}
 			else
 			{
-				if (trim ($ledger->amount == ''))
+				if ($ledger->toDelete)
 				{
 					// An existing ledger entry is being deleted
 					$psDelete->bindparam(':ledger_id', $ledger->ledgerId, PDO::PARAM_INT);
@@ -710,7 +692,7 @@ class Transaction
 				{
 					// UPDATE an existing ledger entry
 					$psUpdate->bindParam(':account_id', $ledger->accountId, PDO::PARAM_INT);
-					$psUpdate->bindParam(':ledger_amount', $ledger->amount);
+					$psUpdate->bindParam(':ledger_amount', $ledger->getAmount());
 					$psUpdate->bindParam(':ledger_id', $ledger->ledgerId, PDO::PARAM_INT);
 					$psUpdate->bindParam(':memo', $ledger->memo);
 					$ps = $psUpdate;
@@ -878,7 +860,7 @@ class Transaction
 			if ($itemAccountId == $accountId)
 			{
 				// Return the amount for the matching account ID
-				return $ledger->amount;
+				return $ledger->getAmount();
 			}
 		}
 

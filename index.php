@@ -270,7 +270,7 @@
 		
 		function getNumberOrZero(jQueryField) {
 			if ($.isNumeric(jQueryField.val())) {
-				return jQueryField.val();
+				return Number(jQueryField.val());
 			} else {
 				return 0.0;
 			}

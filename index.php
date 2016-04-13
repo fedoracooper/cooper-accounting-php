@@ -247,9 +247,11 @@
 			
 			$("#new-ledger").click(function() {
 				// Copy first data row and append to the table.
-				var newRow = $(".ledger-row").first().clone(true).appendTo($("#ledger-table"));
+				var newRow = $(".ledger-row").first().clone(true).insertBefore($("#summary-row"));
+				
 				// Clear existing input values from new row
 				newRow.find("input").val("");
+				newRow.find("select").prop("selectedIndex", "0");
 			});
 		
 			// Initialize change handler, then invoke now	
@@ -258,7 +260,38 @@
 			// Bind Copy button to function
 			$("#copyButton").click(copyTransaction);
 			
+			// Debit / Credit amount calculation handlers
+			$("input[name='amountDebit[]']").change(calculateTotals);
+			$("input[name='amountCredit[]']").change(calculateTotals);
+			
+			// Calculate on first load
+			calculateTotals();
 		});
+		
+		function getNumberOrZero(jQueryField) {
+			if ($.isNumeric(jQueryField.val())) {
+				return jQueryField.val();
+			} else {
+				return 0.0;
+			}
+		}
+		
+		// Total up the amounts
+		function calculateTotals() {
+			var debitTotal = 0.0;
+			var creditTotal = 0.0;
+			$("input[name='amountDebit[]']").each(function() {
+				debitTotal += getNumberOrZero($(this));
+			}
+			$("input[name='amountCredit[]']").each(function() {
+				creditTotal += getNumberOrZero($(this));
+			}
+			
+			var amountDiff = debitTotal - creditTotal;
+			$("#debitTotal").val("$" + debitTotal.toFixed(2));
+			$("#creditTotal").val("$" + creditTotal.toFixed(2));
+			$("#totalDiff").val("$" + amountDiff.toFixed(2));
+		}
 
 
 		// Highlight positive side of Ledger Entry in green (Debit or Credit)
@@ -715,17 +748,29 @@
 		$acct_drop = Build_dropdown ($accountList, 'account_id[]',
 			$ledger->getAccountIdDebitString());
 		echo $acct_drop. "</td>\n".
-			"		<td><input type='number' min='0.0' max='9999999' ".
+			"		<td><input type='number' class='numeric' min='0.0' max='9999999' ".
 			"step='0.01' name='amountDebit[]' value='". $ledger->debitAmount . "' /> </td> \n";
-		echo "		<td><input type='number' min='0.0' max='9999999' ".
+		echo "		<td><input type='number' class='numeric' min='0.0' max='9999999' ".
 			"step='0.01' name='amountCredit[]' value='". $ledger->creditAmount . "' /> </td> \n";
 		echo "		<td><button type='button' class='delete-ledger'> Remove </button></td> \n";
 		echo "	</tr> \n\n";
 	}
 ?>
+	<!-- Summary Row -->
+	<tr id="summary-row">
+		<td>
+			<button type="button" id="new-ledger"> Add Ledger Entry </button>			
+		</td>
+		<td>
+			Totals:
+		</td>
+		<td id="debitTotal" class="numeric"></td>
+		<td id="creditTotal" class="numeric"></td>
+		<td id="totalDiff" class="numeric"></td>
+	</tr>
+
 	</table>
 	
-	<button type="button" id="new-ledger"> Add Ledger Entry </button>
 	</fieldset>
 </div>  <!-- tx-form -->
 		

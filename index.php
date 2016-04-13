@@ -130,7 +130,9 @@
 			}
 			
 			$ledger = new LedgerEntry();
-			$ledger->ledgerId = $_POST['ledger_id'][$i];
+			$ledgerIdRaw = $_POST['ledger_id'][$i]
+			// If ledgerId is blank, convert to -1 for downstream processing.
+			$ledger->ledgerId = is_numeric($ledgerIdRaw) ? $ledgerIdRaw : -1;
 			$ledger->memo = $_POST['ledger_memo'][$i];
 			$ledger->setAccountData($_POST['account_id'][$i]);
 			$ledgerError = $ledger->setDebitCredit($_POST['amountDebit'][$i],
@@ -294,17 +296,10 @@
 			editTrans.innerHTML = 'New Transaction (copy)';
 
 			// 2. Wipe out trans_id hidden field
-			document.forms[1].trans_id.value = '-1';
+			$("#trans_id).val("-1");
 
 			// 3. Wipe out ledger ID values
-			var ledgerIds = document.getElementsByName('ledgerL_id[]');
-			for (i = 0; i < ledgerIds.length; i++) {
-				ledgerIds[i].value = '-1';
-			}
-			var ledgerIds = document.getElementsByName('ledgerR_id[]');
-			for (i = 0; i < ledgerIds.length; i++) {
-				ledgerIds[i].value = '-1';
-			}
+			$("input[name='ledger_id[]']").val("-1");
 
 			// 4. Remove Delete and Cancel buttons
 			var deleteButton = document.getElementById('deleteButton');
@@ -317,11 +312,8 @@
 			copyButton.parentNode.removeChild(copyButton);
 
 			// 5. Clear out dates
-			var transDate = document.getElementById('trans_date').value = '';
-
-			document.getElementById('accounting_date').value = '';
-
-			transDate.focus();
+			$("#trans_date").val("").focus();
+			$("#accounting_date").val("");
 		}
 
 		function auditAccount( ledger_id, account_balance )
@@ -621,7 +613,7 @@
 		</div>
 
 		<div id="tx2">
-			<label class="lhs">Date: </label> <input type="hidden" name="trans_id" value="<?=
+			<label class="lhs">Date: </label> <input type="hidden" id="trans_id" name="trans_id" value="<?=
 					$trans->get_trans_id() ?>">
 				<input type="date" min="1980-01-01" max="2100-01-01" name="trans_date"
 				id="trans_date"

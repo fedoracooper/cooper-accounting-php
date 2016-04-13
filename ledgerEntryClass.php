@@ -60,25 +60,31 @@ class LedgerEntry {
 				$this->setDebitCredit($debit, '');
 				return "Cannot specify Debit Amount and Credit Amount for the same ledger entry";
 			}
+		} elseif (!is_numeric($debit) && !is_numeric($credit)) {
+			return "Debit or Credit Amount must be specified for each Ledger Entry";
 		}
+		
+		// Default to zero value.  Both debit & credit can be specified,
+		// but only 1 should be non-zero.
+		$this->amount = 0.0;
+		
 		if (is_numeric($debit)) {
 			if ($debit < 0.0) {
 				return "Amounts cannot be negative.  Use either Debit or Credit column";
-			} else {
+			} elseif ($debit > 0.0) {
 				// Debit to a Credit account is stored as a negative value
 				$invert = ($this->debit > 0) ? 1.0 : -1.0;
 				$this->amount = $debit * $invert;
 			}
-		} elseif (is_numeric($credit)) {
+		}
+		if (is_numeric($credit)) {
 			if ($credit < 0.0) {
 				return "Amounts cannot be negative.  Use either Debit or Credit column";
-			} else {
+			} elseif ($credit > 0.0) {
 				// Credit to a Debit account is stored as a negative value
 				$invert = ($this->debit > 0) ? -1.0 : 1.0;
 				$this->amount = $credit * $invert;
 			}
-		} else {
-			return "No valid Debit or Credit amount set";
 		}
 		
 		return '';

@@ -97,6 +97,11 @@ class LedgerEntry {
 			return '';
 		}
 	}
+
+	// Get html-escaped memo value
+	public function getMemo() {
+		return htmlspecialchars($this->memo);
+	}
 	
 	// Take a string in this form:  "accountId,debit"
 	// In some cases, it will just be accountId.

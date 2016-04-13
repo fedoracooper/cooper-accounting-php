@@ -667,7 +667,7 @@
 		$ledger = GetLedger($ledgers, $i);
 		echo "	<tr class='ledger-row'>\n".
 			'		<td><input type="text" class="memo" maxlength="50" name="ledger_memo[]" '.
-				"value='". $ledger->memo . "' /> </td> \n";
+				"value=\"". $ledger->getMemo() . "\" /> </td> \n";
 		echo '		<td><input type="hidden" name="ledger_id[]"'.
 				" value='". $ledger->ledgerId . "' /> \n";
 		// Build account dropdown

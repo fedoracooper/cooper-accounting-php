@@ -74,7 +74,8 @@ CREATE TABLE acct.ledger_entries (
   ledger_id SERIAL NOT NULL constraint pk_ledger_entries PRIMARY KEY,
   trans_id int NOT NULL constraint fk_ledger_trans REFERENCES acct.transactions(trans_id),
   account_id smallint NOT NULL constraint fk_ledger_acccount REFERENCES acct.accounts(account_id),
-  ledger_amount decimal(9,2) NOT NULL);
+  ledger_amount decimal(9,2) NOT NULL,
+  memo varchar(100) );
 
   create INDEX ix_ledger_trans ON acct.ledger_entries(trans_id);
   create INDEX ix_ledger_account ON acct.ledger_entries(account_id);

@@ -478,7 +478,7 @@ class Transaction
 		}
 
 		// Load individual ledger entries
-		$sql = "SELECT le.ledger_id, le.account_id, le.ledger_amount, ".
+		$sql = "SELECT le.ledger_id, le.account_id, le.ledger_amount, le.memo, ".
 			" a.equation_side, a.account_debit \n".
 			"FROM Ledger_Entries le \n".
 			"INNER JOIN Accounts a ON ".
@@ -501,6 +501,7 @@ class Transaction
 			$ledger->accountId = $row['account_id'];
 			$ledger->debit = $row['account_debit'];
 			$ledger->amount = $row['ledger_amount'];
+			$ledger->memo = $row['memo'];
 			
 			if ($row['equation_side'] == 'L')		// LHS ledger account
 				$this->m_ledgerL_list[] = $ledger;
@@ -670,15 +671,16 @@ class Transaction
 		
 		// prepare all queries
 		$psInsert = $pdo->prepare("INSERT INTO Ledger_Entries \n".
-			"(trans_id, account_id, ledger_amount) \n".
-			"VALUES(:trans_id, :account_id, :ledger_amount)");
+			"(trans_id, account_id, ledger_amount, memo) \n".
+			"VALUES(:trans_id, :account_id, :ledger_amount, :memo)");
 		
 		$psDelete = $pdo->prepare("DELETE from Ledger_Entries \n".
 			"WHERE ledger_id = :ledger_id");
 		
 		$psUpdate = $pdo->prepare("UPDATE Ledger_Entries \n".
 						"SET account_id= :account_id, ".
-						" ledger_amount= :ledger_amount \n".
+						" ledger_amount= :ledger_amount, ".
+						" memo = :memo \n".
 						"WHERE ledger_id= :ledger_id ");
 		$ps = NULL;
 
@@ -693,6 +695,7 @@ class Transaction
 				$psInsert->bindParam(':trans_id', $this->m_trans_id, PDO::PARAM_INT);
 				$psInsert->bindParam(':account_id', $ledger->accountId, PDO::PARAM_INT);
 				$psInsert->bindParam(':ledger_amount', $ledger->amount);
+				$psInsert->bindParam(':memo', $ledger->memo);
 				$ps = $psInsert;
 			}
 			else
@@ -709,6 +712,7 @@ class Transaction
 					$psUpdate->bindParam(':account_id', $ledger->accountId, PDO::PARAM_INT);
 					$psUpdate->bindParam(':ledger_amount', $ledger->amount);
 					$psUpdate->bindParam(':ledger_id', $ledger->ledgerId, PDO::PARAM_INT);
+					$psUpdate->bindParam(':memo', $ledger->memo);
 					$ps = $psUpdate;
 				}
 			}

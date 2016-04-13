@@ -358,8 +358,8 @@ class Transaction
 			}
 				
 			// Total up amounts
-			$debit_total += $ledgerEntry->debitAmount();
-			$credit_total += $ledgerEntry->creditAmount();
+			$debit_total += $ledgerEntry->debitAmount;
+			$credit_total += $ledgerEntry->creditAmount;
 		}
 
 		$amountDiff = $debit_total - $credit_total;

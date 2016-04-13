@@ -703,9 +703,9 @@
 			$ledger->getAccountIdDebitString());
 		echo $acct_drop. "</td>\n".
 			"		<td><input type='number' min='0.0' max='9999999' ".
-			"step='0.01' name='amountDebit[]' value='". $ledger->getDebit() . "' /> </td> \n";
+			"step='0.01' name='amountDebit[]' value='". $ledger->debitAmount . "' /> </td> \n";
 		echo "		<td><input type='number' min='0.0' max='9999999' ".
-			"step='0.01' name='amountCredit[]' value='". $ledger->getCredit() . "' /> </td> \n";
+			"step='0.01' name='amountCredit[]' value='". $ledger->creditAmount . "' /> </td> \n";
 		echo "		<td><button type='button' class='delete-ledger'> Remove </button></td> \n";
 		echo "	</tr> \n\n";
 	}

@@ -613,8 +613,8 @@
 	<?php
 		// Create ledger entry deletion inputs, for failed deletion submit.
 		foreach ($deleteLedgerIdArray as $deleteLedgerId) {
-			echo "	<input type='hidden' name='delete_ledger_id[]' value='"
-						+ $deleteLedgerId + "' /> \n");			
+			echo "	<input type='hidden' name='delete_ledger_id[]' "
+				. "value='$deleteLedgerId' /> \n";
 		}
 	?>
 	<fieldset> <legend> <a "edit_trans" id="edit_trans"><?php

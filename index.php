@@ -243,6 +243,8 @@
 						+ ledgerId + "' /> ");
 				}
 				row.remove();
+
+				calculateTotals();
 			});
 			
 			$("#new-ledger").click(function() {
@@ -288,9 +290,9 @@
 			});
 			
 			var amountDiff = debitTotal - creditTotal;
-			$("#debitTotal").val("$" + debitTotal.toFixed(2));
-			$("#creditTotal").val("$" + creditTotal.toFixed(2));
-			$("#totalDiff").val("$" + amountDiff.toFixed(2));
+			$("#debitTotal").text("$" + debitTotal.toFixed(2));
+			$("#creditTotal").text("$" + creditTotal.toFixed(2));
+			$("#totalDiff").text("$" + amountDiff.toFixed(2));
 		}
 
 

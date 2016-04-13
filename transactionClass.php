@@ -671,12 +671,13 @@ class Transaction
 		$ledger_list = $this->get_ledger_list();
 		foreach ($ledger_list as $ledger)
 		{
+			$amount = $ledger->getAmount();
 			if ($ledger->ledgerId == -1)
 			{
 				// no ledger_id; new record.
 				$psInsert->bindParam(':trans_id', $this->m_trans_id, PDO::PARAM_INT);
 				$psInsert->bindParam(':account_id', $ledger->accountId, PDO::PARAM_INT);
-				$psInsert->bindParam(':ledger_amount', $ledger->getAmount());
+				$psInsert->bindParam(':ledger_amount', $amount);
 				$psInsert->bindParam(':memo', $ledger->memo);
 				$ps = $psInsert;
 			}
@@ -692,7 +693,7 @@ class Transaction
 				{
 					// UPDATE an existing ledger entry
 					$psUpdate->bindParam(':account_id', $ledger->accountId, PDO::PARAM_INT);
-					$psUpdate->bindParam(':ledger_amount', $ledger->getAmount());
+					$psUpdate->bindParam(':ledger_amount', $amount);
 					$psUpdate->bindParam(':ledger_id', $ledger->ledgerId, PDO::PARAM_INT);
 					$psUpdate->bindParam(':memo', $ledger->memo);
 					$ps = $psUpdate;

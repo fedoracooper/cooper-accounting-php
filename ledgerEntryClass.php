@@ -42,6 +42,16 @@ class LedgerEntry {
 		}
 	}
 	
+	// Return debit amount, or zero if not set.
+	public function getDebitAmountNumeric() {
+		return (is_numeric($this->debitAmount)) ? $this->debitAmount : 0.0;
+	}
+	
+	// Return credit amount, or zero if not set.
+	public function getCreditAmountNumeric() {
+		return (is_numeric($this->creditAmount)) ? $this->creditAmount : 0.0;
+	}
+	
 	/* Set from single database amount field.  We will populate the appropriate
 	   field, debitAmount or creditAmount, based on the account ID.
 	   

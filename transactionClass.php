@@ -340,7 +340,8 @@ class Transaction
   public function Validate() {
 		$error = '';
 
-		$amount_total = 0.0;	// Debits & Credits must match
+		$debit_total = 0.0;	// Debits & Credits must match
+		$credit_total = 0.0;
 		$ledger_list = $this->get_ledger_list();
 		// 0=ledger_id, 1=account_id/account_debit, 2=amount
 		foreach ($ledger_list as $ledgerEntry)
@@ -357,12 +358,14 @@ class Transaction
 			}
 				
 			// Total up amounts
-			$amount_total += $ledgerEntry->getAmount();
+			$debit_total += $ledgerEntry->getDebitAmountNumeric();
+			$credit_total += $ledgerEntry->getCreditAmountNumeric();
 		}
 
-		if (abs($amount_total) > .001)
+		$amountDiff = $debit_total - $credit_total;
+		if ($amountDiff > .001)
 			$error = "Debits and Credits must be equal; current difference: \$".
-				round($amount_total, 3);
+				round($amountDiff, 3);
 		elseif (trim ($this->m_trans_descr) == '')
 			$error = 'You must enter a description of the transaction';
 		elseif (!is_numeric ($this->m_repeat_count)) {

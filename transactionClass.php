@@ -363,7 +363,7 @@ class Transaction
 		}
 
 		$amountDiff = $debit_total - $credit_total;
-		if ($amountDiff > .001)
+		if (abs($amountDiff) > .001)
 			$error = "Debits and Credits must be equal; current difference: \$".
 				round($amountDiff, 3);
 		elseif (trim ($this->m_trans_descr) == '')

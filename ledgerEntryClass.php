@@ -50,9 +50,6 @@ class LedgerEntry {
 		Returns an error string if input is invalid.
 	*/
 	public function setDebitCredit($debit, $credit) {
-		if ($this->debit == 0) {
-			return "Error:  credit flag not initialized";
-		}
 		
 		if (is_numeric($debit) && is_numeric($credit)) {
 			if ($debit != 0.0 && $credit != 0.0) {
@@ -64,6 +61,16 @@ class LedgerEntry {
 			// No valid amount; pass debit value through to subsequent validation
 			$this->amount = $debit;
 			return '';
+		}
+		
+		if ($this->accountId <= 0) {
+			// Set raw value into amount field, and return error
+			$this->amount = empty($debit) ? $credit : $debit;
+			return "Please select an Account for each Ledger Entry";
+		}
+		if ($this->debit == 0) {
+			// Shouldn't happen when accountId is set
+			return "Error:  credit flag not initialized";
 		}
 		
 		// Default to zero value.  Both debit & credit can be specified,

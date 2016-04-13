@@ -130,7 +130,7 @@
 			}
 			
 			$ledger = new LedgerEntry();
-			$ledgerIdRaw = $_POST['ledger_id'][$i]
+			$ledgerIdRaw = $_POST['ledger_id'][$i];
 			// If ledgerId is blank, convert to -1 for downstream processing.
 			$ledger->ledgerId = is_numeric($ledgerIdRaw) ? $ledgerIdRaw : -1;
 			$ledger->memo = $_POST['ledger_memo'][$i];

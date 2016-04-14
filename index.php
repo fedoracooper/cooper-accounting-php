@@ -389,7 +389,7 @@
 			$("input[name='ledger_id[]']").val("-1");
 
 			// 4. Remove Delete and Copy buttons
-			$("#cancelButton").remove();
+			$("#deleteButton").remove();
 			$("#copyButton").remove();
 
 			// 5. Clear out dates

@@ -2,8 +2,33 @@ body {
 	font-size: 11pt;
 }
 
+tr.odd {
+	/* Light Green */
+	background-color: #BCE2BC;
+}
+
+tr.even {
+	/* Pale yellow */
+	background-color: #F2F8D9;
+}
+
+tr.todo {
+	/* Light red */
+	background-color: #FF8888;
+}
+
+tr.exclude-budget {
+	/* Bright yellow */
+	background-color: #F4FE50;
+}
+
 .memo {
 	width: 200px;
+}
+
+.long-text {
+	width: 250px;
+	resize: both;
 }
 
 #tx-form div {

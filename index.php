@@ -452,15 +452,17 @@
 <?php
 	$last_trans_id = -1;
 	$next_trans = NULL;
-	$tr_style = '';
+	$tr_class = '';
 
 	// Loop through each transaction in the list
+	$count = 0;
 	foreach ($trans_list as $key=> $trans_item)
 	{
 		$new_row = false;
 		$td_style = ' style="border-right: 1px solid black;"';
 		$new_text = '<td></td>';
 		$hr_text = '';
+		$title = '';
 
 		if ($key -1 >= 0)	// index keys are in reverse order
 			// in range: get next account
@@ -481,14 +483,20 @@
 			if ($trans_item->get_trans_status() == 0)
 			{
 				// unpaid ledger item: show the row in red
-				$tr_style = ' style="background-color: #FF8888;"';
+				$tr_class = 'todo';
+				$title = 'Todo item; edit to mark as fulfilled';
+			} elseif ($trans_item->get_exclude_budget() > 0) {
+				$tr_class = 'exclude-budget';
+				$title = 'Excluded from budget';
 			}
-			elseif ($tr_style == '') { // even rows get a different color
-				$tr_style = ' style="background-color: #F7CB9F;"';	//#FBAF79"';
+			elseif ($count % 2 == 0) { // odd rows get a different color
+				$tr_class = 'odd';
 			}
-			else{
-				$tr_style = '';
+			else {
+				$tr_class = 'even';
 			}
+			
+			$count++;
 		}
 
 		if ($next_trans === NULL)
@@ -555,7 +563,7 @@
 			$other = $gall. ' gal';
 		}
 
-		echo "	<tr$tr_style>\n";
+		echo "	<tr class='$tr_class' title='$title'>\n";
 		if ($new_row) {
 			echo '		<td style="width: 40px;"><input type="submit" style="height: 18px; '.
 				'font-size: 8pt;" onClick="clickEdit()" name="edit" value="'.
@@ -627,7 +635,8 @@
 		echo $hr_text;
 
 		$last_trans_id = $trans_item->get_trans_id();
-	}
+		
+	}	// End Row Loop
 
 	// Build Transaction list dropdown
 	$status_list = array (1=> 'Fulfilled', 0=> 'To-do');
@@ -689,15 +698,15 @@
 		</div>
 
 		<div id="tx4">
-			<label class="lhs"> Description: </label> <input type="text" size="50" maxlength="50" name="trans_descr"
+			<label class="lhs"> Description: </label> <input type="text" class="long-text" maxlength="50" name="trans_descr"
 				value="<?= $trans->get_trans_descr() ?>">
-			<label> Vendor: </label> <input type="text" size="50" maxlength="50" name="trans_vendor"
+			<label> Vendor: </label> <input type="text" class="long-text" maxlength="50" name="trans_vendor"
 				value="<?= $trans->get_trans_vendor() ?>">
 		</div>
 
 		<div id="tx5">
 			<label class="lhs"> Comment:</label>
-			<textarea name="trans_comment" rows="2" cols="50"
+			<textarea name="trans_comment" rows="1" cols="35"
 				><?= $trans->get_trans_comment() ?></textarea>
 			<label for="prior_month">Budget for prior month: </label> <input type="checkbox" id="prior_month" name="prior_month" value="1" <?= $priorMonthCheck ?>/>
 			<label for="exclude_budget">Exclude from budget: </label>

@@ -37,14 +37,14 @@ tr.exclude-budget {
 
 /* Hidden transaction form div */
 #tx-form {
-	margin: auto;
+	/* margin: auto; */
 	padding: 15px;
 	border: 2px solid black;
-	position: fixed;
-	overflow-y: scroll;
+	position: absolute;  /* absolute allows overlay but scrolls w/ main page. */
+	/* overflow-y: scroll; */
 	top: 140px;
 	left: 100px;
-	max-height: 600px;
+	/* max-height: 600px; */
 	background-color: #FAFCD8;
 	z-index: 10;
 	display: none;

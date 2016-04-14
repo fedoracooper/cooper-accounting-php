@@ -82,9 +82,6 @@
 		$dateArr2['mon'], $dateArr2['mday'], $dateArr2['year']);
 	$start_date	= date (SQL_DATE, $start_time);
 	$end_date	= date (SQL_DATE, $end_time);
-
-	$excludeBudgetCheck = '';
-	$priorMonthCheck = '';
 	
 	$showTx = false;
 	if (isset ($_POST['edit']))
@@ -92,8 +89,6 @@
 		// Loading a transaction & ledger entries from database.
 		$error = $trans->Load_transaction($_POST['edit']);
 		$editClick = 1;		// used to set a form var for javascript
-		$excludeBudgetCheck = get_checked($trans->get_exclude_budget());
-		$priorMonthCheck = get_checked($trans->get_prior_month());
 		
 		$showTx = true;  // Show tx div for editing
 	}
@@ -265,14 +260,21 @@
 			// Bind Copy button to function
 			$("#copyButton").click(copyTransaction);
 			
+			$("#deleteButton").click(confirmDelete);
+			
 			// Cancel button will "close" the div
 			$("#cancelButton").click(function() {
 				var txDiv = $("#tx-form");
 				txDiv.css("display", "none");
 				
 				// Reset inputs
-				txDiv.find("input").val("");
+				txDiv.find("input[type!='submit']").val("");
 				txDiv.find("select").prop("selectedIndex", "0");
+				$("#tx-header").text('New Transaction');
+				
+				// Remove edit-related buttons
+				$("#deleteButton").remove();
+				$("#copyButton").remove();
 			});
 			
 			// Show the Transaction div
@@ -321,12 +323,15 @@
 			
 			var color = "black";
 			var shadowColor = "#FFFFFF";
+			var toolTip = "";
 			if (Math.abs(amountDiff) > 0.001) {
 				color = "red";
 				shadowColor = "#FF0000";
+				toolTip = "Total Debits must match Total Credits";
 			}
 			$("#totalDiff").css("color", color)
-				.css("box-shadow", "0 0 5px " + shadowColor);
+				.css("box-shadow", "0 0 5px " + shadowColor)
+				.attr("title", toolTip);
 		}
 
 
@@ -375,8 +380,7 @@
 		function copyTransaction()
 		{
 			// 1. Change Tx header text
-			var editTrans = document.getElementById('edit_trans');
-			editTrans.innerHTML = 'New Transaction (copy)';
+			$("#tx-header").text('New Transaction (copy)');
 
 			// 2. Wipe out trans_id hidden field
 			$("#trans_id").val("-1");
@@ -384,15 +388,9 @@
 			// 3. Wipe out ledger ID values
 			$("input[name='ledger_id[]']").val("-1");
 
-			// 4. Remove Delete and Cancel buttons
-			var deleteButton = document.getElementById('deleteButton');
-			deleteButton.parentNode.removeChild(deleteButton);
-
-			var cancelButton = document.getElementById('cancelButton');
-			cancelButton.parentNode.removeChild(cancelButton);
-
-			var copyButton = document.getElementById('copyButton');
-			copyButton.parentNode.removeChild(copyButton);
+			// 4. Remove Delete and Copy buttons
+			$("#cancelButton").remove();
+			$("#copyButton").remove();
 
 			// 5. Clear out dates
 			$("#trans_date").val("").focus();
@@ -698,7 +696,7 @@
 <!-- Transaction Form; initially hidden. -->
 <div id="tx-form">
 	<?php
-		echo "<h3>";
+		echo "<h3 id='tx-header'>";
 			if ($trans->get_trans_id() < 0)
 				echo "New Transaction";
 			else
@@ -763,9 +761,12 @@
 			<label class="lhs"> Comment:</label>
 			<textarea name="trans_comment" rows="1" cols="35"
 				><?= $trans->get_trans_comment() ?></textarea>
-			<label for="prior_month">Budget for prior month: </label> <input type="checkbox" id="prior_month" name="prior_month" value="1" <?= $priorMonthCheck ?>/>
+			<label for="prior_month">Budget for prior month: </label> 
+				<input type="checkbox" id="prior_month" name="prior_month" 
+					value="1" <?= get_checked($trans->get_prior_month()) ?>/>
 			<label for="exclude_budget">Exclude from budget: </label>
-				<input type="checkbox" id="exclude_budget" name="exclude_budget" value="1" <?= $excludeBudgetCheck ?>/> 
+				<input type="checkbox" id="exclude_budget" name="exclude_budget" 
+				value="1" <?= get_checked($trans->get_exclude_budget()) ?>/> 
 		</div>
 	</fieldset>
 
@@ -849,7 +850,7 @@
 		{
 			// currently editing; show delete button
 			echo '<td><input type="submit" name="delete" id="deleteButton" '.
-				"onClick=\"return confirmDelete()\" value=\"Delete transaction\" /></td>\n".
+				"value=\"Delete transaction\" /></td>\n".
 				"<td><button type=\"button\" id=\"copyButton\" >Copy</button></td>\n";
 		}
 			echo '<td>';

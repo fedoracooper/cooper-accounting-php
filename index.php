@@ -8,6 +8,7 @@
 	}
 
 	$error = '';
+	$searchError = '';
 
 	// Default values
 	$sel_account_id = $_SESSION['default_account_id'];	// default account selection
@@ -84,6 +85,8 @@
 
 	$excludeBudgetCheck = '';
 	$priorMonthCheck = '';
+	
+	$showTx = false;
 	if (isset ($_POST['edit']))
 	{
 		// Loading a transaction & ledger entries from database.
@@ -91,6 +94,8 @@
 		$editClick = 1;		// used to set a form var for javascript
 		$excludeBudgetCheck = get_checked($trans->get_exclude_budget());
 		$priorMonthCheck = get_checked($trans->get_prior_month());
+		
+		$showTx = true;  // Show tx div for editing
 	}
 
 	// Build the account list dropdown
@@ -200,22 +205,20 @@
 		{
 			//successful save; reset for a new transaction
 			$trans = new Transaction ();
+		} else {
+			// Failed Save; show form
+			$showTx = true;  // Show tx div for editing
 		}
 	}
 
-	$error1 = $error;
 	$warning = '';
 	// Build the transaction list
 	$trans_list = Transaction::Get_transaction_list ($sel_account_id,
-		$start_date, $end_date, $limit, $search_text, $total_period, $error, $warning);
+		$start_date, $end_date, $limit, $search_text, $total_period, $searchError, $warning);
 	// Strip slashes from search_text variable
 	$search_text = stripslashes( $search_text );
 	$sel_account = new Account ();
 	$sel_account->Load_account ($sel_account_id);
-	if ($error1 != '') {
-		// an error occurred before calling transaction list
-		$error = $error1;
-	}
 ?>
 
 
@@ -262,9 +265,31 @@
 			// Bind Copy button to function
 			$("#copyButton").click(copyTransaction);
 			
+			// Cancel button will "close" the div
+			$("#cancelButton").click(function() {
+				var txDiv = $("#tx-form");
+				txDiv.css("display", "none");
+				
+				// Reset inputs
+				txDiv.find("input").val("");
+				txDiv.find("select").prop("selectedIndex", "0");
+			});
+			
+			// Show the Transaction div
+			$("#newTxButton").click(function() {
+				$("#tx-form").css("display", "block");
+				// Focus on transaction date
+				$("#trans_date").val("").focus();
+			});
+			
 			// Debit / Credit amount calculation handlers
 			$("input[name='amountDebit[]']").change(calculateTotals);
 			$("input[name='amountCredit[]']").change(calculateTotals);
+			
+			var showTx = <?= var_export($showTx) ?>;
+			if (showTx) {
+				$("#tx-form").css("display", "block");
+			}
 			
 			// Calculate on first load
 			calculateTotals();
@@ -293,6 +318,15 @@
 			$("#debitTotal").text("$" + debitTotal.toFixed(2));
 			$("#creditTotal").text("$" + creditTotal.toFixed(2));
 			$("#totalDiff").text("$" + amountDiff.toFixed(2));
+			
+			var color = "black";
+			var shadowColor = "#FFFFFF";
+			if (Math.abs(amountDiff) > 0.001) {
+				color = "red";
+				shadowColor = "#FF0000";
+			}
+			$("#totalDiff").css("color", color)
+				.css("box-shadow", "0 0 5px " + shadowColor);
 		}
 
 
@@ -385,6 +419,8 @@
 
 
 <body onload="bodyLoad()">
+<div id="body-div">
+
 <?= $navbar ?>
 
 <table style="margin-top: 5px;">
@@ -395,8 +431,8 @@
 </table>
 
 <?php
-	if ($error != '')
-		echo "<div class='error'>$error</div> \n";
+	if ($searchError != '')
+		echo "<div class='error'>$searchError</div> \n";
 	if ($warning != '') {
 		echo "<div class='message'>$warning</div> \n";
 	}
@@ -652,7 +688,31 @@
 </form>
 
 
+<div id="tx-action-div">
+	<button type="button" id="newTxButton">New Transaction</button>
+
+</div>
+
+
+
+<!-- Transaction Form; initially hidden. -->
 <div id="tx-form">
+	<?php
+		echo "<h3>";
+			if ($trans->get_trans_id() < 0)
+				echo "New Transaction";
+			else
+				echo "Edit Transaction (". $trans->get_trans_id(). ")";
+				
+		echo "</h3>";
+	
+		if ($error != '') {
+			echo "<div class='error'>$error</div> \n";
+		}
+	?>
+			
+			
+			
 <form method="post" action="index.php" name="editForm" id="editForm">
 	<?php
 		// Create ledger entry deletion inputs, for failed deletion submit.
@@ -661,12 +721,7 @@
 				. "value='$deleteLedgerId' /> \n";
 		}
 	?>
-	<fieldset> <legend> <a "edit_trans" id="edit_trans"><?php
-			if ($trans->get_trans_id() < 0)
-				echo "New Transaction";
-			else
-				echo "Edit Transaction (". $trans->get_trans_id(). ")";
-			?></a> </legend>
+	<fieldset> <legend> Transaction Header </legend>
 		<div id="tx1">
 			<label class="lhs">Status:</label> <?= $status_dropdown ?>
 			<label>Repeat months: </label><input type="number" min="1" max="12" step="1" name="repeat_count"
@@ -777,38 +832,41 @@
 		</td>
 		<td id="debitTotal" class="numeric"></td>
 		<td id="creditTotal" class="numeric"></td>
-		<td id="totalDiff" class="numeric"></td>
+		<td id="totalDiff" class="numeric" style="font-weight: bold;"></td>
 	</tr>
 
 	</table>
 	
 	</fieldset>
+	
+	<table style="float: left;">
+		<tr class="padded-row">
+			<td style="padding-left: 15px;">&nbsp;</td>
+			<td><input type="submit" name="save" value="Save transaction"></td>
+			<td><button type="button" id="cancelButton">Cancel</button> </td>
+	<?php
+		if ($trans->get_trans_id() > -1)
+		{
+			// currently editing; show delete button
+			echo '<td><input type="submit" name="delete" id="deleteButton" '.
+				"onClick=\"return confirmDelete()\" value=\"Delete transaction\" /></td>\n".
+				"<td><button type=\"button\" id=\"copyButton\" >Copy</button></td>\n";
+		}
+			echo '<td>';
+			echo '</td>';
+	?>
+		</tr>
+
+	</table>
+	
 </div>  <!-- tx-form -->
 		
-<table style="float: left;">
-	<tr class="padded-row">
-		<td style="padding-left: 25px;">&nbsp;</td>
-		<td><input type="submit" name="save" value="Save transaction"></td>
-<?php
-	if ($trans->get_trans_id() > -1)
-	{
-		// currently editing; show delete button
-		echo '<td><input type="submit" name="delete" id="deleteButton" '.
-			"onClick=\"return confirmDelete()\" value=\"Delete transaction\" /></td>\n".
-			"<td><input type=\"submit\" value=\"Cancel\" name=\"cancel\" id=\"cancelButton\" /></td>\n" .
-			"<td><input type=\"button\" id=\"copyButton\" value=\"Copy\" /></td>\n";
-	}
-		echo '<td>';
-		echo '</td>';
-?>
-	</tr>
-
-</table>
 
 <?php require('footer.php'); ?>
 
 </form>
 
+</div>  <!-- end body-div -->
 </body>
 </html>
 

@@ -31,9 +31,25 @@ tr.exclude-budget {
 	resize: both;
 }
 
-#tx-form div {
-	padding-top: 4px;
-	padding-bottom: 4px;
+#body-div {
+
+}
+
+#tx-form {
+	width: 850px;
+	margin: auto;
+	padding: 15px;
+	border: 2px solid black;
+	position: fixed;
+	top: 150px;
+	left: 100px;
+	background-color: #FAFCD8;
+	z-index: 10;
+	display: none;
+}
+
+#tx-form h3 {
+	margin-top: 0px;
 }
 
 label {
@@ -109,7 +125,10 @@ th
 {
 	color: red;
 	width: 500px;
+	font-weight: bold;
+	padding-bottom: 10px;
 }
+
 
 .message
 {

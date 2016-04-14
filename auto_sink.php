@@ -13,6 +13,7 @@
 	require('include.php');
 	
 	$MAX_LEDGER_ENTRIES_PER_TX = 10;
+	$MIN_SINK_AMOUNT = 0.10;
 	
 	if (!isset ($_SESSION['login_id']))
 	{
@@ -49,7 +50,7 @@
 			0.0,	//audit balance
 			$ledgerEntries,  // LHS
 			array() // RHS
-    	);
+		);
 
 		return $sinkTransaction;
 	}
@@ -66,7 +67,7 @@
 	$account_list = array();
 	$doAutoSink = null;
 	if (isset($_POST['doAutoSink'])) {
-  	$doAutoSink = ($_POST['doAutoSink'] == '1');
+	 	$doAutoSink = ($_POST['doAutoSink'] == '1');
 	}
 	
 	// Perform SQL queries
@@ -116,7 +117,7 @@
 				$parentDebit = $savingsData[7];
 				$accountSavings->parentName = $savingsData[4];
 				
-				if (abs($accountSavings->getToSave()) < 1.0) {
+				if (abs($accountSavings->getToSave()) < $MIN_SINK_AMOUNT) {
 				  // Don't show accounts with 0 to save, or very small amounts
 				  continue;
 				}

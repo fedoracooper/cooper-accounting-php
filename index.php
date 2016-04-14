@@ -247,7 +247,12 @@
 			
 			$("#new-ledger").click(function() {
 				// Copy first data row and append to the table.
-				var newRow = $(".ledger-row").first().clone(true).insertBefore($("#summary-row"));
+				var rows = $(".ledger-row");
+				if (rows.length >= 20) {
+					alert("No more than 20 Ledger Entries are supported in one transaction");
+					return;
+				}
+				var newRow = rows.first().clone(true).insertBefore($("#summary-row"));
 				
 				// Clear existing input values from new row
 				newRow.find("input").val("");
@@ -270,11 +275,23 @@
 				// Reset inputs
 				txDiv.find("input[type!='submit']").val("");
 				txDiv.find("select").prop("selectedIndex", "0");
+				$("#trans_id").val("-1");
 				$("#tx-header").text('New Transaction');
 				
 				// Remove edit-related buttons
 				$("#deleteButton").remove();
 				$("#copyButton").remove();
+				
+				// Delete extra rows
+				while ($(".ledger-row").length > 2) {
+					$(".ledger-row").last().remove();
+				}
+				
+				// Clear up amount field highlighting
+				$("select[name='account_id[]']").change();
+				
+				// recalc totals
+				calculateTotals();
 			});
 			
 			// Show the Transaction div

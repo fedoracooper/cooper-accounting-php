@@ -193,9 +193,12 @@ function db_error ($rs, $sql)
 // If a selected value is supplied, an item with its value will be preselected.
 // If onchange is non-empty, the javascript event handler is embedded.
 function Build_dropdown ($data_list, $dropdown_name, $selected_value = '',
-	$onChange = '')
+	$onChange = '', $setId = true)
 {
-	$html = "<select name=\"$dropdown_name\" id=\"$dropdown_name\"";
+	$html = "<select name=\"$dropdown_name\"";
+	if ($setId) {
+		$html .= " id=\"$dropdown_name\"";
+	}
 	if ($onChange != '')
 		$html .= " onChange=\"$onChange\"";
 	$html .= "> \n";

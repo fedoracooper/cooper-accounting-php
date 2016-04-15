@@ -220,9 +220,10 @@
 <html>
 <head>
 	<title>Account Ledger</title>
+	<meta charset="UTF-8">
 	<link href="style.css" rel="stylesheet" type="text/css">
 	<script src="https://code.jquery.com/jquery-2.2.3.js" ></script>
-	<script language="javascript" type="text/javascript">
+	<script>
 		
 		$(document).ready(function() {
 	
@@ -482,7 +483,7 @@
 	</tr>	-->
 </table>
 
-<table class="trans-table" cellpadding="0" cellspacing="0" style="">
+<table class="trans-table" style="">
 	<tr>
 		<th>Edit</th>
 		<th>Date</th>
@@ -795,6 +796,7 @@
 			<th>Account</th>
 			<th>Debit Amount</th>
 			<th>Credit Amount</th>
+			<th>Total</th>
 		</tr>
 
 <?php
@@ -830,7 +832,7 @@
 		echo '		<td><input type="hidden" name="ledger_id[]" value="' . $ledger->ledgerId . "\" /> \n";
 		// Build account dropdown
 		$acct_drop = Build_dropdown ($accountList, 'account_id[]',
-			$ledger->getAccountIdDebitString());
+			$ledger->getAccountIdDebitString(), '', false);
 		echo $acct_drop. "</td>\n".
 			"		<td><input type='number' class='numeric' min='0.0' max='9999999' ".
 			"step='0.01' name='amountDebit[]' value='". $ledger->debitAmount . "' /> </td> \n";
@@ -876,13 +878,13 @@
 		</tr>
 
 	</table>
+</form>
 	
 </div>  <!-- tx-form -->
 		
 
 <?php require('footer.php'); ?>
 
-</form>
 
 </div>  <!-- end body-div -->
 </body>

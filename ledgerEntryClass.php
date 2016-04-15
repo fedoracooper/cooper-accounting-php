@@ -25,17 +25,18 @@ class LedgerEntry {
 	 */
 	public function getAmount() {
 		
+		$debit = $this->getDebitAmountNumeric();
+		$credit = $this->getCreditAmountNumeric();
+		
+		// Only one amount should be populated, but
+		// it's simplest to just use subtraction.
 		if ($this->debit > 0) {
 			// Debit acct
-			return (is_numeric($this->debitAmount))
-				? $this->debitAmount
-				: $this->creditAmount * -1.0;
+			return $debit - $credit;
 				
 		} elseif ($this->debit < 0) {
 			// Credit acct
-			return (is_numeric($this->creditAmount))
-				? $this->creditAmount
-				: $this->debitAmount * -1.0;
+			return $credit - $debit;
 				
 		} else {
 			return 'Error:  debit flag not set';

@@ -7,6 +7,15 @@
 
 $startTime = microtime(true);
 
+if (empty($_SERVER['HTTPS']) || $_SERVER['HTTPS'] == "off") {
+	// Redirect HTTP to HTTPS
+	$redirect = 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+	header('HTTP/1.1 301 Moved Permanently');
+	header('Location: ' . $redirect);
+
+	exit();
+}
+
 header ("Content-type: text/html; charset=utf-8");
 
 echo "<!DOCTYPE HTML> \n";

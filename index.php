@@ -762,7 +762,7 @@
 		<div id="tx3">			
 			<label class="lhs">Number: </label> <input type="number" min="1" max="9999" name="check_number"
 				value="<?= $trans->get_check_number() ?>">
-			<label>Miles: </label>  <input type="number" min="0" max="9999" step="0.1" name="gas_miles"
+			<label>Miles: </label>  <input type="number" min="0" max="999999" step="0.1" name="gas_miles"
 				value="<?= $trans->get_gas_miles_trimmed() ?>">
 			<label>Gallons: </label> <input type="number" min="0" max="99" step="0.01" name="gas_gallons"
 				value="<?= $trans->get_gas_gallons() ?>">

@@ -764,13 +764,17 @@ class Transaction
 
 		// Look for any audits that touch any accounts being updated, with
 		// an accounting date on or before the audit date
-		$sql = "SELECT aa.audit_date, a.account_name, le.account_id \n".
+		$sql = "SELECT MAX(aa.audit_date) as latest_audit_date, a.account_name, le.account_id, " .
+			" child.account_id as child_account_id \n".
 			"FROM Account_Audits aa \n".
 			"INNER JOIN Ledger_Entries le ON le.ledger_id = aa.ledger_id \n".
 			"INNER JOIN Accounts a ON a.account_id = le.account_id \n".
+			"LEFT JOIN Accounts child ON child.account_parent_id = a.account_id \n".
+			"	AND child.account_id IN( $accounts ) \n".
 			"WHERE le.account_id IN( $accounts ) \n".
 			"	AND aa.audit_date >= :minDate ".
-			"ORDER BY aa.audit_date DESC ";
+			"GROUP BY a.account_name, le.account_id, child.account_id ".
+			"ORDER BY le.account_id ";
 
 		$pdo = db_connect_pdo();
 		$ps = $pdo->prepare($sql);
@@ -780,12 +784,66 @@ class Transaction
 			return get_pdo_error($ps);
 		}
 
+		// Map of parent account ID -> total
+		$totalMap = array();
+		// List of parent account Ids with audit rows
+		$parentAccountIds = array();
+		// Map of child account ID -> parent account ID
+		$childAccountMap = array();
+
+		$lastAccountId = -1;
+
 		// Loop through all potentially conflicting audit records until
 		// we find an error or we exhaust the list.
 		while ($row = $ps->fetch(PDO::FETCH_ASSOC))
 		{
-			$time = strtotime( $row[ 'audit_date' ] );
+			$time = strtotime( $row[ 'latest_audit_date' ] );
 			$date = date( DISPLAY_DATE, $time );
+			$accountId = $row[ 'account_id' ];
+			$childId = $row[ 'child_account_id' ];
+			$auditDate = $row[ 'latest_audit_date' ];
+		
+			if ($accountId != $lastAccountId) {
+				// new audit account
+				$totalMap[$accountId] = 0.0;
+				$lastAccountId = $accountId;
+			}
+			if ($childId != NULL) {
+				$childAccountMap[$childId] = $accountId;
+			}
+		}
+
+		// Loop through all ledger entries
+		// 1. Audited account?
+		// 2. Subaccount of audit?
+
+		foreach ($ledger_list as $ledger) {
+			$accountId = $ledger->accountId;
+			if (array_key_exists($accountId, $totalMap)) {
+				$totalMap[$accountId] += $ledger->getAmount();
+			} elseif (array_key_exists($accountId, $childAccountMap)) {
+				$parentId = $childAccountMap[$accountId];
+				$totalMap[$parentId] -= $ledger->getAmount();
+			}
+		}
+
+		// Check for special audit exemption:
+		// all ledger entries for audited accounts net to 0
+		// due to transfers from / to subaccounts.
+		$netZero = true;
+		foreach ($totalMap as $accountId => $total) {
+			if (abs($total) > 0.01) {
+				error_log("Non-balanced account $accountId affects audit");
+				$netZero = false;
+			} else {
+				error_log("Account $accountId affects audited account, but "
+					"net amount is zero, so permitting...");
+			}
+		}
+
+		if ($netZero) {
+			return '';
+		}
 
 			if ($this->m_trans_id <= -1)
 			{
@@ -798,8 +856,6 @@ class Transaction
 				// One of the transaction items has been audited.
 				// Load up the original record and check if the account
 				// ledger value has changed.
-				$accountId = $row[ 'account_id' ];
-				$auditDate = $row[ 'audit_date' ];
 				$time = strtotime($auditDate);
 				$date = date( DISPLAY_DATE, $time );
 				$oldTime = strtotime($oldDate);

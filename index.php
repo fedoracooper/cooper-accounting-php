@@ -299,7 +299,7 @@
 			$("#newTxButton").click(function() {
 				$("#tx-form").css("display", "block");
 				// Focus on transaction date
-				$("#trans_date").val("").focus();
+				$("#trans_date").focus();
 			});
 			
 			// Debit / Credit amount calculation handlers

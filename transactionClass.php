@@ -762,8 +762,13 @@ class Transaction
 		}
 
 
-		// Look for any audits that touch any accounts being updated, with
-		// an accounting date on or before the audit date
+		/* Look for any audits that touch any accounts being updated, with
+		 an accounting date on or before the audit date.  Also pull up
+		 any child account IDs which are present in the list of ledger entries,
+		 as any transactions that are purely within sub-accounts are allowed
+		 to be created, since they won't affect the roll-up parent account balance.
+		 This is because account balances are audited based on the roll-up sum.
+		 */
 		$sql = "SELECT MAX(aa.audit_date) as latest_audit_date, a.account_name, le.account_id, " .
 			" child.account_id as child_account_id \n".
 			"FROM Account_Audits aa \n".
@@ -774,7 +779,7 @@ class Transaction
 			"WHERE le.account_id IN( $accounts ) \n".
 			"	AND aa.audit_date >= :minDate ".
 			"GROUP BY a.account_name, le.account_id, child.account_id ".
-			"ORDER BY le.account_id ";
+			"ORDER BY le.account_id, child.account_id ";
 
 		$pdo = db_connect_pdo();
 		$ps = $pdo->prepare($sql);
@@ -786,8 +791,8 @@ class Transaction
 
 		// Map of parent account ID -> total
 		$totalMap = array();
-		// List of parent account Ids with audit rows
-		$parentAccountIds = array();
+		// List of SQL rows for each account with direct audit conflicts
+		$parentRows = array();
 		// Map of child account ID -> parent account ID
 		$childAccountMap = array();
 
@@ -797,16 +802,14 @@ class Transaction
 		// we find an error or we exhaust the list.
 		while ($row = $ps->fetch(PDO::FETCH_ASSOC))
 		{
-			$time = strtotime( $row[ 'latest_audit_date' ] );
-			$date = date( DISPLAY_DATE, $time );
 			$accountId = $row[ 'account_id' ];
 			$childId = $row[ 'child_account_id' ];
-			$auditDate = $row[ 'latest_audit_date' ];
 		
 			if ($accountId != $lastAccountId) {
 				// new audit account
 				$totalMap[$accountId] = 0.0;
 				$lastAccountId = $accountId;
+				$parentRows[] = $row;
 			}
 			if ($childId != NULL) {
 				$childAccountMap[$childId] = $accountId;
@@ -820,10 +823,12 @@ class Transaction
 		foreach ($ledger_list as $ledger) {
 			$accountId = $ledger->accountId;
 			if (array_key_exists($accountId, $totalMap)) {
+				// Direct audit:  increment the total
 				$totalMap[$accountId] += $ledger->getAmount();
 			} elseif (array_key_exists($accountId, $childAccountMap)) {
+				// Child account of audit:  increment
 				$parentId = $childAccountMap[$accountId];
-				$totalMap[$parentId] -= $ledger->getAmount();
+				$totalMap[$parentId] += $ledger->getAmount();
 			}
 		}
 
@@ -842,22 +847,33 @@ class Transaction
 		}
 
 		if ($netZero) {
+			// all audited accounts have a net-zero effect from this
+			// transaction, which means we transferred from/to subaccounts;
+			// allow the change to be made.
 			return '';
 		}
+		
+		// Proceed with audit error message
+		foreach ($parentRows as $row) {
+			
+			$auditDate = $row[ 'latest_audit_date' ];
+			$time = strtotime( $auditDate );
+			$date = date( DISPLAY_DATE, $time );
+			$accountId = $row[ 'account_id' ];
+			$childId = $row[ 'child_account_id' ];
+			$accountName = $row['account_name'];
 
 			if ($this->m_trans_id <= -1)
 			{
 				// New transaction crosses old audit period.
 				$error = "This transaction would affect the account ".
-					"'{$row['account_name']}', which has already been audited ".
+					"'$accountName', which has already been audited ".
 					"up to $date.";
 			} else
 			{
 				// One of the transaction items has been audited.
 				// Load up the original record and check if the account
 				// ledger value has changed.
-				$time = strtotime($auditDate);
-				$date = date( DISPLAY_DATE, $time );
 				$oldTime = strtotime($oldDate);
 				if ($oldDate != $newDate)
 				{
@@ -866,13 +882,13 @@ class Transaction
 					{
 						$error = "Cannot change the accounting date from ".
 							date(DISPLAY_DATE, $oldTime) . " for this ".
-							"transaction, as the account ". $row['account_name'].
-							" has been audited up to $date.";
+							"transaction, as the account $accountName ".
+							"has been audited up to $date.";
 					} else
 					{
 						$error = "This transaction's accounting date cannot ".
 							"change, due to an account audit on date $date and account ".
-							$row[ 'account_name' ]. "; please do not change the ".
+							$accountName. "; please do not change the ".
 							"accounting date.";
 					}
 				}
@@ -881,9 +897,9 @@ class Transaction
 				$newValue = $this->Get_ledger_value( $accountId );
 				if ($error == '' && abs( $oldValue - $newValue ) > 0.001)
 				{
-					// The audited account has changed
+					// The audited account VALUE has changed
 					$error = "This transaction violates a past account audit. ".
-						"The account '{$row[ 'account_name' ]}' was audited up ".
+						"The account '$accountName' was audited up ".
 						"to date $date; please change the transaction accounting ".
 						"date.";
 				}

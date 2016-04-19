@@ -841,7 +841,7 @@ class Transaction
 				error_log("Non-balanced account $accountId affects audit");
 				$netZero = false;
 			} else {
-				error_log("Account $accountId affects audited account, but "
+				error_log("Account $accountId affects audited account, but ".
 					"net amount is zero, so permitting...");
 			}
 		}

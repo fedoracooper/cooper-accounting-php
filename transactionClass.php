@@ -29,6 +29,7 @@ class Transaction
 	private $m_repeat_count		= 1;	// # of times to store new transaction
 	private	$m_account_display	= '';
 	private	$m_ledger_amount	= NULL;
+	private $m_ledger_memo		= '';
 	private $m_audit_balance	= NULL;
 	private $m_ledger_total		= NULL;
 	private $m_ledgerL_list		= array();	//array of account_id=>ledger_amount
@@ -198,6 +199,9 @@ class Transaction
 				return '$'. $numStr;
 			}
 		}
+	}
+	public function get_ledger_memo() {
+		return $this->m_ledger_memo;
 	}
 	public function get_ledger_total($plain = false) {
 		if (is_null ($this->m_ledger_total))
@@ -1120,7 +1124,7 @@ $t2 = microtime(true);
 			" aa.audit_id, aa.account_balance as audit_balance, ".
 			" a2.account_name as account2_name, ".
 			" a2.account_id as a2_account_id, a.account_id, ".
-			" t.budget_date, t.exclude_from_budget, ".
+			" t.budget_date, t.exclude_from_budget, le.memo as ledger_memo, ".
 			"  (ledger_amount * a.account_debit * :account_debit) as amount \n".
 			"FROM Transactions t \n".
 			"inner join Ledger_Entries le on ".
@@ -1202,6 +1206,7 @@ $execTime += $t2 - $t1 + $t4 - $t3;
 				$row['audit_id'],
 				$row['audit_balance']
 			);
+			$trans->m_ledger_memo = $row['ledger_memo'] . '';
 			
 			$trans_list[$i] = $trans;
 			$i++;

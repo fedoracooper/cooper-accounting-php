@@ -677,7 +677,7 @@
 			$closeAnchor = "</a>";
 		}
 
-		echo "		<td>". $trans_item->get_account_display(). "</td>\n".
+		echo "		<td title=\"". $trans_item->get_ledger_memo() . "\">". $trans_item->get_account_display(). "</td>\n".
 			"		<td>$other</td> \n".
 			"		<td class=\"currency\">". $trans_item->get_ledger_amount(). "</td>\n".
 			"		<td$td_style class=\"currency\">$auditAnchor".

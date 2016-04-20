@@ -140,7 +140,7 @@
 			// Loop through deleted ledger entry rows
 			$deleteLedgerIdArray = $_POST['delete_ledger_id'];
 			for ($i = 0; $i < count($deleteLedgerIdArray); $i++) {
-				// Deletion is detected by a ledger ID with amount set to empty string
+				// flag each ledger entry for deletion
 				$ledger = new LedgerEntry();
 				$ledger->toDelete = true;
 				$ledger->ledgerId = $deleteLedgerIdArray[$i];
@@ -191,8 +191,10 @@
 			if ($mode == 'save') {
 				$error = $trans->Save_repeat_transactions();
 			}
-			else {
+			elseif ($mode == 'delete') {
 				$error = $trans->Delete_transaction();
+			} else {
+				$error = "Unknown mode $mode";
 			}
 		}
 

@@ -716,36 +716,111 @@ class Transaction
 		$pdo = null;
 	}
 
+	/* Get list of account IDs of ledger entries of this transaction.
+	*/
+	private function Get_ledger_account_ids() {
+
+		$accountIds = array();
+	
+		foreach ($this->get_ledger_list() as $ledger)
+		{
+			// Prevent SQL injection by checking data type!
+			if (!is_numeric($ledger->accountId)) {
+				return "Unable to check audits with non-numeric accountId:"
+					. $ledger->accountId;
+			}
+			$accountIds[] = $ledger->accountId;
+		}
+
+		return $accountIds;
+	}
+
+	private function Get_account_totals(&$totalMap, &$childAccountMap) {
+		$ledger_list = $this->get_ledger_list();
+	
+    		foreach ($ledger_list as $ledger) {
+			$accountId = $ledger->accountId;
+			if (array_key_exists($accountId, $totalMap)) {
+        			// Direct audit:  increment the total
+				$totalMap[$accountId] += $ledger->getAmount();
+			}
+    
+			if (array_key_exists($accountId, $childAccountMap)) {
+				// Child account of audit:  increment
+				$parentId = $childAccountMap[$accountId];
+				if (array_key_exists($parentId, $totalMap)) {
+					$totalMap[$parentId] += $ledger->getAmount();
+				}
+			}
+		}
+	}
+
+	private static function All_net_zero($totalMap) {
+		$netZero = true;
+		foreach ($totalMap as $accountId => $total) {
+			if (abs($total) > 0.01) {
+				error_log("Non-balanced account $accountId affects audit");
+				$netZero = false;
+			} else {
+				error_log("Account $accountId affects audited account, but ".
+					"net amount is zero, so permitting...");
+			}
+		}
+
+		return $netZero;
+	}
+
+	// check for audited account net amounts from old vs. new transaction
+	// which is being modified.  Return error msg when change is not allowed.
+	private static function Validate_total_changes($allAccountIds, $totalMap, $totalMapOld) {
+		foreach ($allAccountIds as $accountId) {
+			$inNewTx = array_key_exists($accountId, $totalMap);
+			$inOldTx = array_key_exists($accountId, $totalMapOld);
+	
+			if ($inOldTx && $inNewTx) {
+				// net amount must be the same
+				if (abs($totalMap[$accountId] - $totalMapOld[$accountId]) > 0.001) {
+					return "net amount must be the same as before";
+				}
+			} elseif ($inNewTx && !$inOldTx) {
+				// new account
+				if (abs($totalMap[$accountId]) > 0.001) {
+					return "new ledger entry account is audited";
+				}
+			} elseif (!$inNewTx && $inOldTx) {
+				// deleted account
+				if (abs($totalMapOld[$accountId]) > 0.001) {
+					return "cannot delete ledger entry for audited account";
+				}
+			}
+		}
+	
+		return '';
+	}
+
+
 
 	/*	This internal function is used to verify that we won't violate
 		any account audits with a save.
 		A return value of empty string indicates we are okay; otherwise
 		a string will be returned with a reason for the violation.
 		check_original:  whether we are assuming this is the original DB data.
+
+		forDelete:  true when checking for tx deletion; false otherwise.
 	*/
-	private function Check_audits()
+	private function Check_audits($forDelete = false)
 	{
 		$error = '';
 
 		// Loop through the ledger entries
 		$accounts = '';
 		$ledger_list = $this->get_ledger_list();
-
-		foreach ($ledger_list as $ledger)
-		{
-			if ($accounts != '')
-			{
-				$accounts .= ", ";
-			}
-
-			// Store the account ID of every ledger ID in a SQL list
-			
-			// Prevent SQL injection by checking data type!
-			if (!is_numeric($ledger->accountId)) {
-				return "Unable to check audits with non-numeric accountId:"
-					. $ledger->accountId;
-			}
-			$accounts .= $ledger->accountId;
+		$accountIds = $this->Get_ledger_account_ids();
+		$oldAccountIds = array();
+		$allAccountIds = $accountIds;
+		if (is_string($accountIds)) {
+			// error msg
+			return $accountIds;
 		}
 
 		$oldTrans = null;
@@ -759,10 +834,25 @@ class Transaction
 			$oldTrans->Load_transaction( $this->m_trans_id );
 			$oldDate = $oldTrans->get_accounting_date_sql();
 			$minDate = min($oldDate, $newDate);
+
+			// Add account Ids to list for SQL search
+			$oldAccountIds = $oldTrans->Get_ledger_account_ids();
+			$ids = array_merge($accountIds, $oldAccountIds);
+			$allAccountIds = array_unique($ids);
 		}
 
+		// build SQL list of account Ids
+		$accounts = '';
+		foreach ($allAccountIds as $accountId) {
+			if ($accounts != '') {
+				$accounts .= ", ";
+			}
+			$accounts .= $accountId;
+		}
 
-		/* Look for any audits that touch any accounts being updated, with
+error_log("Account ID sql: $accounts");
+
+		/* Look for any audits that touch any accounts in current or previous tx, with
 		 an accounting date on or before the audit date.  Also pull up
 		 any child account IDs which are present in the list of ledger entries,
 		 as any transactions that are purely within sub-accounts are allowed
@@ -791,6 +881,7 @@ class Transaction
 
 		// Map of parent account ID -> total
 		$totalMap = array();
+		$totalMapOld = array();
 		// List of SQL rows for each account with direct audit conflicts
 		$parentRows = array();
 		// Map of child account ID -> parent account ID
@@ -807,7 +898,14 @@ class Transaction
 		
 			if ($accountId != $lastAccountId) {
 				// new audit account
-				$totalMap[$accountId] = 0.0;
+				if (array_search($accountId, $accountIds) !== FALSE) {
+					// new tx has this account
+					$totalMap[$accountId] = 0.0;
+				}
+				if (array_search($accountId, $oldAccountIds) !== FALSE) {
+					// old tx has this account
+					$totalMapOld[$accountId] = 0.0;
+				}
 				$lastAccountId = $accountId;
 				$parentRows[] = $row;
 			}
@@ -819,39 +917,17 @@ class Transaction
 		// Loop through all ledger entries
 		// 1. Audited account?
 		// 2. Subaccount of audit?
-
-		foreach ($ledger_list as $ledger) {
-			$accountId = $ledger->accountId;
-			if (array_key_exists($accountId, $totalMap)) {
-				// Direct audit:  increment the total
-				$totalMap[$accountId] += $ledger->getAmount();
-			} elseif (array_key_exists($accountId, $childAccountMap)) {
-				// Child account of audit:  increment
-				$parentId = $childAccountMap[$accountId];
-				$totalMap[$parentId] += $ledger->getAmount();
-			}
+		$this->Get_account_totals($totalMap, $childAccountMap);
+		if ($oldTrans != null) {
+			$oldTrans->Get_account_totals($totalMapOld, $childAccountMap);
 		}
 
 		// Check for special audit exemption:
 		// all ledger entries for audited accounts net to 0
 		// due to transfers from / to subaccounts.
-		$netZero = true;
-		foreach ($totalMap as $accountId => $total) {
-			if (abs($total) > 0.01) {
-				error_log("Non-balanced account $accountId affects audit");
-				$netZero = false;
-			} else {
-				error_log("Account $accountId affects audited account, but ".
-					"net amount is zero, so permitting...");
-			}
-		}
+		$netZero = Transaction::All_net_zero($totalMap);
+		$netZeroOld = Transaction::All_net_zero($totalMap);
 
-		if ($netZero) {
-			// all audited accounts have a net-zero effect from this
-			// transaction, which means we transferred from/to subaccounts;
-			// allow the change to be made.
-			return '';
-		}
 		
 		// Proceed with audit error message
 		foreach ($parentRows as $row) {
@@ -862,11 +938,18 @@ class Transaction
 			$accountId = $row[ 'account_id' ];
 			$childId = $row[ 'child_account_id' ];
 			$accountName = $row['account_name'];
-
-			if ($this->m_trans_id <= -1)
+	
+			if ($forDelete || $this->m_trans_id <= -1)
 			{
+				// New tx or Delete transaction:  only allow for net zero
+				if ($netZero) {
+					// special exemption:
+					// allow new transactions on audited accounts
+					// when subaccount net to zero (moving money to sink accounts)
+					return '';
+				}
 				// New transaction crosses old audit period.
-				$error = "This transaction would affect the account ".
+				$error = "This transaction affects the account ".
 					"'$accountName', which has already been audited ".
 					"up to $date.";
 			} else
@@ -893,15 +976,13 @@ class Transaction
 					}
 				}
 
-				$oldValue = $oldTrans->Get_ledger_value( $accountId );
-				$newValue = $this->Get_ledger_value( $accountId );
-				if ($error == '' && abs( $oldValue - $newValue ) > 0.001)
-				{
-					// The audited account VALUE has changed
-					$error = "This transaction violates a past account audit. ".
-						"The account '$accountName' was audited up ".
-						"to date $date; please change the transaction accounting ".
-						"date.";
+				$errorMsg = Transaction::Validate_total_changes(
+					$allAccountIds, $totalMap, $totalMapOld);
+
+				if ($errorMsg != '') {
+					// The audited account NET AMOUNT has changed
+					$error = "This transaction violates a past account audit: ".
+						$errorMsg;
 				}
 			}
 
@@ -946,35 +1027,39 @@ class Transaction
 	public function Delete_transaction()
 	{
 		$error = '';
-		if ($this->m_trans_id < 0)
-			$error = "Unable to delete transaction.";
-		else
-		{
-			// Delete the ledger entries, then the transactions
-			$sql = "DELETE FROM Ledger_Entries \n".
-				"WHERE trans_id = :trans_id ";
-			$pdo = db_connect_pdo();
-			$ps = $pdo->prepare($sql);
-			$ps->bindParam(':trans_id', $this->m_trans_id);
-			$success = $ps->execute();
-		
-			if (!$success) {
-				return get_pdo_error($ps);
-			}
-			
-			// Delete transactions
-			$sql = "DELETE FROM Transactions \n".
-				"WHERE trans_id = :trans_id ";
-			$ps = $pdo->prepare($sql);
-			$ps->bindParam(':trans_id', $this->m_trans_id);
-			$success = $ps->execute();
-		
-			if (!$success) {
-				return get_pdo_error($ps);
-			}
-			
-			$pdo = null;
+		if ($this->m_trans_id < 0) {
+			return "Unable to delete transaction.";
 		}
+
+		$error = $this->Check_audits(true);
+		if ($error != '') {
+			return $error;
+		}
+
+		// Delete the ledger entries, then the transactions
+		$sql = "DELETE FROM Ledger_Entries \n".
+			"WHERE trans_id = :trans_id ";
+		$pdo = db_connect_pdo();
+		$ps = $pdo->prepare($sql);
+		$ps->bindParam(':trans_id', $this->m_trans_id);
+		$success = $ps->execute();
+		
+		if (!$success) {
+			return get_pdo_error($ps);
+		}
+			
+		// Delete transactions
+		$sql = "DELETE FROM Transactions \n".
+			"WHERE trans_id = :trans_id ";
+		$ps = $pdo->prepare($sql);
+		$ps->bindParam(':trans_id', $this->m_trans_id);
+		$success = $ps->execute();
+		
+		if (!$success) {
+			return get_pdo_error($ps);
+		}
+		
+		$pdo = null;
 
 		return $error;
 	}

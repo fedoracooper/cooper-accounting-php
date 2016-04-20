@@ -12,12 +12,6 @@
 
 	// Default values
 	$sel_account_id = $_SESSION['default_account_id'];	// default account selection
-	// default date range to the whole current month
-	//$dateArr = getdate ();
-	//$dateArr['mday'] = 1;	// first day of current month
-	//$dateArr2 = getdate();
-	//$dateArr2['mon'] ++;
-	//$dateArr2['mday'] = 0;	// last day of previous month
 
 	// Get last x days + x days forward
 	$days = 5 * 24 * 60 * 60;
@@ -37,24 +31,29 @@
 	{
 		// The form has already been submitted; get filter vars
 		$sel_account_id	= $_POST['sel_account_id'];
-		$dateArr	= getdate (strtotime ($_POST['start_date']));
-		$dateArr2	= getdate (strtotime ($_POST['end_date']));
+		$startTime = strtotime ($_POST['start_date']);
+		$endTime = strtotime ($_POST['end_date']);
+		$diffTime = $endTime - $startTime + (60 * 60 * 24);  // Plus 1 day
+
 		$limit			= $_POST['limit'];
 		$total_period	= $_POST['total_period'];
 		$search_text	= $_POST['search_text'];
 
-		if (isset ($_POST['prev_month']))
+		if (isset ($_POST['previous_txs']))
 		{
-			// Back 30 days
-			$dateArr['mday'] -= 30;
-			$dateArr2['mday'] -= 30;
+			// Shift to prior period
+			$startTime -= $diffTime;
+			$endTime -= $diffTime;
 		}
-		elseif (isset ($_POST['next_month']))
+		elseif (isset ($_POST['next_txs']))
 		{
-			// Plus 30 days
-			$dateArr['mday'] += 30;
-			$dateArr2['mday'] += 30;
+			// Shift to next period
+			$startTime += $diffTime;
+			$endTime += $diffTime;
 		}
+		
+		$dateArr  = getdate($startTime);
+		$dateArr2 = getdate($endTime);
 
 		// Set session vars
 		$_SESSION['sel_account_id'] = $sel_account_id;
@@ -476,8 +475,8 @@
 		<td>Limit: </td>
 		<td><input type="number" min="0" max="999" name="limit" value="<?= $limit ?>"></td>
 		<td></td>
-		<td colspan="2"><input type="submit" value="<" name="prev_month"> &nbsp;
-		<input type="submit" value=">" name="next_month"></td>
+		<td colspan="2"><input type="submit" value="<- Previous" name="previous_txs"> &nbsp;
+		<input type="submit" value="Next ->" name="next_txs"></td>
 	</tr>
 <!--
 	<tr>

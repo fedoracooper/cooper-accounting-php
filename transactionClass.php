@@ -548,20 +548,6 @@ class Transaction
 		$check_number	= $this->m_check_number;
 		$gas_miles		= $this->m_gas_miles;
 		$gas_gallons	= $this->m_gas_gallons;
-		
-		// no longer need special null handling ?
-		/*
-		if (is_null ($trans_comment))
-			$trans_comment = 'NULL';
-		else
-			$trans_comment = "'$trans_comment'";	//enclose in quotes for non null
-		if (is_null ($check_number))
-			$check_number = 'NULL';
-		if (is_null ($gas_miles))
-			$gas_miles = 'NULL';
-		if (is_null ($gas_gallons))
-			$gas_gallons = 'NULL';
-			*/
 
 		// Query the audit table to check for conflicts
 		if ($checkAudits) {

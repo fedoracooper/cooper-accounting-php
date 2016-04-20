@@ -192,16 +192,6 @@ $execTime += $t2 - $t1;
 	public function Save_account()
 	{
 		$error = '';
-		// Formatting for database
-		$account_parent_id = $this->m_account_parent_id ;
-		if ($account_parent_id === NULL)
-		{
-			$account_parent_id = 'NULL';
-		}
-		$savings_account_id = $this->m_savings_account_id;
-		if ($savings_account_id === NULL) {
-			$savings_account_id = 'NULL';
-		}
 
 		$pdo = db_connect_pdo();
 		$pdo->beginTransaction();
@@ -245,7 +235,7 @@ $execTime += $t2 - $t1;
 		// bind all params
 		$ps->bindParam(':login_id', $this->m_login_id);
 		$ps->bindParam(':savings_account_id', $this->m_savings_account_id);
-		$ps->bindParam(':parent_id', $account_parent_id);
+		$ps->bindParam(':parent_id', $this->m_account_parent_id);
 		$ps->bindParam(':account_name', $this->m_account_name);
 		$ps->bindParam(':account_descr', $this->m_account_descr);
 		$ps->bindParam(':account_debit', $this->m_account_debit);

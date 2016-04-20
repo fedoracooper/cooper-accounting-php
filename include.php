@@ -5,7 +5,7 @@
 	Modified 10/11/2004: moved class definitions to external files.
 */
 
-$startTime = microtime(true);
+$START_TIME = microtime(true);
 
 if (empty($_SERVER['HTTPS']) || $_SERVER['HTTPS'] == "off") {
 	// Redirect HTTP to HTTPS

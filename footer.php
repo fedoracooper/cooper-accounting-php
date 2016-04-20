@@ -1,7 +1,7 @@
 <?php
-$endTime = microtime(true);
+$END_TIME = microtime(true);
 
-$elapsed = $endTime - $startTime;
+$elapsed = $END_TIME - $START_TIME;
 $elapsedMessage = 'page built in '. sprintf('%.2f', $elapsed). ' seconds';
 $enableMetrics = false;
 if ($connTime > 0.0 && $enableMetrics) {

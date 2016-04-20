@@ -735,13 +735,17 @@ class Transaction
 		return $accountIds;
 	}
 
-	private function Get_account_totals(&$totalMap, &$childAccountMap) {
+	/*
+		Load account & subaccount totals into totalMap, based on
+		this transaction's ledger entries and the given childAccountMap.
+	*/
+	private function Get_account_totals(&$totalMap, $childAccountMap) {
 		$ledger_list = $this->get_ledger_list();
 	
-    		foreach ($ledger_list as $ledger) {
+		foreach ($ledger_list as $ledger) {
 			$accountId = $ledger->accountId;
 			if (array_key_exists($accountId, $totalMap)) {
-        			// Direct audit:  increment the total
+				// Direct audit:  increment the total
 				$totalMap[$accountId] += $ledger->getAmount();
 			}
     
@@ -770,28 +774,18 @@ class Transaction
 		return $netZero;
 	}
 
-	// check for audited account net amounts from old vs. new transaction
-	// which is being modified.  Return error msg when change is not allowed.
-	private static function Validate_total_changes($allAccountIds, $totalMap, $totalMapOld) {
-		foreach ($allAccountIds as $accountId) {
-			$inNewTx = array_key_exists($accountId, $totalMap);
-			$inOldTx = array_key_exists($accountId, $totalMapOld);
-	
-			if ($inOldTx && $inNewTx) {
-				// net amount must be the same
-				if (abs($totalMap[$accountId] - $totalMapOld[$accountId]) > 0.001) {
-					return "net amount must be the same as before";
-				}
-			} elseif ($inNewTx && !$inOldTx) {
-				// new account
-				if (abs($totalMap[$accountId]) > 0.001) {
-					return "new ledger entry account is audited";
-				}
-			} elseif (!$inNewTx && $inOldTx) {
-				// deleted account
-				if (abs($totalMapOld[$accountId]) > 0.001) {
-					return "cannot delete ledger entry for audited account";
-				}
+	/* Check for audited account net amounts from old vs. new transaction
+	 which is being modified.  Return error msg when change is not allowed.
+	 Each totalMap should have the same keys, with a value of 0.0 indicating
+	 a net zero amount or no transactions.
+	 */
+	private static function Validate_total_changes($totalMap, $totalMapOld) {
+		foreach ($totalMap as $accountId => $newTotal) {
+			
+			$oldTotal = $totalMapOld[$accountId];
+			// net amount must be the same
+			if (abs($newTotal - $oldTotal) > 0.001) {
+				return "net amount must be the same as before";
 			}
 		}
 	
@@ -853,11 +847,9 @@ class Transaction
 error_log("Account ID sql: $accounts");
 
 		/* Look for any audits that touch any accounts in current or previous tx, with
-		 an accounting date on or before the audit date.  Also pull up
+		 an accounting date on or before the audit date.  Include
 		 any child account IDs which are present in the list of ledger entries,
-		 as any transactions that are purely within sub-accounts are allowed
-		 to be created, since they won't affect the roll-up parent account balance.
-		 This is because account balances are audited based on the roll-up sum.
+		 as all sub-accounts will affect the parent account balance.
 		 */
 		$sql = "SELECT MAX(aa.audit_date) as latest_audit_date, a.account_name, le.account_id, " .
 			" child.account_id as child_account_id \n".
@@ -865,8 +857,8 @@ error_log("Account ID sql: $accounts");
 			"INNER JOIN Ledger_Entries le ON le.ledger_id = aa.ledger_id \n".
 			"INNER JOIN Accounts a ON a.account_id = le.account_id \n".
 			"LEFT JOIN Accounts child ON child.account_parent_id = a.account_id \n".
-			"	AND child.account_id IN( $accounts ) \n".
-			"WHERE le.account_id IN( $accounts ) \n".
+			"WHERE ( le.account_id IN( $accounts ) OR ".
+			"	child.account_id IN( $accounts ) ) \n".
 			"	AND aa.audit_date >= :minDate ".
 			"GROUP BY a.account_name, le.account_id, child.account_id ".
 			"ORDER BY le.account_id, child.account_id ";
@@ -898,18 +890,13 @@ error_log("Account ID sql: $accounts");
 		
 			if ($accountId != $lastAccountId) {
 				// new audit account
-				if (array_search($accountId, $accountIds) !== FALSE) {
-					// new tx has this account
-					$totalMap[$accountId] = 0.0;
-				}
-				if (array_search($accountId, $oldAccountIds) !== FALSE) {
-					// old tx has this account
-					$totalMapOld[$accountId] = 0.0;
-				}
+				$totalMap[$accountId] = 0.0;
+				$totalMapOld[$accountId] = 0.0;
 				$lastAccountId = $accountId;
 				$parentRows[] = $row;
 			}
 			if ($childId != NULL) {
+				// Each row should be a new child account ID
 				$childAccountMap[$childId] = $accountId;
 			}
 		}
@@ -977,7 +964,7 @@ error_log("Account ID sql: $accounts");
 				}
 
 				$errorMsg = Transaction::Validate_total_changes(
-					$allAccountIds, $totalMap, $totalMapOld);
+					$totalMap, $totalMapOld);
 
 				if ($errorMsg != '') {
 					// The audited account NET AMOUNT has changed

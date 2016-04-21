@@ -129,7 +129,8 @@ CREATE TABLE acct.transactions (
   updated_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   trans_status smallint NOT NULL DEFAULT '1',
   budget_date date DEFAULT NULL,
-  exclude_from_budget smallint NOT NULL DEFAULT '0' );
+  exclude_from_budget "char" NOT NULL DEFAULT '0',
+  closing_transaction "char" NOT NULL DEFAULT '0' );
 
   -- create INDEX ix_tx_login ON acct.transactions(login_id);
   create INDEX ix_tx_accounting_date ON acct.transactions(accounting_date);

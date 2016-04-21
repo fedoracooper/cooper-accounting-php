@@ -516,7 +516,8 @@ $readTime += $t6 - $t5;
 				"  a2.account_id = :account_id OR ".
 				"  a2.account_parent_id = :account_id) ".
 				"  and t.accounting_date >= :start_date_sql ".
-				"  and t.accounting_date <= :end_date_sql \n".
+				"  and t.accounting_date <= :end_date_sql ".
+				"  and t.closing_transaction = '0' ".
 				"GROUP BY $group_sql \n".
 				"ORDER BY extract(YEAR FROM accounting_date) ASC, extract(MONTH FROM accounting_date) ASC ";
 
@@ -688,7 +689,8 @@ $readTime += $t6 - $t5;
 			"WHERE ( a.account_parent_id= :account_id ".
 			"  OR a2.account_parent_id= :account_id OR a.account_id = :account_id ) \n".
 			"  AND t.accounting_date >=  :start_sql ".
-			"  AND t.accounting_date <=  :end_sql \n".
+			"  AND t.accounting_date <=  :end_sql ".
+			"  AND t.closing_transaction = '0' ".
 			"GROUP BY coalesce( a2.account_id, a.account_id ) \n".
 			"ORDER BY total_amount DESC " ;
 
@@ -776,7 +778,8 @@ $readTime += $t6 - $t5;
 			"join Transactions t ON t.trans_id = le.trans_id \n".
 			"where ((a1.equation_side = 'R' and a1.account_debit = -1) ".
 			"  OR (a1.is_paycheck_sink = 1)) ".
-			"  AND t.exclude_from_budget = 0 ".
+			"  AND t.exclude_from_budget = '0' ".
+			"  AND t.closing_transaction = '0' ".
 			"  AND TO_CHAR(t.accounting_date, 'YYYY-MM') = :budget_month ".
 			"  AND t.login_id = :login_id ";
 			
@@ -998,7 +1001,8 @@ $readTime += $t6 - $t5;
 			'LEFT JOIN Transactions t ON t.trans_id = le.trans_id '.
 	  		'  and budget_date >= :min_date '.
 	  		'  and budget_date <= :max_date '.
-			'  and (a.equation_side = \'L\' OR exclude_from_budget = 0) '.
+			'  and (a.equation_side = \'L\' OR t.exclude_from_budget = \'0\') '.
+			"  and t.closing_transaction = '0' ".
 			'WHERE (a.account_id = :account_id or '.
 			'  a.account_parent_id = :account_id or '.
 			'  parent.account_parent_id = :account_id) and a.active = :active '.
@@ -1054,7 +1058,7 @@ $readTime += $t6 - $t5;
 		' ap.account_debit as parent_debit, '.
 		' sum(coalesce(CASE WHEN(tle.budget_date >= :min_date '.
 		'   and tle.budget_date <= :max_date '.
-		'   and tle.exclude_from_budget = 0) THEN tle.ledger_amount END, 0.0) '.
+		'   and tle.exclude_from_budget = \'0\') THEN tle.ledger_amount END, 0.0) '.
     '   * a.account_debit) as savings_total, '.
     ' sum(coalesce(tle.ledger_amount, 0.0)) as savings_balance '.
 		'FROM Accounts a '.

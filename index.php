@@ -149,14 +149,9 @@
 		
 		//nl2br (print_r ($ledgerL_list));
 		//nl2br (print_r ($ledgerR_list));
-		$excludeBudget = 0;
-		$priorMonth = 0;
-		if (isset($_POST['prior_month'])) {
-			$priorMonth = 1;
-		}
-		if (isset($_POST['exclude_budget'])) {
-			$excludeBudget = 1;
-		}
+		$excludeBudget = isset($_POST['exclude_budget']) ? '1' : '0';
+		$closingTx = isset($_POST['closing_tx']) ? '1' : '0';
+		$priorMonth = isset($_POST['prior_month']) ? 1 : 0;
 		
 		$trans->Init_transaction (
 			$_SESSION['login_id'],
@@ -180,6 +175,7 @@
 			0.0,	//audit balance
 			$ledger_list	// Debits + Credits
 		);
+		$trans->set_closing_tx($closingTx);
 		
 		if ($error == '') {
 			$error = $trans->Validate();
@@ -788,6 +784,9 @@
 			<label for="exclude_budget">Exclude from budget: </label>
 				<input type="checkbox" id="exclude_budget" name="exclude_budget" 
 				value="1" <?= get_checked($trans->get_exclude_budget()) ?>/> 
+			<label title="When closing Income or Expenses to Equity; avoids interfering with expense & income totals" for="closing_tx">Closing transaction: </label>
+				<input type="checkbox" id="closing_tx" name="closing_tx" 
+				value="1" <?= get_checked($trans->get_closing_tx()) ?>/> 
 		</div>
 	</fieldset>
 

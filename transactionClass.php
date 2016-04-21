@@ -35,7 +35,8 @@ class Transaction
 	private $m_ledgerL_list		= array();	//array of account_id=>ledger_amount
 	private $m_ledgerR_list		= array();
 	private $m_prior_month		= 0;
-	private $m_exclude_budget	= 0;
+	private $m_exclude_budget	= '0';
+	private $m_closing_tx		= '0';
 	private $m_account_savings = array();
 
 
@@ -115,6 +116,12 @@ class Transaction
 	}
 	public function get_exclude_budget() {
 		return $this->m_exclude_budget;
+	}
+	public function get_closing_tx() {
+		return $this->m_closing_tx;
+	}
+	public function set_closing_tx($value) {
+		$this->m_closing_tx = $value;
 	}
 	public function get_prior_month() {
 		return $this->m_prior_month;
@@ -455,6 +462,7 @@ class Transaction
 		$this->m_gas_gallons		= $row['gas_gallons'];
 		$this->m_trans_status		= $row['trans_status'];
 		$this->m_exclude_budget		= $row['exclude_from_budget'];
+		$this->m_closing_tx			= $row['closing_transaction'];
 		$budget_time = strtotime($row['budget_date']);
 		if ($budget_time < $this->m_accounting_time) {
 			// Budget date is < Accounting date
@@ -578,10 +586,12 @@ class Transaction
 			$sql = "INSERT INTO Transactions \n".
 				"(login_id, trans_descr, trans_date, accounting_date, ".
 				" trans_vendor, trans_comment, check_number, gas_miles, ".
-				" gas_gallons, trans_status, budget_date, exclude_from_budget) \n".
+				" gas_gallons, trans_status, budget_date, exclude_from_budget, ".
+				" closing_transaction) ".
 				"VALUES( :login_id, :descr, :trans_date, " .
 				" :accounting_date, :vendor, :comment, :check_num, " .
-				" :gas_miles, :gas_gallons, :status, :budget_date, :exclude_budget ) ";
+				" :gas_miles, :gas_gallons, :status, :budget_date, :exclude_budget, ".
+				" :closing_tx ) ";
 			$ps = $pdo->prepare($sql);
 		}
 		else
@@ -600,7 +610,8 @@ class Transaction
 				" trans_status = :status, ".
 				" budget_date = :budget_date, ".
 				" updated_time = current_timestamp, ".
-				" exclude_from_budget = :exclude_budget \n ".
+				" exclude_from_budget = :exclude_budget, ".
+				" closing_transaction = :closing_tx ".
 				"WHERE trans_id = :trans_id ";
 			$ps = $pdo->prepare($sql);
 			// the only additional param is the trans id
@@ -623,6 +634,7 @@ class Transaction
 		$budgetDate = $this->get_budget_date_sql();
 		$ps->bindParam(':budget_date', $budgetDate);
 		$ps->bindParam(':exclude_budget', $this->m_exclude_budget);
+		$ps->bindParam(':closing_tx', $this->m_closing_tx);
 		
 		$success = $ps->execute();
 		$error = get_pdo_error($ps);

@@ -539,6 +539,8 @@
 			} elseif ($trans_item->get_exclude_budget() > 0) {
 				$tr_class = 'exclude-budget';
 				$title = 'Excluded from budget';
+			} elseif ($trans_item->get_closing_tx() > 0) {
+				$title = 'Closing transaction; excluded from most summary views';
 			}
 			elseif ($count % 2 == 0) { // odd rows get a different color
 				$tr_class = 'odd';
@@ -612,6 +614,10 @@
 		}
 		elseif ($gall != '') {
 			$other = $gall. ' gal';
+		}
+		if ($trans_item->get_closing_tx() > 0) {
+			$title .= 'Closing transaction; excluded from most summary views';
+			$other = 'C '. $other;
 		}
 
 		echo "	<tr class='$tr_class' title='$title'>\n";
@@ -756,6 +762,10 @@
 			<label> Accounting date: </label> <input type="date" min="1980-01-01" max="2100-01-01" name="accounting_date"
 				id="accounting_date"
 				value="<?= $trans->get_accounting_date() ?>">
+				
+			<label for="prior_month">Budget for prior month: </label> 
+				<input type="checkbox" id="prior_month" name="prior_month" 
+					value="1" <?= get_checked($trans->get_prior_month()) ?>/>
 		</div>
 		
 		<div id="tx3">			
@@ -778,15 +788,17 @@
 			<label class="lhs"> Comment:</label>
 			<textarea name="trans_comment" rows="1" cols="35"
 				><?= $trans->get_trans_comment() ?></textarea>
-			<label for="prior_month">Budget for prior month: </label> 
-				<input type="checkbox" id="prior_month" name="prior_month" 
-					value="1" <?= get_checked($trans->get_prior_month()) ?>/>
-			<label for="exclude_budget">Exclude from budget: </label>
-				<input type="checkbox" id="exclude_budget" name="exclude_budget" 
-				value="1" <?= get_checked($trans->get_exclude_budget()) ?>/> 
-			<label title="When closing Income or Expenses to Equity; avoids interfering with expense & income totals" for="closing_tx">Closing transaction: </label>
-				<input type="checkbox" id="closing_tx" name="closing_tx" 
-				value="1" <?= get_checked($trans->get_closing_tx()) ?>/> 
+				
+			<!-- Inner div to push checkboxes to top -->
+			<div id="tx5-checkboxes" style="vertical-align: top; display: inline-block;">
+				<label for="exclude_budget">Exclude from budget: </label>
+					<input type="checkbox" id="exclude_budget" name="exclude_budget" 
+					value="1" <?= get_checked($trans->get_exclude_budget()) ?>/> 
+				<label title="When closing Income or Expenses to Equity; avoids interfering with expense & income totals" for="closing_tx">Closing transaction: </label>
+					<input type="checkbox" id="closing_tx" name="closing_tx" 
+					value="1" <?= get_checked($trans->get_closing_tx()) ?>/> 				
+			</div>
+
 		</div>
 	</fieldset>
 

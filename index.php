@@ -229,8 +229,8 @@
 		$(document).ready(function() {
 	
 			$(".delete-ledger").click(function() {
-				if ($(".ledger-row").length <= 2) {
-					alert("At least two Ledger Entries are required");
+				if ($(".ledger-row").length <= 1) {
+					alert("At least one Ledger Entry is required");
 					return;
 				}
 				// Look for existing ledger_id; save to hidden field if present.
@@ -277,8 +277,10 @@
 				// Reset inputs
 				txDiv.find("input[type!='submit']").val("");
 				txDiv.find("select").prop("selectedIndex", "0");
+				txDiv.find("textarea").val("");
 				$("#trans_id").val("-1");
 				$("#tx-header").text('New Transaction');
+				$("#tx-error").remove();  // remove error label
 				
 				// Remove edit-related buttons
 				$("#deleteButton").remove();
@@ -724,7 +726,7 @@
 		echo "</h3>";
 	
 		if ($error != '') {
-			echo "<div class='error'>$error</div> \n";
+			echo "<div id='tx-error' class='error'>$error</div> \n";
 		}
 	?>
 			
@@ -803,9 +805,11 @@
 <?php
 
 	$show_inactive = 0;
+	$minLedgerRows = 2;
 	// only show inactive accounts when editing
 	if ($editClick == 1) {
 		$show_inactive = 1;
+		$minLedgerRows = 1;  // edit transactions may only have 1 entry (zero)
 	}
 	// Transaction dropdowns (account_id,account_debit as the key)
 	$accountList = Account::Get_account_list ($_SESSION['login_id'], '',
@@ -817,7 +821,7 @@
 
 	// Figure out number of Ledger Entries needed.
 	// Default:  2
-	$rowCount = max(2, count($ledgers));
+	$rowCount = max($minLedgerRows, count($ledgers));
 
 	for ($i = 0; $i < $rowCount; $i++)
 	{

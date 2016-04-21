@@ -341,13 +341,13 @@ class Transaction
   }
 
 
-  public function Validate() {
+	public function Validate() {
 		$error = '';
 
 		$debit_total = 0.0;	// Debits & Credits must match
 		$credit_total = 0.0;
 		$ledger_list = $this->get_ledger_list();
-		// 0=ledger_id, 1=account_id/account_debit, 2=amount
+
 		foreach ($ledger_list as $ledgerEntry)
 		{
 			$error = $ledgerEntry->validate();

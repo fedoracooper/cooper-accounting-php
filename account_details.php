@@ -378,12 +378,14 @@
 			"		<td class='numeric'>". format_currency($accountSavings->transactions) . "</td> \n";
 		if ($showBalance) {
 			echo "		<td class='numeric'>". format_currency($accountSavings->balance) . "</td> \n";
-			if ($accountSavings->budget == null) {
-				// suppress Unspent from asset accounts with no budget
-				$unspent = '';
-				$budgetPercent = '';
-			}
 		}
+		
+		if (empty($accountSavings->budget)) {
+			// suppress Unspent from asset accounts with no budget
+			$unspent = '';
+			$budgetPercent = '';
+		}
+		
 		if (!$showBalance) {
 			// RHS / expenses
 			$balanceTitle = '';
@@ -407,6 +409,12 @@
 	$unspentTotalString = format_currency($unspentTotal);
 	$savedTotalString = format_currency($savedTotal);
 	$toSaveTotalString = format_currency($toSaveTotal);
+	
+	if (empty($budgetTotal)) {
+		// Suppress summary fields that don't matter
+		$budgetTotalString = '';
+		$unspentTotalString = '';
+	}
 	
 	echo "	<tr> \n".
 		"		<td style='border-top: 1px solid black; border-bottom: 1px solid black;' ".

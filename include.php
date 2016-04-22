@@ -107,7 +107,7 @@ switch ($current_page) {
 		$parentLink = 'reports-link';
 		break;
 	case 'car_stats':
-		$title = 'Car Statistics';
+		$title = 'Car Fuel Usage Statistics';
 		$parentLink = 'reports-link';
 		break;
 	case 'account_detail':

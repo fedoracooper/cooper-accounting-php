@@ -1059,7 +1059,7 @@ error_log("Account ID sql: $accounts");
 	// A limit of 0 means no limit; otherwise it counts the number of
 	// rows prior to end_date & ignores the start_date
 	public static function Get_transaction_list ($account_id, $start_date,
-		$end_date, $limit, $search_text, $total_period, &$error, &$warning)
+		$end_date, $limit, $search_text, $total_period, $includeSub, &$error, &$warning)
 	{
 		$trans_list = array();
 
@@ -1117,6 +1117,15 @@ $t2 = microtime(true);
 				"	OR t.trans_comment like '%$search_text%' )\n";
 
 		}
+		
+		// Search all 3 account levels when including sub-accounts
+		$accountWhere = "(a.account_id = :account_id ".
+			"  or a2.account_id = :account_id ".
+			"  or a2.account_parent_id = :account_id ) ";
+		if (!$includeSub) {
+			// Exclude subaccounts
+			$accountWhere = "(a.account_id = :account_id) ";
+		}
 
 		/*
 			The ledger amount has to have the correct sign. If the ledger
@@ -1149,9 +1158,7 @@ $t2 = microtime(true);
 			"left join Account_Audits aa ON ".
 			"	aa.ledger_id = le.ledger_id ".
 			"	AND a.account_id = :account_id \n".	// audit record must match exact account
-			"WHERE (a.account_id = :account_id ".
-			"  or a2.account_id = :account_id ".
-			"  or a2.account_parent_id = :account_id ) ".
+			"WHERE $accountWhere ".
 			"  and accounting_date >= :start_date_sql ".
 			"  and accounting_date <= :end_date_sql \n".
 			$search_text_sql .
@@ -1271,7 +1278,7 @@ $readTime += $t5 - $t4;
 			if ($i == 0)
 			{
 				$trans->Set_trans_balance ($account_id, $account_debit,
-					$start_date_total);
+					$start_date_total, $includeSub);
 				$running_total = $trans->get_ledger_total(true);
 			}
 			else
@@ -1309,8 +1316,16 @@ $readTime += $t5 - $t4;
 	// require that the list orders by date, trans_id, then ledger_id.
 	// Assumes an open DB connection.
 	private function Set_trans_balance ($account_id, $account_debit,
-		$min_date)
+		$min_date, $includeSub)
 	{
+		$accountWhere = "(a.account_id = :account_id OR ".
+			"  a2.account_id = :account_id OR ".
+			"  a2.account_parent_id = :account_id) ";
+		if (!$includeSub) {
+			// Exclude subaccounts
+			$accountWhere = "(a.account_id = :account_id) ";
+		}
+	
 		$sql = "SELECT sum(ledger_amount * a.account_debit * :account_debit)".
 			" as balance \n".
 			"FROM Ledger_Entries le \n".
@@ -1320,9 +1335,7 @@ $readTime += $t5 - $t4;
 			"	le.account_id = a.account_id ".
 			"LEFT JOIN Accounts a2 on ".
 			"	a.account_parent_id = a2.account_id \n".
-			"WHERE (a.account_id = :account_id OR ".
-			"  a2.account_id = :account_id OR ".
-			"  a2.account_parent_id = :account_id) ".
+			"WHERE $accountWhere ".
 			"  AND (t.accounting_date < :accounting_date ".
 			"		OR (t.accounting_date = :accounting_date ".
 			"			AND (t.trans_id < :trans_id ".

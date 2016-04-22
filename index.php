@@ -20,6 +20,7 @@
 
 	$search_text = '';
 	$limit = 0;
+	$includeSub = 1;
 	$total_period = 'month';
 	$trans = new Transaction();
 	$transL_ledgers = array();
@@ -34,6 +35,7 @@
 		$startTime = strtotime ($_POST['start_date']);
 		$endTime = strtotime ($_POST['end_date']);
 		$diffTime = $endTime - $startTime + (60 * 60 * 24);  // Plus 1 day
+		$includeSub = isset($_POST['include_sub']) ? 1 : 0;
 
 		$limit			= $_POST['limit'];
 		$total_period	= $_POST['total_period'];
@@ -202,11 +204,16 @@
 			$showTx = true;  // Show tx div for editing
 		}
 	}
+	
+	// Balances are only accurate when including subaccounts &
+	// not using search filter text.
+	$showAudit = $includeSub && ($search_text == '');
 
 	$warning = '';
 	// Build the transaction list
 	$trans_list = Transaction::Get_transaction_list ($sel_account_id,
-		$start_date, $end_date, $limit, $search_text, $total_period, $searchError, $warning);
+		$start_date, $end_date, $limit, $search_text, $total_period, 
+		$includeSub, $searchError, $warning);
 	// Strip slashes from search_text variable
 	$search_text = stripslashes( $search_text );
 	$sel_account = new Account ();
@@ -473,8 +480,12 @@
 		<td>Limit: </td>
 		<td><input type="number" min="0" max="999" name="limit" value="<?= $limit ?>"></td>
 		<td></td>
-		<td colspan="2"><input type="submit" value="<- Previous" name="previous_txs"> &nbsp;
-		<input type="submit" value="Next ->" name="next_txs"></td>
+		<td colspan="4"><input type="submit" value="<- Previous" name="previous_txs"> &nbsp;
+			<input type="submit" value="Next ->" name="next_txs">
+			<label for="include_sub">Include Subaccounts</label>
+				<input type="checkbox" id="include_sub" name="include_sub" 
+				value="1" <?= get_checked($includeSub) ?> />
+		</td>
 	</tr>
 <!--
 	<tr>
@@ -646,13 +657,13 @@
 		$auditAnchor = '';
 		$closeAnchor = '';
 		$auditTitle = '';
-		if ($sel_account->get_equation_side() == 'L')
+		if ($sel_account->get_equation_side() == 'L' && $showAudit)
 		{
 			$onclick = "auditAccount( ". $trans_item->get_ledger_id().
 				", ". $trans_item->get_ledger_total( true ) . ");";
 			$auditTitle = "Audit this account balance...";
 		}
-		if ($trans_item->get_audit_id() > -1)
+		if ($trans_item->get_audit_id() > -1 && $showAudit)
 		{
 			// We have an audited record here.
 			$onclick = "editAudit( ". $trans_item->get_audit_id() . ");";

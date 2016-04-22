@@ -1,12 +1,6 @@
 <?php
 	$current_page = 'car_stats';
 	require('include.php');
-	if (!isset ($_SESSION['login_id']))
-	{
-		// redirect to login if they have not logged in
-		header ("Location: login.php");
-		exit();
-	}
 
 	$fuel_list = array();
 	// Get fuel consumption data

@@ -9,15 +9,11 @@
 
 	$fixed_login_id = -1;
 	$login_id = -1;
-	if (!isset ($_SESSION['login_id']))
-	{
-		// redirect to login if they have not logged in
-		header ("Location: login.php");
-	}
-	elseif ($_SESSION['login_admin'] < 1)
+	if ($_SESSION['login_admin'] < 1)
 	{
 		// no admin permission; naughty!
 		header ("Location: login.php");
+		exit();
 	}
 	elseif ($_SESSION['login_admin'] == 1)
 	{

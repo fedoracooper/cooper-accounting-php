@@ -1,11 +1,6 @@
 <?php
 	$current_page = 'index';
 	require('include.php');
-	if (!isset ($_SESSION['login_id']))
-	{
-		// redirect to login if they have not logged in
-		header ("Location: login.php");
-	}
 
 	$error = '';
 	$searchError = '';

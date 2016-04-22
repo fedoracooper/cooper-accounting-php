@@ -58,6 +58,13 @@ if (isset ($_SESSION['login_id']))
 {
 	$login_id = $_SESSION['login_id'];
 	$login_admin = $_SESSION['login_admin'];
+} else {
+	// No session.  Only permit one pages:  Login (also handles Logout)
+	if ($current_page != 'login') {
+		// no session & not on login page
+		header ("Location: login.php");
+		exit();	
+	}
 }
 
 // define top header

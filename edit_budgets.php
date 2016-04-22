@@ -28,12 +28,6 @@
 		
 		return $budgetDate;
 	}
-	
-	if (!isset ($_SESSION['login_id']))
-	{
-		// redirect to login if they have not logged in
-		header ("Location: login.php");
-	}
 
 	$error = '';
 	$message = '';

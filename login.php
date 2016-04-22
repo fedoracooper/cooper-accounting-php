@@ -1,5 +1,6 @@
 <?php
 	ob_start();
+	$current_page = 'login';
 	require('include.php');
 
 	$error = '';

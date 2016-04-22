@@ -2,12 +2,6 @@
 	$current_page = 'account_details';
 	require('include.php');
 	
-	
-	if (!isset ($_SESSION['login_id']))
-	{
-		// redirect to login if they have not logged in
-		header ("Location: login.php");
-	}
 	$login_id = $_SESSION['login_id'];
 	
 	function getStartDate() {
@@ -349,7 +343,7 @@
 </form>
 
 
-<table class="budget-list" cellspacing="0" cellpadding="0">
+<table class="budget-list">
 	<tr>
 		<th onclick="sortAccount();">Account</th>
 		<th style='text-align: right;' onclick="sortBudget();">Budget</th>

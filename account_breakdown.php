@@ -1,11 +1,6 @@
 <?php
 	$current_page = 'account_breakdown';
 	require('include.php');
-	if (!isset ($_SESSION['login_id']))
-	{
-		// redirect to login if they have not logged in
-		header ("Location: login.php");
-	}
 
 	$error = '';
 	// set default vars
@@ -133,7 +128,7 @@
 </table>
 </form>
 
-<table class="summary-list" cellspacing="0" cellpadding="0">
+<table class="summary-list" >
 	<tr>
 		<th>Account</th>
 		<th style="text-align: center;">Amount</th>

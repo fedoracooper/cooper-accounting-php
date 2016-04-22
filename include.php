@@ -64,51 +64,90 @@ if (isset ($_SESSION['login_id']))
 if (!isset ($current_page))
 	$current_page = '';
 
-$navbar = "<table class=\"navbar\"> \n".
-	"	<tr>\n".
-	"		<td><a href=\"index.php\"";
-if ($current_page == 'index')
-	$navbar .= ' style="font-weight: bold;"';
-$navbar .= ">Ledger</a></td> \n".
-	"		<td><a href=\"account_summary.php\"";
-if ($current_page == 'account_summary')
-	$navbar .= ' style="font-weight: bold;"';
-$navbar .=	">Monthly Comparisons</a></td> \n".
-	"		<td><a href=\"account_breakdown.php\"";
-if ($current_page == 'account_breakdown')
-	$navbar .= ' style="font-weight: bold;"';
-$navbar .= ">Period Breakdown</a></td> \n";
-
-$navbar .= "		<td><a href=\"account_details.php\"";
-if ($current_page == 'account_details')
-	$navbar .= ' style="font-weight: bold;"';
-$navbar .= ">Account Details</a></td> \n";
-
-$navbar .= "		<td><a href=\"edit_budgets.php\"";
-if ($current_page == 'edit_budgets')
-	$navbar .= ' style="font-weight: bold;"';
-$navbar .= ">Budget</a></td> \n";
+$navbar = "<ul class='nav-list'> \n".
+	"	<li><a id='index-link' href='index.php'>Ledger</a></li> \n".
+	"	<li><a id='account_details-link' href='account_details.php'> Account Details </a></li> \n".
+	"	<li id='reports-link' class='dropdown'><a href='#' class='drop-button'> Reports </a> \n".
+	"		<div class='dropdown-content'> \n".
+	"			<a id='account_summary-link' href='account_summary.php'> Monthly Comparisons </a> \n".
+	"			<a id='account_breakdown-link' href='account_breakdown.php'> Period Breakdown </a> \n".
+	"			<a id='car_stats-link' href='car_stats.php'> Car Statistics </a> \n".
+	"		</div> \n".
+	"	</li> \n".
+	"	<li><a id='edit_budgets-link' href='edit_budgets.php'> Budget </a></li> \n";
 
 if ($login_admin >= 1)
 {
-	$navbar .= "		<td><a href=\"accounts.php\"";
-	if ($current_page == 'accounts')
-		$navbar .= ' style="font-weight: bold;"';
-	$navbar .= ">Accounts</a></td> \n";
+	$navbar .= "		<li><a id='accounts-link' href='accounts.php'> Accounts </a></li> \n";
 }
 if ($login_admin > 1)
 {
 	// top-level admin
-	$navbar .= "		<td><a href=\"logins.php\"";
-	if ($current_page == 'logins')
-		$navbar .= ' style="font-weight: bold;"';
-	$navbar .= ">Manage Logins</a></td> \n";
+	$navbar .= "		<li><a id='logins-link' href='logins.php'> Manage Logins </a></li> \n";
 }
-if ($login_id > -1)
-	$navbar .= "		<td><a href=\"login.php?logout=1\">Logout ".
-		$_SESSION['display_name']. "</a></td> \n";
-$navbar .= "	</tr>\n".
-	"</table> \n\n";
+if ($login_id > -1) {
+	$navbar .= "		<li><a href='login.php?logout=1'>Logout ".
+		$_SESSION['display_name']. "</a></li> \n";
+}
+$navbar .= "	</ul> \n\n";
+
+$title = '';
+$activeClass = ' class="active-nav"';
+$parentLink = '';
+switch ($current_page) {
+	case 'index':
+		$title = 'Account Ledger';
+		break;
+	case 'account_summary':
+		$title = 'Account Summary';
+		$parentLink = 'reports-link';
+		break;
+	case 'account_breakdown':
+		$title = 'Period Breakdown';
+		$parentLink = 'reports-link';
+		break;
+	case 'car_stats':
+		$title = 'Car Statistics';
+		$parentLink = 'reports-link';
+		break;
+	case 'account_detail':
+		$title = 'Account Details';
+		break;
+	case 'edit_budgets':
+		$title = 'Monthly Budget';
+		break;
+	case 'accounts':
+		$title = 'Accounts Management';
+		break;
+	case 'logins':
+		$title = 'Login Management';
+		break;
+}
+
+// Start HTML document
+?>
+<html>
+<head>
+	<title><?= $title ?></title>
+	<meta charset="UTF-8">
+	<link href="style.css" rel="stylesheet" type="text/css">
+	<script src="https://code.jquery.com/jquery-2.2.3.js" ></script>
+	<script>
+		var currentPage = "<?= $current_page ?>";
+		var parentLink = "<?= $parentLink ?>";
+	
+		$(document).ready(function() {
+			// Make current nav link bold
+			var activeLinkId = '#' + currentPage + '-link';
+			$(activeLinkId).addClass('active-nav');
+			
+			if (parentLink != '') {
+				$('#' + parentLink).addClass('active-reports');
+			}
+		});
+	</script>
+
+<?php
 
 
 // UTILITY FUNCTIONS

@@ -220,13 +220,6 @@
 	$sel_account->Load_account ($sel_account_id);
 ?>
 
-
-<html>
-<head>
-	<title>Account Ledger</title>
-	<meta charset="UTF-8">
-	<link href="style.css" rel="stylesheet" type="text/css">
-	<script src="https://code.jquery.com/jquery-2.2.3.js" ></script>
 	<script>
 		
 		$(document).ready(function() {
@@ -447,7 +440,7 @@
 
 <table style="margin-top: 5px;">
 	<tr>
-		<td><h3>Account Ledger: <?= $sel_account->get_account_name() ?></h3></td>
+		<td><h3><?= $title. ': '. $sel_account->get_account_name() ?></h3></td>
 		<td style="padding-left: 30px;"><?= $sel_account->get_account_descr() ?></td>
 	</tr>
 </table>

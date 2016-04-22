@@ -130,11 +130,6 @@
 
 ?>
 
-
-<html>
-<head>
-	<title>Login Management</title>
-	<link href="style.css" rel="stylesheet" type="text/css">
 	<script language="javascript" type="text/javascript">
 	
 		function select_account()
@@ -153,7 +148,7 @@
 <?= $navbar ?>
 
 <form method="post" action="logins.php">
-<h3>Login Management</h3>
+<h3><?= $title ?></h3>
 <p class="error"><?= $error ?></p>
 <p>Please select your login</p>
 

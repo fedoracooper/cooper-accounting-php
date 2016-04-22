@@ -174,11 +174,6 @@
 	}
 ?>
 
-
-<html>
-<head>
-	<title>Accounts Management</title>
-	<link href="style.css" rel="stylesheet" type="text/css">
 	<script language="javascript" type="text/javascript">
 	
 		function select_account()
@@ -199,7 +194,7 @@
 <form id="search_form" method="post" action="accounts.php">
 <input type="hidden" name="account_id" value="<?= $account->get_account_id() ?>" />
 <input type="hidden" name="account_parent_id" value="<?= $account->get_account_parent_id() ?>"/>
-<h3>Accounts Management</h3>
+<h3><?= $title ?></h3>
 <p class="error"><?= $error ?></p>
 <p>Please select your account</p>
 

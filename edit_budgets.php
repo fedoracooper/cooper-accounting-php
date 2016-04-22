@@ -143,10 +143,6 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 	}
 ?>
 
-<html>
-<head>
-	<title>Budget</title>
-	<link href="style.css" rel="stylesheet" type="text/css">
 	<script language="javascript" type="text/javascript">
 
 		function bodyLoad()
@@ -161,7 +157,7 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 <body onload="bodyLoad()">
 <?= $navbar ?>
 
-<h3>Budget</h3>
+<h3><?= $title ?></h3>
 
 <span class="error"><?= $error ?></span>
 <span class="message"><?= $message ?></span>

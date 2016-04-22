@@ -95,10 +95,6 @@
 	}
 ?>
 
-<html>
-<head>
-	<title>Account Breakdown</title>
-	<link href="style.css" rel="stylesheet" type="text/css">
 	<script language="javascript" type="text/javascript">
 
 		function bodyLoad()
@@ -113,7 +109,7 @@
 <body onload="bodyLoad()">
 <?= $navbar ?>
 
-<h3>Account Breakdown</h3>
+<h3><?= $title ?></h3>
 
 <span class="error"><?= $error ?></span>
 

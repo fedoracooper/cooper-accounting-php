@@ -1137,6 +1137,7 @@ $t2 = microtime(true);
 			" a2.account_name as account2_name, ".
 			" a2.account_id as a2_account_id, a.account_id, ".
 			" t.budget_date, t.exclude_from_budget, le.memo as ledger_memo, ".
+			" t.closing_transaction, ".
 			"  (ledger_amount * a.account_debit * :account_debit) as amount \n".
 			"FROM Transactions t \n".
 			"inner join Ledger_Entries le on ".
@@ -1219,6 +1220,7 @@ $execTime += $t2 - $t1 + $t4 - $t3;
 				$row['audit_balance']
 			);
 			$trans->m_ledger_memo = $row['ledger_memo'] . '';
+			$trans->m_closing_tx = $row['closing_transaction'];
 			
 			$trans_list[$i] = $trans;
 			$i++;

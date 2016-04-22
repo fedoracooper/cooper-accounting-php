@@ -1,6 +1,10 @@
 body {
-	font-size: 10pt;
-	font-family: Arial,sans-serif;
+	font-size: 11pt;
+	/* font-family: Arial,sans-serif; */
+}
+
+fieldset div {
+	padding: 2px;
 }
 
 tr.odd {

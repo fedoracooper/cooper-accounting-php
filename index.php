@@ -615,7 +615,7 @@
 		elseif ($gall != '') {
 			$other = $gall. ' gal';
 		}
-		if ($trans_item->get_closing_tx() > 0) {
+		if ($trans_item->get_closing_tx() == '1') {
 			$title .= 'Closing transaction; excluded from most summary views';
 			$other = 'C '. $other;
 		}
@@ -802,7 +802,7 @@
 		</div>
 	</fieldset>
 
-	<fieldset>
+	<fieldset style="margin-top: 4px;">
 		<legend>Ledger Entries </legend>
 	<table id="ledger-table"> 
 		<tr>

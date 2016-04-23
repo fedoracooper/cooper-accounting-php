@@ -16,12 +16,15 @@ if (empty($_SERVER['HTTPS']) || $_SERVER['HTTPS'] == "off") {
 	exit();
 }
 
-header ("Content-type: text/html; charset=utf-8");
+if (!isset($buildHtmlHeaders)) {
+	// default to on
+	$buildHtmlHeaders = true;
+}
 
-echo "<!DOCTYPE HTML> \n";
-//echo '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" '.
-//'"http://www.w3.org/TR/html4/loose.dtd">' . "\n\n";
-
+if ($buildHtmlHeaders) {
+	header ("Content-type: text/html; charset=utf-8");
+	echo "<!DOCTYPE HTML> \n";
+}
 
 session_start();
 
@@ -79,6 +82,7 @@ $navbar = "<ul class='nav-list'> \n".
 	"			<a id='account_summary-link' href='account_summary.php'> Monthly Comparisons </a> \n".
 	"			<a id='account_breakdown-link' href='account_breakdown.php'> Period Breakdown </a> \n".
 	"			<a id='car_stats-link' href='car_stats.php'> Car Statistics </a> \n".
+	"			<a id='export-link' href='export.php'> Export to QIF </a> \n".
 	"		</div> \n".
 	"	</li> \n".
 	"	<li><a id='edit_budgets-link' href='edit_budgets.php'> Budget </a></li> \n";
@@ -117,7 +121,11 @@ switch ($current_page) {
 		$title = 'Car Fuel Usage Statistics';
 		$parentLink = 'reports-link';
 		break;
-	case 'account_detail':
+	case 'export':
+		$title = 'Export to QIF';
+		$parentLink = 'reports-link';
+		break;
+	case 'account_details':
 		$title = 'Account Details';
 		break;
 	case 'edit_budgets':
@@ -129,32 +137,11 @@ switch ($current_page) {
 	case 'logins':
 		$title = 'Login Management';
 		break;
+	case 'export':
+		$title = 'Export to QIF File';
+		break;
 }
 
-// Start HTML document
-?>
-<html>
-<head>
-	<title><?= $title ?></title>
-	<meta charset="UTF-8">
-	<link href="style.css" rel="stylesheet" type="text/css">
-	<script src="https://code.jquery.com/jquery-2.2.3.js" ></script>
-	<script>
-		var currentPage = "<?= $current_page ?>";
-		var parentLink = "<?= $parentLink ?>";
-	
-		$(document).ready(function() {
-			// Make current nav link bold
-			var activeLinkId = '#' + currentPage + '-link';
-			$(activeLinkId).addClass('active-nav');
-			
-			if (parentLink != '') {
-				$('#' + parentLink).addClass('active-reports');
-			}
-		});
-	</script>
-
-<?php
 
 
 // UTILITY FUNCTIONS
@@ -431,4 +418,32 @@ function get_checked($value) {
 }
 
 
+if ($buildHtmlHeaders) {
+
+
+// Start HTML document
+?>
+<html>
+<head>
+	<title><?= $title ?></title>
+	<meta charset="UTF-8">
+	<link href="style.css" rel="stylesheet" type="text/css">
+	<script src="https://code.jquery.com/jquery-2.2.3.js" ></script>
+	<script>
+		var currentPage = "<?= $current_page ?>";
+		var parentLink = "<?= $parentLink ?>";
+	
+		$(document).ready(function() {
+			// Make current nav link bold
+			var activeLinkId = '#' + currentPage + '-link';
+			$(activeLinkId).addClass('active-nav');
+			
+			if (parentLink != '') {
+				$('#' + parentLink).addClass('active-reports');
+			}
+		});
+	</script>
+<?php
+
+} // end building HTML headers
 ?>

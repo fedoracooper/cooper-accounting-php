@@ -1376,6 +1376,58 @@ $readTime += $t5 - $t4;
 		else
 			$this->m_ledger_total = 0.0;	// no rows found
 	}
+	
+	public static function Get_transactions_export($login_id, $account_id, &$error) {
+		
+		$account = new Account();
+		$error = $account->Load_account($account_id);
+		if ($error != '') {
+			return $error;
+		}
+		if ($account->get_login_id() != $login_id) {
+			return 'Error:  account does not belong to your login ID';
+		}
+		
+		/* Query key details about all transactions for this account
+		   and its subaccounts.
+		 
+		   For performance & memory reasons, we will return the resultset
+		   so it can be output without holding all in memory.
+		   1. Query ledger entries hitting the account ID
+		   2. Query all ledger entries for the same trans ID
+		   3. Query all accounts for the given ledger
+		 */
+		$sql = "select txac.account_id, txac.account_name, txac.account_descr, ".
+			" txac.account_debit, txac.equation_side, txac2.account_name as parent_account, ".
+			" txac3.account_name as parent_parent_account, ".
+			" t.trans_id, t.trans_descr, t.trans_comment, t.trans_vendor, ".
+			" t.accounting_date, t.check_number, ".
+			" txledger.ledger_amount * txac.account_debit as amount, txledger.memo ".
+			"FROM accounts ac ".
+			"JOIN Ledger_entries le ON le.account_id = ac.account_id ".
+			"JOIN Ledger_entries txledger ON le.trans_id = txledger.trans_id ".
+			"JOIN accounts txac ON txac.account_id = txledger.account_id ".
+			"LEFT JOIN accounts txac2 ON txac2.account_id = txac.account_parent_id ".
+			"LEFT JOIN accounts txac3 ON txac3.account_id = txac2.account_parent_id ".
+			"JOIN transactions t on t.trans_id = le.trans_id ".
+			"WHERE ac.account_id = :account_id ".
+			"  AND t.accounting_date > :min_date ".
+			"ORDER BY t.accounting_date, t.trans_id ";
+			
+		$pdo = db_connect_pdo();
+		$ps = $pdo->prepare($sql);
+		$ps->bindParam(':account_id', $account_id);
+		$minDate = '0001-01-01';
+		$ps->bindParam(':min_date', $minDate);
+		$success = $ps->execute();
+		
+		if (!$success) {
+			$error = get_pdo_error($ps);
+			return null;
+		}
+		
+		return $ps;
+	}
 
 
 }	//End Transaction class

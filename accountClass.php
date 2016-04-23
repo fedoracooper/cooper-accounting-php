@@ -321,7 +321,7 @@ $execTime += $t2 - $t1;
 	 * @param int $login_id User's login id; will always filter by this
 	 * @param string $equation_side Can be 'L' or 'R' to only show accounts from 1 side
 	 * @param int $account_parent_id Can specify a list of accounts with this parent
-	 * @param string $force_parent
+	 * @param string $force_parent Only select one account level
 	 * @param string $show_debit Include the debit value in the list key (account_id, debit)
 	 * @param string $show_inactive Show accounts that have a Active = 0 or 1
 	 * @param string $top2_tiers Do not show third-tier accounts
@@ -336,7 +336,7 @@ $execTime += $t2 - $t1;
 			return $account_list;	// empty list
 
 		$use_parent = false;
-		if ($account_parent_id < 0 && !$force_parent)
+		if ($account_parent_id <= 0 && !$force_parent)
 		{
 			// query all layers of accounts
 			$sql =
@@ -358,6 +358,10 @@ $execTime += $t2 - $t1;
 			if (!$show_inactive)
 			{
 				$sql .= "AND a.active = 1 ";
+			}
+			if ($account_parent_id == -2) {
+				// don't show root accounts
+				$sql .= "AND a.account_parent_id > 0 ";
 			}
 			if ($top2_tiers)
 			{

@@ -1,5 +1,4 @@
 <?php
-	ob_start();
 	$current_page = 'login';
 	require('include.php');
 
@@ -15,6 +14,7 @@
 		{
 			// Redirect to main page
 			header ("Location: index.php");
+			exit();
 		}
 		else
 		{

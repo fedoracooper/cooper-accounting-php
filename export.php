@@ -12,17 +12,22 @@
 		require('include.php');
 
 		$account_id = $_POST['account_id'];
+		$startDate = $_POST['startDate'];
 		
 		// Generate the output file
 		$error = '';
 		$lastAudit = AccountAudit::Get_latest_audit($account_id);
+		$fileName = 'account-export.qif';
+		if ($lastAudit != NULL) {
+			$fileName = $lastAudit->get_account_name() . '.qif';
+		}
 
-		$ps = Transaction::Get_transactions_export($login_id, $account_id, $error);
+		$ps = Transaction::Get_transactions_export($login_id, $account_id, $startDate, $error);
 		if ($error == '') {
 			// clear output buffer & set output headers
 			ob_end_clean();
 			header('Content-Type', 'text/plain; charset=utf-8');
-			header('Content-Disposition: attachment; filename="accounting-export.qif"');
+			header("Content-Disposition: attachment; filename=\"$fileName\"");
 			// loop through results
 			buildTransactions($account_id, $ps, $lastAudit);
 
@@ -223,11 +228,21 @@
 <?= $errorHtml ?>
 
 <form method="POST">
-	<div id="export-div">
-		<label for="export-account">Account to Export</label>
-		<?= $account_dropdown ?>
-		
-		<input type="submit" value="Generate QIF File" />
+	<table>
+		<tr> <td>
+			<label for="export-account">Account to Export</label></td>
+		<td> <?= $account_dropdown ?> </td>
+		</tr>
+
+		<tr> <td>
+			<label> Start Date </label></td>
+		<td>
+			<input type="date" name="startDate" /> </td>
+		</tr>
+		<tr> <td></td/>
+			<td>
+			<input type="submit" value="Generate QIF File" /></td>
+		</tr>
 	</div>
 </form>
 

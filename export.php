@@ -15,14 +15,16 @@
 		
 		// Generate the output file
 		$error = '';
+		$lastAudit = AccountAudit::Get_latest_audit($account_id);
+
 		$ps = Transaction::Get_transactions_export($login_id, $account_id, $error);
 		if ($error == '') {
 			// clear output buffer & set output headers
 			ob_end_clean();
-			header('Content-type', 'text/plain; charset=utf-8');
+			header('Content-Type', 'text/plain; charset=utf-8');
 			header('Content-Disposition: attachment; filename="accounting-export.qif"');
 			// loop through results
-			buildTransactions($account_id, $ps);
+			buildTransactions($account_id, $ps, $lastAudit);
 
 			// All done!  Don't output footer HTML
 			exit();
@@ -90,7 +92,7 @@
 	   mainAccountId is the primary account being exported,
 	   and so its ledger entries must come first.
 	 */
-	function buildTransactions($mainAccountId, $ps) {
+	function buildTransactions($mainAccountId, $ps, $lastAudit) {
 		$splits = array();
 		$record = '';
 		global $lineBreak;
@@ -164,11 +166,20 @@
 					$descr .= "; $comment";
 				}
 				$vendor = $row['trans_vendor'];
-				$txDate = convert_date($row['accounting_date'], 2);
+				$accountingSqlDate = $row['accounting_date'];
+				$txDate = convert_date($accountingSqlDate, 2);
+				$cleared = '';
+				if ($lastAudit != NULL) {
+					$auditSqlDate = $lastAudit->get_audit_date_sql();
+					if ($auditSqlDate >= $accountingSqlDate) {
+						$cleared = "CR". $lineBreak;
+					}
+				}
 
 				$record .= "D$txDate". $lineBreak.  // Date
 					"T$amount". $lineBreak.     // Amount
 					"M$descr". $lineBreak.      // Memo
+					$cleared .                  // Cleared status
 					"P$vendor". $lineBreak;     // Payee
 			} else {
 				// secondary / split part of record

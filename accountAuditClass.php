@@ -197,18 +197,26 @@ class AccountAudit
 		if (!$success) {
 			return get_pdo_error($ps);
 		}
-		
-		$row = $ps->fetch(PDO::FETCH_ASSOC );
-		$this->m_audit_id			= $audit_id;
-		$this->m_ledger_id			= $row[ 'ledger_id' ];
-		$this->m_audit_time			= strtotime( $row[ 'audit_date' ] );
-		$this->m_account_balance	= $row[ 'account_balance' ];
-		$this->m_audit_comment		= $row[ 'audit_comment' ];
-		$this->m_account_name		= $row[ 'account_name' ];
-		$this->m_updated_time		= strtotime( $row[ 'updated_time'] );
 
+		$error = $this->bindRow($ps);
 		$pdo = null;
 		
+		return $error;
+	}
+
+	private function bindRow(&$ps) {
+		$row = $ps->fetch(PDO::FETCH_ASSOC);
+		if (!$row) {
+			return 'No audit row found';
+		}
+		$this->m_audit_id               = $audit_id;
+                $this->m_ledger_id              = $row[ 'ledger_id' ];
+                $this->m_audit_time             = strtotime( $row[ 'audit_date' ] );
+                $this->m_account_balance        = $row[ 'account_balance' ];
+                $this->m_audit_comment          = $row[ 'audit_comment' ];
+                $this->m_account_name           = $row[ 'account_name' ];
+                $this->m_updated_time           = strtotime( $row[ 'updated_time'] );
+
 		return '';
 	}
 
@@ -347,6 +355,35 @@ class AccountAudit
 		// Success; set audit_id to -1
 		$this->m_audit_id = -1;
 		return '';
+	}
+
+	/*
+	   Find the latest audit row for the given account ID.
+	   Returns the account object, or NULL if not found.
+	*/
+	public static function Get_latest_audit($account_id) {
+		$sql = "SELECT aa.*, a.account_name from Account_Audits aa ".
+                        "INNER JOIN Ledger_Entries le ON le.ledger_id = aa.ledger_id ".
+                        "INNER JOIN Accounts a ON a.account_id = le.account_id ".
+                        "WHERE a.account_id = :account_id ".
+			"ORDER BY aa.audit_date DESC LIMIT 1 ";
+		
+		$pdo = db_connect_pdo();
+		$ps = $pdo->prepare($sql);
+		$ps->bindParam(':account_id', $account_id);
+		$success = $ps->execute();
+		if (!$success) {
+			return get_pdo_error($ps);
+		}
+
+		$audit = new AccountAudit();
+		$error = $audit->bindRow($ps);
+		if (!empty($error)) {
+			// no result found
+			return NULL;
+		}
+		
+		return $audit;
 	}
 
 } // End Account Audit class

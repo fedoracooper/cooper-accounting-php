@@ -10,7 +10,6 @@
 	if (isset($_POST['account_id'])) {
 		$buildHtmlHeaders = false;
 		require('include.php');
-
 		$account_id = $_POST['account_id'];
 		$startDate = $_POST['startDate'];
 		
@@ -25,8 +24,9 @@
 		$ps = Transaction::Get_transactions_export($login_id, $account_id, $startDate, $error);
 		if ($error == '') {
 			// clear output buffer & set output headers
-			ob_end_clean();
-			header('Content-Type', 'text/plain; charset=utf-8');
+			//ob_end_clean();
+			//header('Content-Type: application/qif; charset=utf-8');
+			header('Content-Type: text/qif; charset=utf-8');
 			header("Content-Disposition: attachment; filename=\"$fileName\"");
 			// loop through results
 			buildTransactions($account_id, $ps, $lastAudit);

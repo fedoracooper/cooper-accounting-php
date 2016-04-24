@@ -198,6 +198,7 @@ class AccountAudit
 			return get_pdo_error($ps);
 		}
 
+		$this->m_audit_id = $audit_id;
 		$error = $this->bindRow($ps);
 		$pdo = null;
 		
@@ -209,7 +210,6 @@ class AccountAudit
 		if (!$row) {
 			return 'No audit row found';
 		}
-		$this->m_audit_id               = $audit_id;
                 $this->m_ledger_id              = $row[ 'ledger_id' ];
                 $this->m_audit_time             = strtotime( $row[ 'audit_date' ] );
                 $this->m_account_balance        = $row[ 'account_balance' ];

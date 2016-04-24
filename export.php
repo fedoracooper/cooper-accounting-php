@@ -56,6 +56,10 @@
 			echo $lineBreak . $lineBreak;
 
 			$accountIdsExported[] = $accountId;
+			//echo "Account ids exported: ";
+			//var_dump($accountIdsExported);
+			//echo $lineBreak;
+
 		}
 
 		// All done!  Don't output footer HTML
@@ -65,6 +69,7 @@
 
 	class Split {
 		public $account;
+		public $accountId;
 		public $memo;
 		public $amount;
 
@@ -130,7 +135,6 @@
 		global $lineBreak;
 		$lastTxId = -1;
 		$buildHeader = true;
-		$skipTx = false;
 
 		do {
 			$row = $ps->fetch(PDO::FETCH_ASSOC);
@@ -139,10 +143,6 @@
 			if ($row) {
 				$accountId = $row['account_id'];
 				$txId = $row['trans_id'];
-				if (array_search($accountId, $accountIdsExported) !== FALSE) {
-					// Skip duplicate tx already exported
-					$skipTx = true;
-				}
 			}
 
 			$isMainAccount = ($accountId == $mainAccountId);
@@ -153,6 +153,7 @@
 			if ($txId != $lastTxId) {
 				
 				// Finish previous record (assume header already in record)
+				$skipTx = false;
 				$numSplits = count($splits);
 				if ($numSplits == 0) {
 					// no splits (probably 0 amount tx)
@@ -166,19 +167,24 @@
 						$record .= $split->getSplitRecord();
 					}
 				}
-				$record .= "^". $lineBreak;  // End of Record indicator
 
+				// Check for splits on accounts already exported
+				foreach ($splits as $split) {
+					if (in_array($split->accountId, $accountIdsExported)) {
+						$skipTx = true;
+					}
+				}
+				$record .= "^". $lineBreak;  // End of Record indicator
+ 
 				if (!$skipTx) {
-					// not skipping duplicate
+					// not skipping; no duplicate account ID
 					// Output!
 					echo $record;
 				}
-
 				// reset fields
 				$record = '';
 				$splits = array();
 				$lastTxId = $txId;
-				$skipTx = false;
 			}
 
 			if (!$row) {
@@ -237,6 +243,7 @@
 				// secondary / split part of record
 				$split = new Split();
 				$split->account = $accountName;
+				$split->accountId = $accountId;
 				$split->memo = $row['memo'];
 				$split->amount = $row['amount'];
 				$splits[] = $split;

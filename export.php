@@ -8,35 +8,58 @@
 	$error = '';
 
 	if (isset($_POST['account_id'])) {
+		$error = exportAccounts();
+		// if we get here, then export failed
+		$buildHtmlHeaders = true;
+	}
+
+	// Normal load
+	require('include.php');
+
+
+	function exportAccounts() {
+		global $lineBreak;
 		$buildHtmlHeaders = false;
 		require('include.php');
-		$account_id = $_POST['account_id'];
+		$topAccountId = $_POST['account_id'];
 		$startDate = $_POST['startDate'];
+		$account = new Account();
+		$error = $account->Load_account($topAccountId);
+		if ($error != '') {
+			return $error;
+		}
+		if ($account->get_login_id() != $login_id) {
+			return 'Error:  account does not belong to your login ID';
+		}
+
+		$accountIds = Account::Get_child_accounts($topAccountId);
+		// Add main account to front of list
+		array_unshift($accountIds, $topAccountId);
 		
-		// Generate the output file
-		$error = '';
-		$lastAudit = AccountAudit::Get_latest_audit($account_id);
-		$fileName = 'account-export.qif';
-		if ($lastAudit != NULL) {
-			$fileName = $lastAudit->get_account_name() . '.qif';
-		}
+		$fileName = $account->get_account_name() . '.qif';
+		header('Content-Type: text/qif; charset=utf-8');
+		header("Content-Disposition: attachment; filename=\"$fileName\"");
 
-		$ps = Transaction::Get_transactions_export($login_id, $account_id, $startDate, $error);
-		if ($error == '') {
-			// clear output buffer & set output headers
-			//ob_end_clean();
-			//header('Content-Type: application/qif; charset=utf-8');
-			header('Content-Type: text/qif; charset=utf-8');
-			header("Content-Disposition: attachment; filename=\"$fileName\"");
+		// Loop through account & all subaccounts
+		$accountIdsExported = array();
+		foreach ($accountIds as $accountId) {
+			$lastAudit = AccountAudit::Get_latest_audit($accountId);
+			$error = '';  // pass by ref
+			$ps = Transaction::Get_transactions_export($accountId, $startDate, $error);
+			if ($error != '') {
+				echo "Error querying database: $error";
+				exit();
+			}
+			// Generate the output file
 			// loop through results
-			buildTransactions($account_id, $ps, $lastAudit);
+			buildTransactions($accountId, $ps, $lastAudit, $accountIdsExported);
+			echo $lineBreak . $lineBreak;
 
-			// All done!  Don't output footer HTML
-			exit();
+			$accountIdsExported[] = $accountId;
 		}
-	} else {
-		// Normal load
-		require('include.php');
+
+		// All done!  Don't output footer HTML
+		exit();
 	}
 
 
@@ -96,13 +119,18 @@
 	   Then output the QIF text record and continue processing.
 	   mainAccountId is the primary account being exported,
 	   and so its ledger entries must come first.
+
+	   accountIdsExported is a list of account Ids already processed;
+	   we will skip any transactions with these accounts to avoid
+	   duplicate transactions, which will keep export file smaller.
 	 */
-	function buildTransactions($mainAccountId, $ps, $lastAudit) {
+	function buildTransactions($mainAccountId, $ps, $lastAudit, $accountIdsExported) {
 		$splits = array();
 		$record = '';
 		global $lineBreak;
 		$lastTxId = -1;
 		$buildHeader = true;
+		$skipTx = false;
 
 		do {
 			$row = $ps->fetch(PDO::FETCH_ASSOC);
@@ -111,6 +139,10 @@
 			if ($row) {
 				$accountId = $row['account_id'];
 				$txId = $row['trans_id'];
+				if (array_search($accountId, $accountIdsExported) !== FALSE) {
+					// Skip duplicate tx already exported
+					$skipTx = true;
+				}
 			}
 
 			$isMainAccount = ($accountId == $mainAccountId);
@@ -119,8 +151,14 @@
 				$lastTxId = $txId;
 			}
 			if ($txId != $lastTxId) {
+				
 				// Finish previous record (assume header already in record)
-				if (count($splits) == 1) {
+				$numSplits = count($splits);
+				if ($numSplits == 0) {
+					// no splits (probably 0 amount tx)
+					$record .= 'LNo Split'. $lineBreak;
+				}
+				elseif ($numSplits == 1) {
 					$record .= $splits[0]->getCategoryRecord();
 				} else {
 					foreach ($splits as $split) {
@@ -129,13 +167,18 @@
 					}
 				}
 				$record .= "^". $lineBreak;  // End of Record indicator
-				// Output!
-				echo $record;
+
+				if (!$skipTx) {
+					// not skipping duplicate
+					// Output!
+					echo $record;
+				}
 
 				// reset fields
 				$record = '';
 				$splits = array();
 				$lastTxId = $txId;
+				$skipTx = false;
 			}
 
 			if (!$row) {
@@ -163,6 +206,10 @@
 						"!Type:$accountType". $lineBreak;
 					// Reset flag so we don't build file header again
 					$buildHeader = false;
+
+					// Write it now, in case we skip the tx
+					echo $record;
+					$record = '';
 				}
 				$amount = $row['amount'];
 				$descr = $row['trans_descr'];
@@ -199,7 +246,7 @@
 
 	$account_list = Account::Get_account_list($login_id, 
 		'L',	// LHS:  Asset / Liability accounts only
-		-2,	// Parent ID value (don't show root accounts)
+		-1,	// Parent ID value (don't show root accounts)
 		false,	// don't force to one level
 		false,	// show debit flag
 		true	// show inactive
@@ -208,9 +255,6 @@
 	$account_dropdown = Build_dropdown ($account_list, 'account_id',
 		$account_id);
 		
-	// disable buffering; we're not outputting a file
-	ob_end_flush();
-	
 	$errorHtml = '';
 	if ($error != '') {
 		$errorHtml = "<div class='error'> $error </div>";

@@ -1377,18 +1377,8 @@ $readTime += $t5 - $t4;
 			$this->m_ledger_total = 0.0;	// no rows found
 	}
 	
-	public static function Get_transactions_export($login_id, $account_id,
-	$startDate, &$error) {
+	public static function Get_transactions_export($account_id, $startDate, &$error) {
 		
-		$account = new Account();
-		$error = $account->Load_account($account_id);
-		if ($error != '') {
-			return $error;
-		}
-		if ($account->get_login_id() != $login_id) {
-			return 'Error:  account does not belong to your login ID';
-		}
-
 		if (empty($startDate)) {
 			// Set min date to beginning
 			$startDate = '0001-01-01';

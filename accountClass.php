@@ -1129,6 +1129,33 @@ $readTime += $t6 - $t5;
 		
 		return '';
 	}
+
+	/* Get a list of child account Ids for the given account.
+	*/
+	public static function Get_child_accounts($accountId) {
+		$sql = "SELECT a.account_id, a.account_name ".
+			"FROM accounts a ".
+			"LEFT JOIN accounts parent ON ".
+			"  parent.account_id = a.account_parent_id ".
+			"WHERE a.account_parent_id = :account_id ".
+			"  OR parent.account_parent_id = :account_id ".
+			"ORDER BY a.account_name ";
+
+		$pdo = db_connect_pdo();
+		$ps = $pdo->prepare($sql);
+		$ps->bindParam(':account_id', $accountId);
+		$success = $ps->execute();
+		if (!$success) {
+			return get_pdo_error($ps);
+		}
+
+		$accountIds = array();
+		while ($row = $ps->fetch(PDO::FETCH_ASSOC)) {
+			$accountIds[] = $row['account_id'];
+		}
+
+		return $accountIds;
+	}
 		
 }	//End Account class
 

@@ -110,6 +110,12 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 	}
 
 	$budgetDateText = $budgetDate->format('m/Y');
+	
+	// Goto first day of selected month, then subtract 1 day
+	$savingsDate = new DateTime();
+	$savingsDate->setDate($budgetDate->format('Y'), $budgetDate->format('m'), 1);
+	$savingsDate->sub(new DateInterval('P1D'));
+	
 
 	// build account dropdowns: include inactive, and only show top 2 tiers
 	$account_list = Account::Get_account_list ($_SESSION['login_id'],
@@ -122,6 +128,15 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 	if ($error == '') {
 		$error = Account::Get_account_budgets($budgetDate,
 			$account_id, $budget_list);
+	}
+	
+	// Get savings balances
+	$savings_list = array();  // pass by ref
+	if ($error == '') {
+		$error = Account::Get_expense_savings($login_id,
+			$savingsDate,	// Start date:  last day of prior month
+			$savingsDate,	// End date:  last day of prior month
+			$savings_list);
 	}
 	
 	// Get income transactions
@@ -186,7 +201,8 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 	<tr>
 		<th>Account</th>
 		<th style="text-align: center;">Default Budget</th>
-		<th style="text-align: center;">Curent</th>
+		<th style="text-align: right;">Current</th>
+		<th style="text-align: right;"> Savings </th>
 		<th style="text-align: center;">New Budget</th>
 		<th style="text-align: center;">Budget Comment</th>
 
@@ -196,7 +212,7 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 	// First loop through data: calculate totals
 	$defaultTotal = 0.0;
 	$budgetTotal = 0.0;
-
+	$savingsTotal = 0.0;
 
 	// Need the abs_total to calculate row percentages
 	foreach ($budget_list as $account_data)
@@ -226,6 +242,17 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 			// Apply default to budget when undefined
 			$newBudget = $defaultBudget;
 		}
+		
+		// Find associated savings account, if applicable
+		$savingsBalance = '';
+		$savingsAccountName = '';
+		if (array_key_exists($account_id, $savings_list)) {
+			$accountSavings = $savings_list[$account_id];
+			$savingsAmount = $accountSavings->savingsBalance;
+			$savingsTotal += $savingsAmount;
+			$savingsBalance = format_amount($savingsAmount);
+			$savingsAccountName = htmlspecialchars($accountSavings->savingsName);
+		}
 
 		echo "	<tr> \n".
 			"		<input type='hidden' name='accountIds[]' value='$account_id' />".
@@ -233,8 +260,9 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 			"		<td title=\"$accountDescr\">$accountName</td> \n".
 			"		<td><input type='text' name='defaultBudgets[]' ".
 			"maxlength='9' value='$defaultBudget' size='10' /></td> \n".
-			"		<td style='text-align: right; $budgetStyle'>$budgetAmount</td> \n".
-			"		<td><input type='text' name='budgetAmounts[]' ".
+			"		<td class='numeric' style='$budgetStyle'>$budgetAmount</td> \n".
+			"		<td title=\"$savingsAccountName\" class='numeric'>$savingsBalance</td> \n".
+			"		<td><input type='number' min='0.0' max='999999.99' step='0.01' name='budgetAmounts[]' ".
 			"maxlength='9' value='$newBudget' size='10' /></td> \n".
 			"		<td><input style='text-align: left;' type='text' name='budgetComments[]' ".
 			"maxlength='100' size='50' value=\"$budgetComment\" /></td> \n".
@@ -243,6 +271,7 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 
 	$defaultTotalString = format_currency($defaultTotal);
 	$budgetTotalString = format_currency($budgetTotal);
+	$savingsTotalString = format_currency($savingsTotal);
 	
 	echo "	<tr> \n".
 		"		<td style='border-top: 1px solid black; border-bottom: 1px solid black;' ".
@@ -250,8 +279,10 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 		"	</tr> \n\n".
 		"	<tr> \n".
 		"		<td>Total</td> \n".
-		"		<td style='text-align: right; font-weight: bold;'>$defaultTotalString</td> \n".
-		"		<td style='text-align: right; font-weight: bold;'>$budgetTotalString</td> \n";
+		"		<td class='total'>$defaultTotalString</td> \n".
+		"		<td class='total'>$budgetTotalString</td> \n".
+		"		<td><span id='new-total-budget'></span> </td> \n".
+		"		<td class='total'>$savingsTotalString</td> \n";
 ?>
 	<td colspan="1" style="text-align: right;">
 		<input style="margin-top: 5px; margin-bottom: 5px;" type="submit" 

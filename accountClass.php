@@ -1064,7 +1064,7 @@ $readTime += $t6 - $t5;
 		'   and tle.budget_date <= :max_date '.
 		'   and tle.exclude_from_budget = \'0\') THEN tle.ledger_amount END, 0.0) '.
 		'   * a.account_debit) as savings_total, '.
-		' sum(coalesce(tle.ledger_amount, 0.0)) as savings_balance '.
+		' sum(coalesce(tle.ledger_amount, 0.0) * a.account_debit) as savings_balance '.
 		'FROM Accounts a '.
 		'INNER JOIN Accounts ex ON ex.savings_account_id = a.account_id '.
 		'INNER JOIN Accounts ap ON ap.account_id = a.account_parent_id '.

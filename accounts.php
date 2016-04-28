@@ -268,7 +268,7 @@
 
 	<tr>
 		<td></td>
-		<td title="Typically a sub-account of a Checking account">Is Savings Account:</td>
+		<td title="Typically a sub-account of a Checking account">Savings or long-term debt account:</td>
 		<td><input type="checkbox" name="is_savings" value="1"<?= $is_savings_txt ?>></td>
 	</tr>
 	
@@ -280,7 +280,7 @@
 
 	<tr>
 		<td></td>
-		<td title="Sinking account linked to this expense account">Linked Savings Account:</td>
+		<td title="Sinking account linked to this expense account">Linked savings / debt account:</td>
 		<td><?= $savings_dropdown ?></td>
 	</tr>
 

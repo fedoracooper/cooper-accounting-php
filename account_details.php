@@ -184,10 +184,10 @@
 			// account associated.
 			if ($savingsData != null) {
   			// Set savingsBalance *before* setSaved, for calculation.
-				$accountSavings->savingsBalance = $savingsData[5];
-				$accountSavings->setSaved($savingsData[0], true);
-				$accountSavings->savingsName = 'Account ' . $savingsData[1];
-				$accountSavings->savingsParentId = $savingsData[3];
+				$accountSavings->savingsBalance = $savingsData->savingsBalance;
+				$accountSavings->setSaved($savingsData->getSaved(), true);
+				$accountSavings->savingsName = 'Account ' . $savingsData->savingsName;
+				$accountSavings->savingsParentId = $savingsData->savingsParentId;
 			} else {
 			  // Savings account, but no savings this period
 			  $accountSavings->setSaved(0.0, true);

@@ -953,7 +953,7 @@ $readTime += $t6 - $t5;
 			// Row:  account_id => AccountSavings object
 			$accountSavings = new AccountSavings();
 			$accountSavings->accountName = $row['account_name'];
-		  $accountSavings->balance = $row['balance'];
+			$accountSavings->balance = $row['balance'];
 			$accountSavings->budget = $row['budget'];
 			$accountSavings->transactions = $row['transaction_sum'];
 			$accountSavings->savingsId = $row['savings_account_id'];
@@ -1063,14 +1063,14 @@ $readTime += $t6 - $t5;
 		' sum(coalesce(CASE WHEN(tle.budget_date >= :min_date '.
 		'   and tle.budget_date <= :max_date '.
 		'   and tle.exclude_from_budget = \'0\') THEN tle.ledger_amount END, 0.0) '.
-    '   * a.account_debit) as savings_total, '.
-    ' sum(coalesce(tle.ledger_amount, 0.0)) as savings_balance '.
+		'   * a.account_debit) as savings_total, '.
+		' sum(coalesce(tle.ledger_amount, 0.0)) as savings_balance '.
 		'FROM Accounts a '.
 		'INNER JOIN Accounts ex ON ex.savings_account_id = a.account_id '.
 		'INNER JOIN Accounts ap ON ap.account_id = a.account_parent_id '.
 		'LEFT JOIN (SELECT le.ledger_amount, le.account_id, t.budget_date, t.exclude_from_budget '.
-    '  FROM Transactions t JOIN Ledger_Entries le ON le.trans_id = t.trans_id) as tle ON '.
-    '  tle.account_id = a.account_id '.
+		'  FROM Transactions t JOIN Ledger_Entries le ON le.trans_id = t.trans_id) as tle ON '.
+		'  tle.account_id = a.account_id '.
 		'WHERE a.login_id = :login_id  '.
 		'GROUP BY a.account_id, a.account_name, ex.account_id, ap.account_name, ap.account_debit '.
 		'ORDER BY a.account_parent_id, a.account_name';
@@ -1091,6 +1091,20 @@ $readTime += $t6 - $t5;
 		
 		while ($row = $ps->fetch(PDO::FETCH_ASSOC))
 		{
+			$accountSavings = new AccountSavings();
+			$accountSavings->expenseAccountId = $row['expense_account_id'];
+			$accountSavings->setSaved($row['savings_total'], false);
+			$accountSavings->savingsName = $row['savings_account_name'];
+			$accountSavings->savingsId = $row['account_id'];
+			$accountSavings->savingsParentId = $row['account_parent_id'];
+			$accountSavings->parentName = $row['parent_name'];
+			$accountSavings->savingsBalance = $row['savings_balance'];
+			$accountSavings->savingsDebit = $row['savings_debit'];
+			$accountSavings->savingsParentDebit = $row['parent_debit'];
+			
+			$account_list[$row['expense_account_id']] = $accountSavings;
+
+			/*
 			$account_list[$row['expense_account_id']] = array(
 				$row['savings_total'],
 				$row['savings_account_name'],
@@ -1100,6 +1114,7 @@ $readTime += $t6 - $t5;
 				$row['savings_balance'],
 				$row['savings_debit'],
 				$row['parent_debit']);
+			*/
 		}
 
 		return '';

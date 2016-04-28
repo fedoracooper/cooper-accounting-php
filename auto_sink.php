@@ -107,15 +107,15 @@
 	  			// This is an expense account with a sinking / savings
 	  			// account associated.
 	  			// Set savingsBalance *before* setSaved, for calculation.
-				$accountSavings->savingsBalance = $savingsData[5];
-				$accountSavings->setSaved($savingsData[0], true);
-				$accountSavings->savingsName = $savingsData[1];
-				$accountSavings->savingsParentId = $savingsData[3];
-				$savingsParentId = $savingsData[3];
+				$accountSavings->savingsBalance = $savingsData->savingsBalance;
+				$accountSavings->setSaved($savingsData->getSaved(), true);
+				$accountSavings->savingsName = $savingsData->savingsName;
+				$accountSavings->savingsParentId = $savingsData->savingsParentId;
+				$savingsParentId = $savingsData->savingsParentId;
 				// Debit flags (-1 or +1)
-				$savingsDebit = $savingsData[6];
-				$parentDebit = $savingsData[7];
-				$accountSavings->parentName = $savingsData[4];
+				$savingsDebit = $savingsData->savingsDebit;
+				$parentDebit = $savingsData->savingsParentDebit;
+				$accountSavings->parentName = $savingsData->parentName;
 				
 				if (abs($accountSavings->getToSave()) < $MIN_SINK_AMOUNT) {
 				  // Don't show accounts with 0 to save, or very small amounts

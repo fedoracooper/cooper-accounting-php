@@ -3,20 +3,23 @@
 // Account Savings Class
 
 class AccountSavings {
-	public $accountName;
-	public $balance;
-	public $budget;
-	public $transactions;
-	public $savingsId;
-	public $accountDescr;
-	private $saved = 0.0;
+	public $accountName;	// Account Name (could be Expense or Asset)
+	public $balance;		// Account Balance (for assets)
+	public $budget;			// Monthly budget amount (expenses)
+	public $transactions;	// Total transactions this month for this account
+	public $savingsId;		// Savings Account ID
+	public $expenseAccountId;	// Expense Account ID (expenses)
+	public $accountDescr;	// Account description
+	private $saved = 0.0;	// Amount Saved in this account this month; use setter method
 	private $toSave = 0.0;
 	private $budgetPercent = 0.0;
 	private $unspent = 0.0;
-	public $savingsName = '';
-	public $savingsParentId = -1;
-	public $savingsBalance = 0.0;
-	public $parentName = '';
+	public $savingsName = '';	// Savings Account Name
+	public $savingsParentId = -1;	// Savings Parent Account ID (like Checking)
+	public $savingsBalance = 0.0;	// Savings Account Balance
+	public $parentName = '';		// Parent Account Name
+	public $savingsDebit;			// Savings Account Debit flag (-1 or +1)
+	public $savingsParentDebit;		// Savings Parent Account Debit flag
 	
 	// After setting the Saved amount for the account, we calculate unspent and toSave.
 	public function setSaved($saved, $setToSave) {

@@ -232,9 +232,10 @@ table.budget-list th
 	padding-right: 5px;
 	padding-left: 5px;
 }
-table.budget-list td input
+table.budget-list td input[type="number"]
 {
 	text-align: right;
+	width: 90px;
 }
 
 table.transaction

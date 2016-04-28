@@ -336,7 +336,7 @@ $execTime += $t2 - $t1;
 			return $account_list;	// empty list
 
 		$use_parent = false;
-		if ($account_parent_id <= 0 && !$force_parent)
+		if ($account_parent_id < 0 && !$force_parent)
 		{
 			// query all layers of accounts
 			$sql =

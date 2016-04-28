@@ -200,10 +200,10 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 <table class="budget-list" cellspacing="0" cellpadding="0">
 	<tr>
 		<th>Account</th>
-		<th style="text-align: center;">Default Budget</th>
+		<th style="text-align: right;">Default Budget</th>
 		<th style="text-align: right;">Current</th>
 		<th style="text-align: right;"> Savings </th>
-		<th style="text-align: center;">New Budget</th>
+		<th style="text-align: right;">New Budget</th>
 		<th style="text-align: center;">Budget Comment</th>
 
 	</tr>
@@ -258,13 +258,13 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 			"		<input type='hidden' name='accountIds[]' value='$account_id' />".
 			"		<input type='hidden' name='budgetIds[]' value='$budgetId' />".
 			"		<td title=\"$accountDescr\">$accountName</td> \n".
-			"		<td><input type='text' name='defaultBudgets[]' ".
-			"maxlength='9' value='$defaultBudget' size='10' /></td> \n".
+			"		<td class='numeric'><input type='number' min='0.0' max='999999.99' step='0.01' name='defaultBudgets[]' ".
+			" value='$defaultBudget' size='10' /></td> \n".
 			"		<td class='numeric' style='$budgetStyle'>$budgetAmount</td> \n".
-			"		<td title=\"$savingsAccountName\" class='numeric'>$savingsBalance</td> \n".
-			"		<td><input type='number' min='0.0' max='999999.99' step='0.01' name='budgetAmounts[]' ".
+			"		<td class='numeric' title=\"$savingsAccountName\"> $savingsBalance </td> \n".
+			"		<td class='numeric'><input type='number' min='0.0' max='999999.99' step='0.01' name='budgetAmounts[]' ".
 			"maxlength='9' value='$newBudget' size='10' /></td> \n".
-			"		<td><input style='text-align: left;' type='text' name='budgetComments[]' ".
+			"		<td><input type='text' name='budgetComments[]' ".
 			"maxlength='100' size='50' value=\"$budgetComment\" /></td> \n".
 			"	</tr> \n\n" ;
 	}	// End budget loop
@@ -275,7 +275,7 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 	
 	echo "	<tr> \n".
 		"		<td style='border-top: 1px solid black; border-bottom: 1px solid black;' ".
-		" colspan='5'>&nbsp;</td> \n".
+		" colspan='6'>&nbsp;</td> \n".
 		"	</tr> \n\n".
 		"	<tr> \n".
 		"		<td>Total</td> \n".
@@ -284,7 +284,7 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 		"		<td><span id='new-total-budget'></span> </td> \n".
 		"		<td class='total'>$savingsTotalString</td> \n";
 ?>
-	<td colspan="1" style="text-align: right;">
+	<td colspan="1" style="text-align: center;">
 		<input style="margin-top: 5px; margin-bottom: 5px;" type="submit" 
 		name="saveBudget" value="Save Budgets" />
 	</td>
@@ -307,7 +307,7 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 	}
 	
 	$totalUnbudgeted = $totalIncome - $budgetTotal;
-	echo "<tr><td style='font-weight: bold;'>Total Income</td> <td></td> <td></td> ".
+	echo "<tr><td style='font-weight: bold;'>Total Income</td> <td></td> ".
 		"<td class='total'>" . format_currency($totalIncome) . "</td> \n".
 		"</tr>";
 	echo "<tr><td style='font-weight: bold;'>Unbudgeted Amount</td> <td></td> <td></td> ".
@@ -315,7 +315,7 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 		"</tr>";
 ?>
 <tr>
-	<td colspan="5"><?php require('footer.php'); ?></td>
+	<td colspan="6"><?php require('footer.php'); ?></td>
 </tr>
 		
 

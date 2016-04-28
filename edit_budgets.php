@@ -281,8 +281,8 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 		"		<td>Total</td> \n".
 		"		<td class='total'>$defaultTotalString</td> \n".
 		"		<td class='total'>$budgetTotalString</td> \n".
-		"		<td><span id='new-total-budget'></span> </td> \n".
-		"		<td class='total'>$savingsTotalString</td> \n";
+		"		<td class='total'>$savingsTotalString</td> \n".
+		"		<td><span id='new-total-budget'></span> </td> \n";
 ?>
 	<td colspan="1" style="text-align: center;">
 		<input style="margin-top: 5px; margin-bottom: 5px;" type="submit" 
@@ -294,7 +294,7 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 	<th colspan="2">Income Account</th>
 	<th class="numeric">Amount</th>
 	<th class="numeric">Total</th>
-	<th>Transaction Description</th>
+	<th colspan="2">Transaction Description</th>
 </tr>
 
 <?php
@@ -302,7 +302,7 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 		echo "  <tr> <td>". $income->accountName . "</td><td></td> \n".
 		"<td class='numeric'>". format_currency($income->amount) . "</td> \n".
 		"<td></td> \n".
-		"<td>". $income->transDescr . "</td>\n".
+		"<td colspan='2'>". $income->transDescr . "</td>\n".
 		"</tr> \n";
 	}
 	

@@ -220,6 +220,7 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 		<th class="numeric"> Savings </th>
 		<th style='text-align: center;'> Budget </th>
 		<th class="numeric"> Spent </th>
+		<th class="numeric"> Available </th>
 		<th style="text-align: center;">Budget Comment</th>
 
 	</tr>
@@ -274,9 +275,12 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 			$budget_data->savingsBalance = $accountSavings->savingsBalance;
 			$budget_data->setSaved($accountSavings->getSaved(), true);
 			$savingsTotal += $savingsAmount;
-			$savingsBalance = format_amount($savingsAmount);
+			$savingsBalance = format_currency($savingsAmount);
 			$savingsAccountName = htmlspecialchars($accountSavings->savingsName);
 		}
+		
+		$available = $budget_data->getAvailable();
+		$availableAmount = format_currency($available);
 
 		echo "	<tr> \n".
 			"		<input type='hidden' name='accountIds[]' value='$account_id' />".
@@ -288,6 +292,7 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 			"		<td class='numeric'><input class='budgetAmount' type='number' min='0.0' max='999999.99' step='0.01' name='budgetAmounts[]' ".
 			"maxlength='9' value='$newBudget' size='10' /></td> \n".
 			"		<td class='numeric'> $spentAmount </td> \n".
+			"		<td class='numeric'> $availableAmount </td> \n".
 			"		<td><input type='text' name='budgetComments[]' ".
 			"maxlength='100' class='long-text' value=\"$budgetComment\" /></td> \n".
 			"	</tr> \n\n" ;
@@ -300,14 +305,15 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 	
 	echo "	<tr> \n".
 		"		<td style='border-top: 1px solid black; border-bottom: 1px solid black;' ".
-		" colspan='6'>&nbsp;</td> \n".
+		" colspan='7'>&nbsp;</td> \n".
 		"	</tr> \n\n".
 		"	<tr> \n".
 		"		<td class='total'>Total</td> \n".
 		"		<td class='total'>$defaultTotalString</td> \n".
 		"		<td class='total'>$savingsTotalString</td> \n".
 		"		<td class='total'><span id='new-total-budget'></span> </td> \n".
-		"		<td class='total'> $spentTotalString </td> \n";
+		"		<td class='total'> $spentTotalString </td> \n".
+		"		<td class='total'>  </td> \n";
 ?>
 	<td colspan="1" style="text-align: center;">
 		<input style="margin-top: 5px; margin-bottom: 5px;" type="submit" 
@@ -319,7 +325,7 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 	<th colspan="2">Income Account</th>
 	<th class="numeric">Amount</th>
 	<th class="numeric">Total</th>
-	<th colspan="2">Transaction Description</th>
+	<th colspan="3">Transaction Description</th>
 </tr>
 
 <?php
@@ -340,7 +346,7 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 		"</tr>";
 ?>
 <tr>
-	<td colspan="6"><?php require('footer.php'); ?></td>
+	<td colspan="7"><?php require('footer.php'); ?></td>
 </tr>
 		
 

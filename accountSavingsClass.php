@@ -59,8 +59,17 @@ class AccountSavings {
 	  }
 	}
 	
+	/* Get Available Amount for the given expense account for this month;
+	   add Budget, Savings Balance - Expenses - Saved.  If savings balance is
+	   negative, meaning a Debit account, we treat it as zero.
+	   This represents the amount which could be spent additionally in the
+	   given month without breaking the budget.
+	 */ 
 	public function getAvailable() {
-		return $this->getUnspent() + $this->savingsBalance;
+		return $this->budget
+			+ max(0.0, $this->savingsBalance)
+			- $this->transactions
+			- $this->getSaved();
 	}
 
   public function getSaved() {

@@ -58,6 +58,10 @@ class AccountSavings {
 	    return max(($this->savingsBalance * -1.0), $unspent);
 	  }
 	}
+	
+	public function getAvailable() {
+		return $this->getUnspent() + $this->savingsBalance;
+	}
 
   public function getSaved() {
     return $this->saved;

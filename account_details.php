@@ -386,7 +386,7 @@
 			if ($accountSavings->savingsParentId > 0) {
 			  // Savings account is present for this expense account
 			  $balanceTitle = "Savings balance: $accountSavings->savingsBalance";
-			  $available = $accountSavings->getUnspent() + $accountSavings->savingsBalance;
+			  $available = $accountSavings->getAvailable();
 			}
 			echo "		<td title='$accountSavings->savingsName' style='text-align: right;'>".
 			  format_currency($accountSavings->getSaved()) . "</td> \n".

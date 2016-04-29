@@ -7,6 +7,22 @@ fieldset div {
 	padding: 2px;
 }
 
+.green-shadow {
+	box-shadow: 0 0 5px #00FF00;
+}
+
+.all-green {
+	color: white;
+	box-shadow: 0 0 5px #148B14;
+	background-color: #148B14;
+}
+
+.red-shadow {
+	color: white;
+	box-shadow: 0 0 5px #FF0000;
+	background-color: #FF0000;
+}
+
 tr.odd {
 	/* Light Green */
 	background-color: #BCE2BC;

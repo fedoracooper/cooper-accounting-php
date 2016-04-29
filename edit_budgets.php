@@ -172,6 +172,23 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 			});
 
 			$("#new-total-budget").text(formatCurrency(total));
+			
+			// Get total Income, stripping $ and thousands separators
+			var totalIncome = $("#total-income").text().replace(/[$,]/g, '');
+			var unbudgeted = totalIncome - total;
+			$("#total-unbudgeted").text( formatCurrency(unbudgeted) );
+			
+			// Highlight the unbudgeted amount if it is not 0
+			if (unbudgeted > 0.001) {
+				$("#total-unbudgeted").removeClass('red-shadow');
+				$("#total-unbudgeted").addClass('all-green');
+			} else if (unbudgeted < -0.001) {
+				$("#total-unbudgeted").removeClass('all-green');
+				$("#total-unbudgeted").addClass('red-shadow');
+			} else {
+				$("#total-unbudgeted").removeClass('all-green');
+				$("#total-unbudgeted").removeClass('red-shadow');
+			}
 		}
 
 
@@ -343,7 +360,7 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 <?php
 	foreach ($income_list as $income) {
 		echo "  <tr> <td colspan='2'>". $income->accountName . "</td> \n".
-		"<td class='numeric'>". format_currency($income->amount) . "</td> \n".
+		"<td class='numeric'>". format_currency($income->amount, false) . "</td> \n".
 		"<td></td> \n".
 		"<td colspan='3'>". $income->transDescr . "</td>\n".
 		"</tr> \n";
@@ -351,10 +368,10 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 	
 	$totalUnbudgeted = $totalIncome - $budgetTotal;
 	echo "<tr><td style='font-weight: bold;'>Total Income</td> <td></td> ".
-		"<td class='total'>" . format_currency($totalIncome) . "</td> \n".
+		"<td class='total' id='total-income'>" . format_currency($totalIncome) . "</td> \n".
 		"</tr>";
 	echo "<tr><td style='font-weight: bold;'>Unbudgeted Amount</td> <td></td> <td></td> ".
-		"<td class='total'>" . format_currency($totalUnbudgeted) . "</td> \n".
+		"<td class='total' id='total-unbudgeted'>" . format_currency($totalUnbudgeted, false) . "</td> \n".
 		"</tr>";
 ?>
 <tr>

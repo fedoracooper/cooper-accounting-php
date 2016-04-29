@@ -369,8 +369,10 @@ function add_months (&$time, $num_months)
 }
 
 // Given a number, this will return an HTML-formatted
-// one. Negatives are red, and a dollar sign will be shown
-function format_currency ($amount)
+// one. Negatives are red, and a dollar sign will be shown.
+// If redNegative is false, we won't inject a span element
+// with red color.
+function format_currency ($amount, $redNegative = true)
 {
 	$txt = '';
 	if (is_numeric ($amount))
@@ -381,7 +383,7 @@ function format_currency ($amount)
 			$amount = 0.0;
 		}
 		$amount_str = number_format ($amount, 2);
-		if ($amount < 0.0)
+		if ($amount < 0.0 && $redNegative)
 			$txt =  '<span style="color: red;">$'.
 				$amount_str. '</span>';
 		else

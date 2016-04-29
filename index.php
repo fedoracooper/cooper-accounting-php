@@ -333,24 +333,21 @@
 			$("#creditTotal").text("$" + creditTotal.toFixed(2));
 			$("#totalDiff").text("$" + amountDiff.toFixed(2));
 			
-			var color = "black";
-			var shadowColor = "#FFFFFF";
 			var toolTip = "";
 			if (Math.abs(amountDiff) > 0.001) {
-				color = "red";
-				shadowColor = "#FF0000";
 				toolTip = "Total Debits must match Total Credits";
+				$("#totalDiff").addClass('red-shadow');
+			} else {
+				$("#totalDiff").removeClass('red-shadow');
 			}
-			$("#totalDiff").css("color", color)
-				.css("box-shadow", "0 0 5px " + shadowColor)
-				.attr("title", toolTip);
+			$("#totalDiff").attr("title", toolTip);
 		}
 
 
 		// Highlight positive side of Ledger Entry in green (Debit or Credit)
 		function handleAccountSelect() {
 			// Reset box shadows on Debit & Credit
-			$(this).parent().parent().find("input[type='number']").css("box-shadow", "none");
+			$(this).parent().parent().find("input[type='number']").removeClass('green-shadow');
 
 			// Value is account_id,debit
 			var valueArray = $(this).val().split(",");
@@ -364,7 +361,7 @@
 				: "input[name='amountCredit[]']";
 			// select -> td -> tr -> find input on this row
 			var field = $(this).parent().parent().find(fieldSelector);
-			field.css("box-shadow", "0 0 5px #00FF00");
+			field.addClass('green-shadow');
 		}
 
 

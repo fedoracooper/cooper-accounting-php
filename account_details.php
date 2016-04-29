@@ -100,11 +100,13 @@
 	$showBalance = ($account_id == -99 || $account->get_equation_side() == 'L');
 	$balanceHeader = '';
 	$savingsHeader = '';
+	$availableHeader = '';
 	if ($showBalance) {
 		$balanceHeader = '<th onclick="sortBalance();">Balance</th>';
 	} else {
-		$savingsHeader = "<th style='text-align: right;' onclick='sortSaved();'>Saved</th> \n".
-		"		<th style='text-align: right;' onclick='sortToSave();'>To Save</th>";
+		$savingsHeader = "<th class='numeric' onclick='sortSaved();'>Saved</th> \n".
+		"		<th class='numeric' onclick='sortToSave();'>To Save</th> \n";
+		$availableHeader = "  <th class='numeric'> Available </th> \n";
 	}
 	
 	$activeOnlyChecked = $activeOnly ? 'checked="checked"' : '';
@@ -351,6 +353,7 @@
 		<?= $balanceHeader ?>
 		<?= $savingsHeader ?>
 		<th onclick="sortUnspent();">Unspent</th>
+		<?= $availableHeader ?>	
 		<th onclick="sortBudgetPercent()">Budget %</th>
 	</tr>
 
@@ -375,21 +378,26 @@
 			$unspent = '';
 			$budgetPercent = '';
 		}
-		
+
 		if (!$showBalance) {
 			// RHS / expenses
 			$balanceTitle = '';
+			$available = $unspent;
 			if ($accountSavings->savingsParentId > 0) {
 			  // Savings account is present for this expense account
 			  $balanceTitle = "Savings balance: $accountSavings->savingsBalance";
+			  $available = $accountSavings->getUnspent() + $accountSavings->savingsBalance;
 			}
 			echo "		<td title='$accountSavings->savingsName' style='text-align: right;'>".
 			  format_currency($accountSavings->getSaved()) . "</td> \n".
 			  "		<td title='$balanceTitle' class='numeric'>".
 			  format_currency($accountSavings->getToSave()) . "</td> \n";
 		}
-		echo	"		<td class='numeric'>". format_currency($unspent) . "</td> \n".
-			"		<td class='numeric'>". format_percent($budgetPercent, 0) . "</td> \n".
+		echo "		<td class='numeric'>". format_currency($unspent) . "</td> \n";
+		if (!$showBalance) {
+			echo "		<td class='numeric'>". format_currency($available). "</td> \n";
+		}
+		echo "		<td class='numeric'>". format_percent($budgetPercent, 0) . "</td> \n".
 			"	</tr> \n";
 	}	// End budget loop
 
@@ -408,7 +416,7 @@
 	
 	echo "	<tr> \n".
 		"		<td style='border-top: 1px solid black; border-bottom: 1px solid black;' ".
-		" colspan=\"7\">&nbsp;</td> \n".
+		" colspan=\"8\">&nbsp;</td> \n".
 		"	</tr> \n\n".
 		"	<tr> \n".
 		"		<td>Total</td> \n".

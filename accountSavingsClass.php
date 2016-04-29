@@ -6,6 +6,9 @@ class AccountSavings {
 	public $accountName;	// Account Name (could be Expense or Asset)
 	public $balance;		// Account Balance (for assets)
 	public $budget;			// Monthly budget amount (expenses)
+	public $budgetId;
+	public $budgetComment;
+	public $defaultBudget = 0.0;
 	public $transactions;	// Total transactions this month for this account
 	public $savingsId;		// Savings Account ID
 	public $expenseAccountId;	// Expense Account ID (expenses)

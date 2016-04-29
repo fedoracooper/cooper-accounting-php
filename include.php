@@ -442,6 +442,11 @@ if ($buildHtmlHeaders) {
 				$('#' + parentLink).addClass('active-reports');
 			}
 		});
+
+		function formatCurrency(num) {
+			var numStr = num.toFixed(2);
+			return '$' + numStr.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+		}
 	</script>
 <?php
 

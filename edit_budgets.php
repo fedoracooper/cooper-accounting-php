@@ -152,18 +152,32 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 	}
 ?>
 
-	<script language="javascript" type="text/javascript">
+	<script>
 
-		function bodyLoad()
-		{
-			document.forms[0].budget_date.focus();
+		$(document).ready(function() {
+			$(".budgetAmount").change(function() {
+				calculateBudgetTotal();
+			});
+
+			// Calculate total on first load
+			calculateBudgetTotal();
+		});
+
+		function calculateBudgetTotal() {
+			var total = 0.0;
+			$(".budgetAmount").each(function() {
+				total += (Number($(this).val()) || 0.0);
+			});
+
+			$("#new-total-budget").text(formatCurrency(total));
 		}
+
 
 	</script>
 </head>
 
 
-<body onload="bodyLoad()">
+<body>
 <?= $navbar ?>
 
 <h3><?= $title ?></h3>
@@ -200,10 +214,10 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 <table class="budget-list" cellspacing="0" cellpadding="0">
 	<tr>
 		<th>Account</th>
-		<th style="text-align: right;">Default Budget</th>
-		<th style="text-align: right;">Current</th>
-		<th style="text-align: right;"> Savings </th>
-		<th style="text-align: right;">New Budget</th>
+		<th class="numeric">Default Budget</th>
+		<th class="numeric"> Savings </th>
+		<th style='text-align: center;'> Budget </th>
+		<th class="numeric"> Spent </th>
 		<th style="text-align: center;">Budget Comment</th>
 
 	</tr>
@@ -260,12 +274,12 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 			"		<td title=\"$accountDescr\">$accountName</td> \n".
 			"		<td class='numeric'><input type='number' min='0.0' max='999999.99' step='0.01' name='defaultBudgets[]' ".
 			" value='$defaultBudget' size='10' /></td> \n".
-			"		<td class='numeric' style='$budgetStyle'>$budgetAmount</td> \n".
 			"		<td class='numeric' title=\"$savingsAccountName\"> $savingsBalance </td> \n".
-			"		<td class='numeric'><input type='number' min='0.0' max='999999.99' step='0.01' name='budgetAmounts[]' ".
+			"		<td class='numeric'><input class='budgetAmount' type='number' min='0.0' max='999999.99' step='0.01' name='budgetAmounts[]' ".
 			"maxlength='9' value='$newBudget' size='10' /></td> \n".
+			"		<td class='numeric'>  </td> \n".
 			"		<td><input type='text' name='budgetComments[]' ".
-			"maxlength='100' size='50' value=\"$budgetComment\" /></td> \n".
+			"maxlength='100' class='long-text' value=\"$budgetComment\" /></td> \n".
 			"	</tr> \n\n" ;
 	}	// End budget loop
 
@@ -278,11 +292,11 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 		" colspan='6'>&nbsp;</td> \n".
 		"	</tr> \n\n".
 		"	<tr> \n".
-		"		<td>Total</td> \n".
+		"		<td class='total'>Total</td> \n".
 		"		<td class='total'>$defaultTotalString</td> \n".
-		"		<td class='total'>$budgetTotalString</td> \n".
 		"		<td class='total'>$savingsTotalString</td> \n".
-		"		<td><span id='new-total-budget'></span> </td> \n";
+		"		<td class='total'><span id='new-total-budget'></span> </td> \n".
+		"		<td class='total'>  </td> \n";
 ?>
 	<td colspan="1" style="text-align: center;">
 		<input style="margin-top: 5px; margin-bottom: 5px;" type="submit" 
@@ -299,7 +313,7 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 
 <?php
 	foreach ($income_list as $income) {
-		echo "  <tr> <td>". $income->accountName . "</td><td></td> \n".
+		echo "  <tr> <td colspan='2'>". $income->accountName . "</td> \n".
 		"<td class='numeric'>". format_currency($income->amount) . "</td> \n".
 		"<td></td> \n".
 		"<td colspan='2'>". $income->transDescr . "</td>\n".

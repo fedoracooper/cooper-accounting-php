@@ -220,6 +220,7 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 		<th class="numeric"> Savings </th>
 		<th style='text-align: center;'> Budget </th>
 		<th class="numeric"> Spent </th>
+		<th class="numeric"> Unspent </th>
 		<th class="numeric"> Available </th>
 		<th style="text-align: center;">Budget Comment</th>
 
@@ -231,6 +232,7 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 	$budgetTotal = 0.0;
 	$savingsTotal = 0.0;
 	$spentTotal = 0.0;
+	$unspentTotal = 0.0;
 
 	// Need the abs_total to calculate row percentages
 	foreach ($budget_list as $account_data)
@@ -274,11 +276,18 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 			// then have all data needed to calculate Unspent & Available.
 			$budget_data->savingsBalance = $accountSavings->savingsBalance;
 			$budget_data->setSaved($accountSavings->getSaved(), true);
+
 			$savingsTotal += $savingsAmount;
 			$savingsBalance = format_currency($savingsAmount);
 			$savingsAccountName = htmlspecialchars($accountSavings->savingsName);
+		} else {
+			// no savings for this period
+			$budget_data->setSaved(0.0, false);
 		}
-		
+
+		$unspent = $budget_data->getUnspent();	
+		$unspentTotal += $unspent;
+		$unspentAmount = format_currency($unspent);
 		$available = $budget_data->getAvailable();
 		$availableAmount = format_currency($available);
 
@@ -292,6 +301,7 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 			"		<td class='numeric'><input class='budgetAmount' type='number' min='0.0' max='999999.99' step='0.01' name='budgetAmounts[]' ".
 			"maxlength='9' value='$newBudget' size='10' /></td> \n".
 			"		<td class='numeric'> $spentAmount </td> \n".
+			"		<td class='numeric'> $unspentAmount </td> \n".
 			"		<td class='numeric'> $availableAmount </td> \n".
 			"		<td><input type='text' name='budgetComments[]' ".
 			"maxlength='100' class='long-text' value=\"$budgetComment\" /></td> \n".
@@ -302,10 +312,11 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 	$budgetTotalString = format_currency($budgetTotal);
 	$savingsTotalString = format_currency($savingsTotal);
 	$spentTotalString = format_currency($spentTotal);
+	$unspentTotalString = format_currency($unspentTotal);
 	
 	echo "	<tr> \n".
 		"		<td style='border-top: 1px solid black; border-bottom: 1px solid black;' ".
-		" colspan='7'>&nbsp;</td> \n".
+		" colspan='8'>&nbsp;</td> \n".
 		"	</tr> \n\n".
 		"	<tr> \n".
 		"		<td class='total'>Total</td> \n".
@@ -313,7 +324,8 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 		"		<td class='total'>$savingsTotalString</td> \n".
 		"		<td class='total'><span id='new-total-budget'></span> </td> \n".
 		"		<td class='total'> $spentTotalString </td> \n".
-		"		<td class='total'>  </td> \n";
+		"		<td class='total'> $unspentTotalString </td> \n".
+		"		<td class='total'> </td> \n";
 ?>
 	<td colspan="1" style="text-align: center;">
 		<input style="margin-top: 5px; margin-bottom: 5px;" type="submit" 
@@ -333,7 +345,7 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 		echo "  <tr> <td colspan='2'>". $income->accountName . "</td> \n".
 		"<td class='numeric'>". format_currency($income->amount) . "</td> \n".
 		"<td></td> \n".
-		"<td colspan='2'>". $income->transDescr . "</td>\n".
+		"<td colspan='3'>". $income->transDescr . "</td>\n".
 		"</tr> \n";
 	}
 	

@@ -372,7 +372,7 @@ $execTime += $t2 - $t1;
 				"    coalesce( a2.account_name || ':', ''), ".
 				"    a.account_name) ";
 		}
-		else
+		else // account_parent > 0 or force_parent == true
 		{
 			// query only one level of accounts
 			$sql = "SELECT a.account_id, a.account_name as account_display, ".
@@ -387,6 +387,10 @@ $execTime += $t2 - $t1;
 			else
 			{
 				$sql.= "  AND account_parent_id is NULL ";
+			}
+			if ($equation_side <> '')
+			{
+				$sql .= "and a.equation_side = '$equation_side' ";
 			}
 			$sql.= "\n ORDER BY a.account_name ";
 		}

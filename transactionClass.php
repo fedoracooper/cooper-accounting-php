@@ -1392,12 +1392,15 @@ $readTime += $t5 - $t4;
 		   1. Query ledger entries hitting the account ID
 		   2. Query all ledger entries for the same trans ID
 		   3. Query all accounts for the given ledger
+
+		   Added DISTINCT because le will join multiple times for a tx if there
+		   are multiple ledger entries for the same parent account.
 		 */
-		$sql = "select txac.account_id, txac.account_name, txac.account_descr, ".
+		$sql = "select DISTINCT txac.account_id, txac.account_name, txac.account_descr, ".
 			" txac.account_debit, txac.equation_side, txac2.account_name as parent_account, ".
 			" txac3.account_name as parent_parent_account, ".
 			" t.trans_id, t.trans_descr, t.trans_comment, t.trans_vendor, ".
-			" t.accounting_date, t.check_number, ".
+			" t.accounting_date, t.check_number, txledger.ledger_id, ".
 			" txledger.ledger_amount * txac.account_debit as amount, txledger.memo ".
 			"FROM accounts ac ".
 			"JOIN Ledger_entries le ON le.account_id = ac.account_id ".
@@ -1408,7 +1411,7 @@ $readTime += $t5 - $t4;
 			"JOIN transactions t on t.trans_id = le.trans_id ".
 			"WHERE ac.account_id = :account_id ".
 			"  AND t.accounting_date > :min_date ".
-			"ORDER BY t.accounting_date, t.trans_id ";
+			"ORDER BY t.accounting_date, t.trans_id, txledger.ledger_id ";
 			
 		$pdo = db_connect_pdo();
 		$ps = $pdo->prepare($sql);

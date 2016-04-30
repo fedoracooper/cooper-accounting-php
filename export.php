@@ -23,22 +23,42 @@
 		require('include.php');
 		$topAccountId = $_POST['account_id'];
 		$startDate = $_POST['startDate'];
-		$account = new Account();
-		$error = $account->Load_account($topAccountId);
-		if ($error != '') {
-			return $error;
-		}
-		if ($account->get_login_id() != $login_id) {
-			return 'Error:  account does not belong to your login ID';
-		}
+		$accountIds = NULL;
+		$fileName = NULL;
 
-		$accountIds = Account::Get_child_accounts($topAccountId);
-		// Add main account to front of list
-		array_unshift($accountIds, $topAccountId);
+		if ($topAccountId > 0) {
+			$account = new Account();
+			$error = $account->Load_account($topAccountId);
+			if ($error != '') {
+				return $error;
+			}
+			if ($account->get_login_id() != $login_id) {
+				return 'Error:  account does not belong to your login ID';
+			}
+
+			$fileName = $account->get_account_name();
+
+			$accountIds = Account::Get_child_accounts($topAccountId);
+			// Add main account to front of list
+			array_unshift($accountIds, $topAccountId);
+
+		} elseif ($topAccountId <= 0) {
+			// Get list of all LHS accounts
+			$account_list = Account::Get_account_list($login_id, 
+				'L',	// LHS:  Asset / Liability accounts only
+				-1,	// Parent ID value (root accounts only)
+				false,	// force to 1 level only 
+				false,	// show debit flag
+				true	// show inactive
+			);
+
+			// account list has all our account IDs
+			$accountIds = array_keys($account_list);
+			$fileName = 'All Accounts';
+		}
 		
-		$fileName = $account->get_account_name() . '.qif';
 		header('Content-Type: text/qif; charset=utf-8');
-		header("Content-Disposition: attachment; filename=\"$fileName\"");
+		header("Content-Disposition: attachment; filename=\"$fileName.qif\"");
 
 		// Loop through account & all subaccounts
 		$accountIdsExported = array();
@@ -135,6 +155,7 @@
 		global $lineBreak;
 		$lastTxId = -1;
 		$buildHeader = true;
+		$buildRecordHeader = true;
 
 		do {
 			$row = $ps->fetch(PDO::FETCH_ASSOC);
@@ -185,6 +206,7 @@
 				$record = '';
 				$splits = array();
 				$lastTxId = $txId;
+				$buildRecordHeader = true;
 			}
 
 			if (!$row) {
@@ -197,8 +219,10 @@
 				$row['parent_account'],
 				$row['parent_parent_account'],
 				$row['equation_side'],
-				$isMainAccount);
-			if ($isMainAccount) {
+				$isMainAccount && $buildRecordHeader);
+
+			// Only print record header once per tx
+			if ($isMainAccount && $buildRecordHeader) {
 				// build main record
 				if ($buildHeader) {
 					// Debit accounts = Bank & Credit accounts are Credit Card
@@ -239,6 +263,9 @@
 					"M$descr". $lineBreak.      // Memo
 					$cleared .                  // Cleared status
 					"P$vendor". $lineBreak;     // Payee
+
+				$buildRecordHeader = false;  // don't print more than once
+
 			} else {
 				// secondary / split part of record
 				$split = new Split();
@@ -258,6 +285,8 @@
 		false,	// show debit flag
 		true	// show inactive
 	);
+
+	$account_list = array('-1' => '--All Accounts--') + $account_list;
 	
 	$account_dropdown = Build_dropdown ($account_list, 'account_id',
 		$account_id);

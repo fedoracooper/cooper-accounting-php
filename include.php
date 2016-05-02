@@ -16,17 +16,34 @@ if (empty($_SERVER['HTTPS']) || $_SERVER['HTTPS'] == "off") {
 	exit();
 }
 
-if (!isset($buildHtmlHeaders)) {
-	// default to on
-	$buildHtmlHeaders = true;
-}
 
-if ($buildHtmlHeaders) {
-	header ("Content-type: text/html; charset=utf-8");
-	echo "<!DOCTYPE HTML> \n";
-}
+// **************************  Session Initialization **************************
 
 session_start();
+
+$SESSION_TIMEOUT_MINUTES = 240;     // After 4 hours of inactivity, logout the user
+$SESSION_ID_TIMEOUT_MINUTES = 30;   // Every 30 minutes, get new session ID for better security.
+
+if (isset($_SESSION['LAST_ACTIVITY']) && 
+	(time() - $_SESSION['LAST_ACTIVITY'] > $SESSION_TIMEOUT_MINUTES * 60)) {
+	// Session has expired
+	session_unset();     // unset $_SESSION variable for the run-time 
+	session_destroy();   // destroy session data in storage
+}
+$_SESSION['LAST_ACTIVITY'] = time(); // update last activity time stamp
+
+// Get a fresh session ID every 30 minutes; this does not logout the user.
+if (!isset($_SESSION['SESSION_CREATED'])) {
+	$_SESSION['SESSION_CREATED'] = time();
+} else if (time() - $_SESSION['SESSION_CREATED'] > $SESSION_ID_TIMEOUT_MINUTES * 60) {
+	// session started more than 30 minutes ago
+	session_regenerate_id(true);    // change session ID for the current session and invalidate old session ID
+	$_SESSION['SESSION_CREATED'] = time();  // update creation time
+}
+
+// **************************  End Session Initialization **************************
+
+
 
 // Define constants here
 define( 'DISPLAY_DATE',	'm/d/Y' );			// MM/DD/YYYY
@@ -420,11 +437,19 @@ function get_checked($value) {
 }
 
 
+if (!isset($buildHtmlHeaders)) {
+	// default to on
+	$buildHtmlHeaders = true;
+}
+
 if ($buildHtmlHeaders) {
+	// Start HTML document
 
+	header ("Content-Type: text/html; charset=utf-8");
 
-// Start HTML document
 ?>
+<!DOCTYPE HTML>
+
 <html>
 <head>
 	<title><?= $title ?></title>

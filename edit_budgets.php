@@ -196,7 +196,7 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 		function calculateBudgetTotal() {
 			var total = 0.0;
 			$(".budgetAmount").each(function() {
-				total += (Number($(this).val()) || 0.0);
+				total += (Number(this.value) || 0.0);
 			});
 
 			$("#new-total-budget").text(formatCurrency(total));
@@ -205,13 +205,13 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 			var unbudgeted = currencyToNum($("#total-income").text()) - total;
 			$("#total-unbudgeted").text( formatCurrency(unbudgeted) );
 			// Highlight the unbudgeted amount if it is not 0
-			setCssClass($("#total-unbudgeted"), 'red-shadow', unbudgeted > 0.001);
-			setCssClass($("#total-unbudgeted"), 'all-green', unbudgeted < -0.001);
+			setCssClass($("#total-unbudgeted"), 'all-green', unbudgeted > 0.001);
+			setCssClass($("#total-unbudgeted"), 'red-shadow', unbudgeted < -0.001);
 			
 			// Unspent totals
 			total = 0.0;
 			$(".unspent-amt").each(function() {
-				total+= (Number($(this).val()) || 0.0);
+				total+= currencyToNum(this.value);
 			});
 			$("#unspent-total").text( formatCurrency(total) );
 			setCssClass($("#unspent-total"), 'red-shadow', total < -0.001);

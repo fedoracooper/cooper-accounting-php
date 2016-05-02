@@ -495,9 +495,9 @@ if ($buildHtmlHeaders) {
 			}
 		}
 		
-		function getNumberOrZero(jQueryField) {
-			if ($.isNumeric(jQueryField.val())) {
-				return Number(jQueryField.val());
+		function getNumberOrZero(val) {
+			if ($.isNumeric(val)) {
+				return Number(val);
 			} else {
 				return 0.0;
 			}

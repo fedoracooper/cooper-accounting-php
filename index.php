@@ -314,10 +314,10 @@
 			var debitTotal = 0.0;
 			var creditTotal = 0.0;
 			$("input[name='amountDebit[]']").each(function() {
-				debitTotal += getNumberOrZero($(this));
+				debitTotal += getNumberOrZero(this.value);
 			});
 			$("input[name='amountCredit[]']").each(function() {
-				creditTotal += getNumberOrZero($(this));
+				creditTotal += getNumberOrZero(this.value);
 			});
 			
 			var amountDiff = debitTotal - creditTotal;

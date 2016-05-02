@@ -212,7 +212,7 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 			total = 0.0;
 			$(".unspent-amt").each(function() {
 				total+= (Number($(this).val()) || 0.0);
-			}
+			});
 			$("#unspent-total").text( formatCurrency(total) );
 			setCssClass($("#unspent-total"), 'red-shadow', total < -0.001);
 		}

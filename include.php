@@ -106,39 +106,39 @@ $title = '';
 $activeClass = ' class="active-nav"';
 $parentLink = '';
 switch ($current_page) {
-	case 'index':
-		$title = 'Account Ledger';
-		break;
-	case 'account_summary':
-		$title = 'Account Summary';
-		$parentLink = 'reports-link';
-		break;
 	case 'account_breakdown':
 		$title = 'Period Breakdown';
-		$parentLink = 'reports-link';
-		break;
-	case 'car_stats':
-		$title = 'Car Fuel Usage Statistics';
-		$parentLink = 'reports-link';
-		break;
-	case 'export':
-		$title = 'Export to QIF';
 		$parentLink = 'reports-link';
 		break;
 	case 'account_details':
 		$title = 'Account Details';
 		break;
-	case 'edit_budgets':
-		$title = 'Monthly Budget';
+	case 'account_summary':
+		$title = 'Account Summary';
+		$parentLink = 'reports-link';
 		break;
 	case 'accounts':
 		$title = 'Accounts Management';
 		break;
-	case 'logins':
-		$title = 'Login Management';
+	case 'car_stats':
+		$title = 'Car Fuel Usage Statistics';
+		$parentLink = 'reports-link';
+		break;
+	case 'edit_budgets':
+		$title = 'Monthly Budget';
 		break;
 	case 'export':
 		$title = 'Export to QIF File';
+		$parentLink = 'reports-link';
+		break;
+	case 'index':
+		$title = 'Account Ledger';
+		break;
+	case 'login':	// Login page
+		$title = 'Accounting Login';
+		break;
+	case 'logins':	// Manage Logins
+		$title = 'Login Management';
 		break;
 }
 

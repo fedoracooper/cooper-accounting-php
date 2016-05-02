@@ -12,6 +12,10 @@
 		$result = Login::Authenticate($_POST['login_user'], $_POST['login_password']);
 		if ($result === true)
 		{
+			// Successful Login !
+			// Create a new session ID to prevent "session fixation" attacks
+			session_regenerate_id(true);
+			
 			// Redirect to main page
 			header ("Location: index.php");
 			exit();
@@ -26,7 +30,8 @@
 	elseif (isset ($_GET['logout']))
 	{
 		// Log out this user
-		session_destroy();
+		session_unset();		// Delete session variables
+		session_destroy();		// Delete persistent session data
 	}
 
 	if (isset ($_SESSION['login_id']))
@@ -36,10 +41,6 @@
 	}
 ?>
 
-<html>
-<head>
-	<title>Accounting Login</title>
-	<link href="style.css" rel="stylesheet" type="text/css">
 	<script language="javascript" type="text/javascript">
 		function user_focus()
 		{
@@ -50,7 +51,7 @@
 </head>
 
 <body onload="user_focus()">
-<h3>Accounting Login</h3>
+<h3><?= $title ?></h3>
 <p class="error"><?= $error ?></p>
 <p>Please log in below.</p>
 

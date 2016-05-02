@@ -19,6 +19,13 @@ if (empty($_SERVER['HTTPS']) || $_SERVER['HTTPS'] == "off") {
 
 // **************************  Session Initialization **************************
 
+// Override cookie params to set Secure = true
+session_set_cookie_params(
+	0,     // Lifetime; 0 = until browser close
+	'/',   // Path
+	NULL,  // Domain
+	true   // Secure:  only send cookies over HTTPS
+);
 session_start();
 
 $SESSION_TIMEOUT_MINUTES = 240;     // After 4 hours of inactivity, logout the user
@@ -39,6 +46,21 @@ if (!isset($_SESSION['SESSION_CREATED'])) {
 	// session started more than 30 minutes ago
 	session_regenerate_id(true);    // change session ID for the current session and invalidate old session ID
 	$_SESSION['SESSION_CREATED'] = time();  // update creation time
+}
+
+$login_admin = 0;
+$login_id = -1;
+if (isset ($_SESSION['login_id']))
+{
+	$login_id = $_SESSION['login_id'];
+	$login_admin = $_SESSION['login_admin'];
+} else {
+	// No session.  Only permit one page:  Login (also handles Logout)
+	if ($current_page != 'login') {
+		// no session & not on login page
+		header ("Location: login.php");
+		exit();	
+	}
 }
 
 // **************************  End Session Initialization **************************
@@ -71,21 +93,6 @@ require ('ledgerEntryClass.php');
 require ('loginClass.php');
 require ('transactionClass.php');
 
-
-$login_admin = 0;
-$login_id = -1;
-if (isset ($_SESSION['login_id']))
-{
-	$login_id = $_SESSION['login_id'];
-	$login_admin = $_SESSION['login_admin'];
-} else {
-	// No session.  Only permit one pages:  Login (also handles Logout)
-	if ($current_page != 'login') {
-		// no session & not on login page
-		header ("Location: login.php");
-		exit();	
-	}
-}
 
 // define top header
 if (!isset ($current_page))

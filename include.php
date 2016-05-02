@@ -477,9 +477,38 @@ if ($buildHtmlHeaders) {
 			}
 		});
 
+		/* Format amount into a text string starting with '$' and with thousands separators.
+		 */
 		function formatCurrency(num) {
 			var numStr = num.toFixed(2);
 			return '$' + numStr.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+		}
+		
+		/* Helper method to add a class to a given jQuery element, or to
+		   remove it when enable is false.
+		 */
+		function setCssClass(jQueryElem, cssClass, enable) {
+			if (enable) {
+				jQueryElem.addClass(cssClass);
+			} else {
+				jQueryElem.removeClass(cssClass);
+			}
+		}
+		
+		function getNumberOrZero(jQueryField) {
+			if ($.isNumeric(jQueryField.val())) {
+				return Number(jQueryField.val());
+			} else {
+				return 0.0;
+			}
+		}
+		
+		// Convert formatted currency amount to javascript numeric.
+		// Invalid or empty string will be returned as 0.
+		function currencyToNum(amount) {
+			// Strip out $ sign and thousands separators
+			var stripped = amount.replace(/[$,]/g, '');
+			return getNumberOrZero(stripped);
 		}
 	</script>
 <?php

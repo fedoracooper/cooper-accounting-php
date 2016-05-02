@@ -348,13 +348,13 @@
 <table class="budget-list">
 	<tr>
 		<th onclick="sortAccount();">Account</th>
-		<th style='text-align: right;' onclick="sortBudget();">Budget</th>
+		<th class="numeric" onclick="sortBudget();">Budget</th>
 		<th onclick="sortTransactions();">Transactions</th>
 		<?= $balanceHeader ?>
 		<?= $savingsHeader ?>
-		<th onclick="sortUnspent();">Unspent</th>
+		<th class="numeric" onclick="sortUnspent();">Unspent</th>
 		<?= $availableHeader ?>	
-		<th onclick="sortBudgetPercent()">Budget %</th>
+		<th class="numeric" onclick="sortBudgetPercent()">Budget %</th>
 	</tr>
 
 <?php

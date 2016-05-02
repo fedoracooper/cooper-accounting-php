@@ -157,7 +157,35 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 	<script>
 
 		$(document).ready(function() {
+			
 			$(".budgetAmount").change(function() {
+				// input -> td -> tr
+				var row = $(this).parent().parent();
+				
+				// Recalculate Unspent + Available columns
+				// Unspent = Budget - SpentOrSaved - To Save
+				// ToSave = max(Savings * -1.0, Budget - SpentOrSaved )
+				var budget = this.value;
+				var spentOrSaved = currencyToNum(row.find(".spent-or-saved").text());
+				var saved = row.find(".saved-amount").text();
+				var savingsText = row.find(".savings-balance").text().trim();
+				var savings = currencyToNum(savingsText);
+				var toSave = Math.max(savings * -1.0, budget - spentOrSaved);
+				if (savingsText == '') {
+					// No savings account
+					toSave = 0.0;
+				}
+				var unspent = budget - spentOrSaved - toSave;
+				var unspentCell = row.find(".unspent-amt");
+				unspentCell.text(formatCurrency(unspent));
+				setCssClass(unspentCell, 'red-shadow', unspent < -0.001);
+				
+				// Available = Budget + max(0.0, Savings) - SpentOrSaved
+				var available = budget + Math.max(savings, 0.0) - spentOrSaved;
+				var availableCell = row.find(".avilable-amt");
+				availableCell.text(formatCurrency(available));
+				setCssClass(availableCell, 'red-shadow', available < -0.001);
+				
 				calculateBudgetTotal();
 			});
 
@@ -174,21 +202,19 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 			$("#new-total-budget").text(formatCurrency(total));
 			
 			// Get total Income, stripping $ and thousands separators
-			var totalIncome = $("#total-income").text().replace(/[$,]/g, '');
-			var unbudgeted = totalIncome - total;
+			var unbudgeted = currencyToNum($("#total-income").text()) - total;
 			$("#total-unbudgeted").text( formatCurrency(unbudgeted) );
-			
 			// Highlight the unbudgeted amount if it is not 0
-			if (unbudgeted > 0.001) {
-				$("#total-unbudgeted").removeClass('red-shadow');
-				$("#total-unbudgeted").addClass('all-green');
-			} else if (unbudgeted < -0.001) {
-				$("#total-unbudgeted").removeClass('all-green');
-				$("#total-unbudgeted").addClass('red-shadow');
-			} else {
-				$("#total-unbudgeted").removeClass('all-green');
-				$("#total-unbudgeted").removeClass('red-shadow');
+			setCssClass($("#total-unbudgeted"), 'red-shadow', unbudgeted > 0.001);
+			setCssClass($("#total-unbudgeted"), 'all-green', unbudgeted < -0.001);
+			
+			// Unspent totals
+			total = 0.0;
+			$(".unspent-amt").each(function() {
+				total+= (Number($(this).val()) || 0.0);
 			}
+			$("#unspent-total").text( formatCurrency(total) );
+			setCssClass($("#unspent-total"), 'red-shadow', total < -0.001);
 		}
 
 
@@ -230,13 +256,13 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 <input type="hidden" name="account_id" value="<?= $account_id ?>" />
 
 
-<table class="budget-list" cellspacing="0" cellpadding="0">
+<table class="budget-list" >
 	<tr>
 		<th>Account</th>
 		<th class="numeric">Default Budget</th>
 		<th class="numeric"> Savings </th>
 		<th style='text-align: center;'> Budget </th>
-		<th class="numeric"> Spent </th>
+		<th class="numeric"> Spent + Saved </th>
 		<th class="numeric"> Unspent </th>
 		<th class="numeric"> Available </th>
 		<th style="text-align: center;">Budget Comment</th>
@@ -273,9 +299,7 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 		$budgetId = $budget_data->budgetId;
 		$accountDescr = htmlspecialchars($budget_data->accountDescr);
 		$budgetComment = htmlspecialchars($budget_data->budgetComment);
-		$spent = $budget_data->transactions;
-		$spentTotal += $spent;
-		$spentAmount = format_currency($spent);
+		$spentOrSaved = $budget_data->transactions;
 		
 		$newBudget = $budgetAmount;
 		if ($budgetAmount == null) {
@@ -295,6 +319,7 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 			$budget_data->setSaved($accountSavings->getSaved(), true);
 
 			$savingsTotal += $savingsAmount;
+			$spentOrSaved += $budget_data->getSaved();
 			$savingsBalance = format_currency($savingsAmount);
 			$savingsAccountName = htmlspecialchars($accountSavings->savingsName);
 		} else {
@@ -302,24 +327,29 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 			$budget_data->setSaved(0.0, false);
 		}
 
+		$spentTotal += $spentOrSaved;
+		$spentAmount = format_currency($spentOrSaved);
 		$unspent = $budget_data->getUnspent();	
 		$unspentTotal += $unspent;
 		$unspentAmount = format_currency($unspent);
 		$available = $budget_data->getAvailable();
 		$availableAmount = format_currency($available);
+		$savedAmount = $budget_data->getSaved();
 
 		echo "	<tr> \n".
-			"		<input type='hidden' name='accountIds[]' value='$account_id' />".
-			"		<input type='hidden' name='budgetIds[]' value='$budgetId' />".
-			"		<td title=\"$accountDescr\">$accountName</td> \n".
+			"		<td title=\"$accountDescr\"> ".
+			"			<input type='hidden' name='accountIds[]' value='$account_id' />".
+			"			<input type='hidden' name='budgetIds[]' value='$budgetId' />".
+			"			<div style='display: none;' id='saved-amount'>$savedAmount</div> \n".
+			"			$accountName </td> \n".
 			"		<td class='numeric'><input type='number' min='0.0' max='999999.99' step='0.01' name='defaultBudgets[]' ".
 			" value='$defaultBudget' size='10' /></td> \n".
-			"		<td class='numeric' title=\"$savingsAccountName\"> $savingsBalance </td> \n".
+			"		<td class='numeric savings-balance' title=\"$savingsAccountName\"> $savingsBalance </td> \n".
 			"		<td class='numeric'><input class='budgetAmount' type='number' min='0.0' max='999999.99' step='0.01' name='budgetAmounts[]' ".
-			"maxlength='9' value='$newBudget' size='10' /></td> \n".
-			"		<td class='numeric'> $spentAmount </td> \n".
-			"		<td class='numeric'> $unspentAmount </td> \n".
-			"		<td class='numeric'> $availableAmount </td> \n".
+			" value='$newBudget' size='10' /></td> \n".
+			"		<td class='numeric spent-or-saved'> $spentAmount </td> \n".
+			"		<td class='numeric unspent-amt'> $unspentAmount </td> \n".
+			"		<td class='numeric available-amt'> $availableAmount </td> \n".
 			"		<td><input type='text' name='budgetComments[]' ".
 			"maxlength='100' class='long-text' value=\"$budgetComment\" /></td> \n".
 			"	</tr> \n\n" ;
@@ -339,9 +369,9 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 		"		<td class='total'>Total</td> \n".
 		"		<td class='total'>$defaultTotalString</td> \n".
 		"		<td class='total'>$savingsTotalString</td> \n".
-		"		<td class='total'><span id='new-total-budget'></span> </td> \n".
+		"		<td class='total' id='new-total-budget'></td> \n".
 		"		<td class='total'> $spentTotalString </td> \n".
-		"		<td class='total'> $unspentTotalString </td> \n".
+		"		<td class='total' id='unspent-total'> $unspentTotalString </td> \n".
 		"		<td class='total'> </td> \n";
 ?>
 	<td colspan="1" style="text-align: center;">
@@ -354,7 +384,7 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 	<th colspan="2">Income Account</th>
 	<th class="numeric">Amount</th>
 	<th class="numeric">Total</th>
-	<th colspan="3">Transaction Description</th>
+	<th colspan="4">Transaction Description</th>
 </tr>
 
 <?php
@@ -362,7 +392,7 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 		echo "  <tr> <td colspan='2'>". $income->accountName . "</td> \n".
 		"<td class='numeric'>". format_currency($income->amount, false) . "</td> \n".
 		"<td></td> \n".
-		"<td colspan='3'>". $income->transDescr . "</td>\n".
+		"<td colspan='4'>". $income->transDescr . "</td>\n".
 		"</tr> \n";
 	}
 	
@@ -375,7 +405,7 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 		"</tr>";
 ?>
 <tr>
-	<td colspan="7"><?php require('footer.php'); ?></td>
+	<td colspan="8"><?php require('footer.php'); ?></td>
 </tr>
 		
 

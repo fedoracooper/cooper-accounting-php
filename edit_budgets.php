@@ -211,7 +211,7 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 			// Unspent totals
 			total = 0.0;
 			$(".unspent-amt").each(function() {
-				total+= currencyToNum(this.value);
+				total+= currencyToNum(this.innerHTML);
 			});
 			$("#unspent-total").text( formatCurrency(total) );
 			setCssClass($("#unspent-total"), 'red-shadow', total < -0.001);

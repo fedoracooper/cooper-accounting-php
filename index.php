@@ -321,9 +321,9 @@
 			});
 			
 			var amountDiff = debitTotal - creditTotal;
-			$("#debitTotal").text("$" + debitTotal.toFixed(2));
-			$("#creditTotal").text("$" + creditTotal.toFixed(2));
-			$("#totalDiff").text("$" + amountDiff.toFixed(2));
+			$("#debitTotal").text(formatCurrency( debitTotal ));
+			$("#creditTotal").text(formatCurrency( creditTotal ));
+			$("#totalDiff").text(formatCurrency( amountDiff ));
 			
 			var toolTip = "";
 			if (Math.abs(amountDiff) > 0.001) {

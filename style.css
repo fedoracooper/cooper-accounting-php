@@ -145,6 +145,10 @@ th
 	border-bottom: 1px solid black;
 }
 
+.negative {
+	color: red;
+}
+
 .error
 {
 	color: red;

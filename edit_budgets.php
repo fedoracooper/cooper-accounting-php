@@ -165,14 +165,14 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 				// Recalculate Unspent + Available columns
 				// Unspent = Budget - SpentOrSaved - To Save
 				// ToSave = max(Savings * -1.0, Budget - SpentOrSaved )
-				var budget = this.value;
+				var budget = Number(this.value);
 				var spentOrSaved = currencyToNum(row.find(".spent-or-saved").text());
-				var saved = row.find(".saved-amount").text();
+				var saved = Number(row.find(".saved-amount").text());
 				var savingsText = row.find(".savings-balance").text().trim();
 				var savings = currencyToNum(savingsText);
 				var toSave = Math.max(savings * -1.0, budget - spentOrSaved);
-				if (savingsText == '') {
-					// No savings account
+				if (savingsText == '' || Math.abs(saved) > 0.001) {
+					// No savings account or we are already saving or drawing
 					toSave = 0.0;
 				}
 				var unspent = budget - spentOrSaved - toSave;
@@ -182,7 +182,7 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 				
 				// Available = Budget + max(0.0, Savings) - SpentOrSaved
 				var available = budget + Math.max(savings, 0.0) - spentOrSaved;
-				var availableCell = row.find(".avilable-amt");
+				var availableCell = row.find(".available-amt");
 				availableCell.text(formatCurrency(available));
 				setCssClass(availableCell, 'red-shadow', available < -0.001);
 				
@@ -191,6 +191,16 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 
 			// Calculate total on first load
 			calculateBudgetTotal();
+
+			// Format negatives
+
+			$(".unspent-amt").each(function() {
+				setCssClass($(this), 'red-shadow', currencyToNum($(this).text()) < -0.001);
+			});
+
+			$(".available-amt").each(function() {
+				setCssClass($(this), 'red-shadow', currencyToNum($(this).text()) < -0.001);
+			});
 		});
 
 		function calculateBudgetTotal() {
@@ -211,7 +221,7 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 			// Unspent totals
 			total = 0.0;
 			$(".unspent-amt").each(function() {
-				total+= currencyToNum(this.innerHTML);
+				total+= currencyToNum($(this).text());
 			});
 			$("#unspent-total").text( formatCurrency(total) );
 			setCssClass($("#unspent-total"), 'red-shadow', total < -0.001);
@@ -331,16 +341,17 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 		$spentAmount = format_currency($spentOrSaved);
 		$unspent = $budget_data->getUnspent();	
 		$unspentTotal += $unspent;
-		$unspentAmount = format_currency($unspent);
+		// Format negatives in JavaScript code
+		$unspentAmount = format_currency($unspent, NULL);
 		$available = $budget_data->getAvailable();
-		$availableAmount = format_currency($available);
+		$availableAmount = format_currency($available, NULL);
 		$savedAmount = $budget_data->getSaved();
 
 		echo "	<tr> \n".
 			"		<td title=\"$accountDescr\"> ".
 			"			<input type='hidden' name='accountIds[]' value='$account_id' />".
 			"			<input type='hidden' name='budgetIds[]' value='$budgetId' />".
-			"			<div style='display: none;' id='saved-amount'>$savedAmount</div> \n".
+			"			<div style='display: none;' class='saved-amount'>$savedAmount</div> \n".
 			"			$accountName </td> \n".
 			"		<td class='numeric'><input type='number' min='0.0' max='999999.99' step='0.01' name='defaultBudgets[]' ".
 			" value='$defaultBudget' size='10' /></td> \n".
@@ -359,7 +370,7 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 	$budgetTotalString = format_currency($budgetTotal);
 	$savingsTotalString = format_currency($savingsTotal);
 	$spentTotalString = format_currency($spentTotal);
-	$unspentTotalString = format_currency($unspentTotal);
+	$unspentTotalString = format_currency($unspentTotal, NULL); // format in JS
 	
 	echo "	<tr> \n".
 		"		<td style='border-top: 1px solid black; border-bottom: 1px solid black;' ".
@@ -390,7 +401,7 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 <?php
 	foreach ($income_list as $income) {
 		echo "  <tr> <td colspan='2'>". $income->accountName . "</td> \n".
-		"<td class='numeric'>". format_currency($income->amount, false) . "</td> \n".
+		"<td class='numeric'>". format_currency($income->amount, NULL) . "</td> \n".
 		"<td></td> \n".
 		"<td colspan='4'>". $income->transDescr . "</td>\n".
 		"</tr> \n";
@@ -401,7 +412,7 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 		"<td class='total' id='total-income'>" . format_currency($totalIncome) . "</td> \n".
 		"</tr>";
 	echo "<tr><td style='font-weight: bold;'>Unbudgeted Amount</td> <td></td> <td></td> ".
-		"<td class='total' id='total-unbudgeted'>" . format_currency($totalUnbudgeted, false) . "</td> \n".
+		"<td class='total' id='total-unbudgeted'>" . format_currency($totalUnbudgeted, NULL) . "</td> \n".
 		"</tr>";
 ?>
 <tr>

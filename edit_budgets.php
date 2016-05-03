@@ -207,8 +207,8 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 		 */
 		function setUnspentStyle(jQueryElement, num) {
 			setCssClass(jQueryElement, 'red-shadow', num < -0.001);	// Negatives are bright red
+			setCssClass(jQueryElement, 'green-shadow', num >= -0.001 && num < 0.999);	// Light green for 0 to 0.99
 			setCssClass(jQueryElement, 'all-green', num >= 0.999);	// >= $1.00 is bright green
-			setCssClass(jQueryElement, 'green-shadow', num > 0.001 && num < 0.999);	// Light green for 0 to 0.99
 		}
 		
 		/* Set CSS style on Available jQuery element, based on numeric value num.
@@ -228,9 +228,9 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 			// Get total Income, stripping $ and thousands separators
 			var unbudgeted = currencyToNum($("#total-income").text()) - total;
 			$("#total-unbudgeted").text( formatCurrency(unbudgeted) );
-			// Highlight the unbudgeted amount if it is not 0
-			setCssClass($("#total-unbudgeted"), 'all-green', unbudgeted > 0.001);
+			// Highlight the unbudgeted amount in green or red
 			setCssClass($("#total-unbudgeted"), 'red-shadow', unbudgeted < -0.001);
+			setCssClass($("#total-unbudgeted"), 'all-green', unbudgeted >= -0.001);
 			
 			// Unspent totals
 			total = 0.0;

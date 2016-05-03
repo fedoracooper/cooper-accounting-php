@@ -32,8 +32,7 @@ class Transaction
 	private $m_ledger_memo		= '';
 	private $m_audit_balance	= NULL;
 	private $m_ledger_total		= NULL;
-	private $m_ledgerL_list		= array();	//array of account_id=>ledger_amount
-	private $m_ledgerR_list		= array();
+	private $m_ledger_list		= array();	//array of Ledger Entry objects
 	private $m_prior_month		= 0;
 	private $m_exclude_budget	= '0';
 	private $m_closing_tx		= '0';
@@ -238,22 +237,21 @@ class Transaction
 	public function get_audit_balance() {
 		return $this->m_audit_balance;
 	}
-	public function &get_ledgerL_list() {
-		return $this->m_ledgerL_list;
-	}
-	public function get_ledgerR_list() {
-		return $this->m_ledgerR_list;
-	}
-
 	public function get_ledger_list() {
-		return array_merge($this->m_ledgerL_list, $this->m_ledgerR_list);
+		return $this->m_ledger_list;
+	}
+	public function add_ledger_entry($ledgerEntry) {
+		$this->m_ledger_list[] = $ledgerEntry;
 	}
 
 	public function set_account_savings($account_savings) {
 	  $this->m_account_savings = $account_savings;
 	}
-	public function &get_account_savings() {
+	public function get_account_savings() {
 	  return $this->m_account_savings;
+	}
+	public function add_account_savings($savings) {
+		$this->m_account_savings[] = $savings;
 	}
 
 
@@ -280,8 +278,7 @@ class Transaction
 		$ledger_id = -1,
 		$audit_id = -1,
 		$audit_balance = 0.0,
-		$ledgerL_list = array(),
-		$ledgerR_list = array())
+		$ledger_list = array())
 	{
 
 		//truncate comment to 1000 chars
@@ -332,8 +329,7 @@ class Transaction
 		$this->m_ledger_id			= $ledger_id;
 		$this->m_audit_id			= $audit_id;
 		$this->m_audit_balance		= $audit_balance;
-		$this->m_ledgerL_list		= $ledgerL_list;
-		$this->m_ledgerR_list		= $ledgerR_list;
+		$this->m_ledger_list		= $ledger_list;
 		
 		
 		if ($trans_time == -1) {
@@ -411,12 +407,12 @@ class Transaction
 	// parent account, which will be the first ledger entry.
 	public function Calculate_sinking_total() {
 	  $total = 0.0;
-	  foreach ($this->m_ledgerL_list as $ledgerEntry) {
+	  foreach ($this->m_ledger_list as $ledgerEntry) {
 	    $total -= $ledgerEntry->getAmount();
 	  }
 	  
 	  // Set total in the first entry
-	  $this->m_ledgerL_list[0]->setAmount($total);
+	  $this->m_ledger_list[0]->setAmount($total);
 	}
 	
 	
@@ -487,8 +483,7 @@ class Transaction
 			return get_pdo_error($ps);
 		}
 
-		$this->m_ledgerL_list = array();
-		$this->m_ledgerR_list = array();
+		$this->m_ledger_list = array();
 		// loop for each ledger entry
 		while ($row = $ps->fetch(PDO::FETCH_ASSOC))
 		{
@@ -499,10 +494,7 @@ class Transaction
 			$ledger->setAmount($row['ledger_amount']);
 			$ledger->memo = $row['memo'];
 			
-			if ($row['equation_side'] == 'L')		// LHS ledger account
-				$this->m_ledgerL_list[] = $ledger;
-			else	// RHS ledger account
-				$this->m_ledgerR_list[] = $ledger;
+			$this->m_ledger_list[] = $ledger;
 		}
 
 		$pdo = null;
@@ -672,7 +664,7 @@ class Transaction
 
 		// insert the individual ledger entries
 		// Combine the LHS & RHS lists
-		$ledger_list = $this->get_ledger_list();
+		$ledger_list = $this->m_ledger_list;
 		foreach ($ledger_list as $ledger)
 		{
 			$amount = $ledger->getAmount();

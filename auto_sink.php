@@ -48,8 +48,7 @@
 			-1,		//ledger ID
 			-1,		//audit ID
 			0.0,	//audit balance
-			$ledgerEntries,  // LHS
-			array() // RHS
+			$ledgerEntries  // Ledger Entries
 		);
 
 		return $sinkTransaction;
@@ -145,10 +144,10 @@
 				$ledger->accountId = $accountSavings->savingsId;
 				$ledger->debit = $savingsDebit;
 				$ledger->setAmount($accountSavings->getToSave());
-				$sinkTransaction->get_ledgerL_list()[] = $ledger;
-				$sinkTransaction->get_account_savings()[] = $accountSavings;
+				$sinkTransaction->add_ledger_entry($ledger);
+				$sinkTransaction->add_account_savings($accountSavings);
 				
-				if (count($sinkTransaction->get_ledgerL_list()) >= $MAX_LEDGER_ENTRIES_PER_TX) {
+				if (count($sinkTransaction->get_ledger_list()) >= $MAX_LEDGER_ENTRIES_PER_TX) {
 					// Add completed transaction
 					$transactions[] = $sinkTransaction;
 
@@ -249,7 +248,7 @@
       "   <td></td>\n".
       "   <td></td>\n".
       "   <td class='numeric' style='font-weight: bold;'>".
-          format_currency($transaction->get_ledgerL_list()[0]->getAmount()) . "</td>\n".
+          format_currency($transaction->get_ledger_list()[0]->getAmount()) . "</td>\n".
       " </tr>\n";
       
       foreach ($accountSavingsList as $accountSavings) {

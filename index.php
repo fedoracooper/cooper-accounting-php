@@ -18,8 +18,6 @@
 	$includeSub = 1;
 	$total_period = 'month';
 	$trans = new Transaction();
-	$transL_ledgers = array();
-	$transR_ledgers = array();
 	$editClick = 0;
 	
 	// If the filter form was submitted, update session vars

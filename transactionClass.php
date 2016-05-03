@@ -472,12 +472,14 @@ class Transaction
 		}
 
 		// Load individual ledger entries
+		// Sort:  Credits first (-1), then by account name
 		$sql = "SELECT le.ledger_id, le.account_id, le.ledger_amount, le.memo, ".
 			" a.equation_side, a.account_debit \n".
 			"FROM Ledger_Entries le \n".
 			"INNER JOIN Accounts a ON ".
 			"	a.account_id = le.account_id ".
-			"WHERE le.trans_id= :trans_id ";
+			"WHERE le.trans_id= :trans_id ".
+			"ORDER BY a.account_debit, a.account_name, le.ledger_id ";
 		$ps = $pdo->prepare($sql);
 		$ps->bindParam(':trans_id', $trans_id, PDO::PARAM_INT);
 		$success = $ps->execute();

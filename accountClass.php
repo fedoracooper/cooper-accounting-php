@@ -20,7 +20,8 @@ class Account
 	private $m_budget_default		= 0.0;
 	private $m_is_savings			= 0;
 	private $m_is_paycheck_sink		= 0;
-	private $m_active			= 1;
+	private $m_is_equity			= 0;
+	private $m_active				= 1;
 
 
 	// ACCESSOR methods: called typically after load from DB
@@ -56,6 +57,12 @@ class Account
 	}
 	public function get_is_savings() {
 		return $this->m_is_savings;
+	}
+	public function set_is_equity($value) {
+		$this->m_is_equity = $value;
+	}
+	public function get_is_equity() {
+		return $this->m_is_equity;
 	}
 	public function get_active() {
 		return $this->m_active;
@@ -144,7 +151,7 @@ class Account
 		}
 
 		$this->m_account_id			= $account_id;
-		$this->m_savings_account_id		= $row['savings_account_id'];
+		$this->m_savings_account_id	= $row['savings_account_id'];
 		$this->m_login_id			= $row['login_id'];
 		$this->m_account_parent_id	= $row['account_parent_id'];
 		$this->m_account_name		= $row['account_name'];
@@ -154,6 +161,7 @@ class Account
 		$this->m_budget_default	 	= $row['monthly_budget_default'];
 		$this->m_is_savings			= $row['is_savings'];
 		$this->m_is_paycheck_sink	= $row['is_paycheck_sink'];
+		$this->m_is_equity			= $row['is_equity'];
 		$this->m_active				= $row['active'];
 
 		$pdo = null;
@@ -202,10 +210,10 @@ $execTime += $t2 - $t1;
 			// New account: perform an insert
 			$sql = "INSERT INTO Accounts \n".
 				"(login_id, account_parent_id, savings_account_id, ".
-				"account_name, account_descr, is_savings, is_paycheck_sink, ".
+				"account_name, account_descr, is_savings, is_paycheck_sink, is_equity, ".
 				" account_debit, equation_side, monthly_budget_default, active) \n".
 				"VALUES (:login_id, :parent_id, :savings_account_id, ".
-				" :account_name, :account_descr, :is_savings, :is_paycheck_sink, ".
+				" :account_name, :account_descr, :is_savings, :is_paycheck_sink, :is_equity, ".
 				" :account_debit, :equation_side, ".
 				" :budget_default, :active) ";
 			$ps = $pdo->prepare($sql);
@@ -224,6 +232,7 @@ $execTime += $t2 - $t1;
 				"  monthly_budget_default = :budget_default, ".
 				"  is_savings = :is_savings, ".
 				"  is_paycheck_sink = :is_paycheck_sink, ".
+				"  is_equity = :is_equity, ".
 				"  updated_time = current_timestamp, ".
 				"  active = :active \n".
 				"WHERE account_id = :account_id ";
@@ -243,6 +252,7 @@ $execTime += $t2 - $t1;
 		$ps->bindParam(':budget_default', $this->m_budget_default);
 		$ps->bindParam(':is_savings', $this->m_is_savings);
 		$ps->bindParam(':is_paycheck_sink', $this->m_is_paycheck_sink);
+		$ps->bindParam(':is_equity', $this->m_is_equity);
 		$ps->bindParam(':active', $this->m_active);
 		
 		$success = $ps->execute();
@@ -930,7 +940,7 @@ $readTime += $t6 - $t5;
 	'   INNER JOIN Accounts a2 ON a1.account_id = a2.account_parent_id '.
 	'   WHERE a1.login_id = :login_id and a1.account_parent_id is null '.
 	'     AND a1.equation_side = \'L\' and a1.account_debit = -1 '.
-	'     AND a2.is_savings = 0 and a2.active = 1 '.
+	'     AND a2.is_savings = 0 AND a2.active = 1 AND a2.is_equity = 0 '.
 	'   UNION ALL '.
 	'   SELECT primary_checking_account_id from Logins '.
 	'   WHERE login_id = :login_id '.

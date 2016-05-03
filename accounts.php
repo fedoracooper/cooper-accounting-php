@@ -82,6 +82,7 @@
 			$_POST['account_id'],
 			$active
 		);
+		$account->set_is_equity($_POST['is_equity']);
 
 		if ($error == '')
 		{
@@ -168,6 +169,16 @@
 	} else {
 		$is_savings_txt = '';
 	}
+	
+	$is_equity_txt = '';
+	if ($account->get_is_equity() == 1) {
+		$is_equity_txt = ' CHECKED';
+	}
+	
+	$headerText = 'New Account';
+	if ($account->get_account_id() > 0) {
+		$headerText = 'Edit Account';
+	}
 ?>
 
 	<script language="javascript" type="text/javascript">
@@ -222,83 +233,75 @@
 <input type="hidden" name="sec_account_id" value="<?= $sec_account_id ?>" />
 <input type="hidden" name="ter_account_id" value="<?= $ter_account_id ?>" />
 
-
+<fieldset id="account-fields" style="padding-left: 30px;">
+	<legend>
+		<?= $headerText ?>
+	</legend>
 <table>
-	<tr>
-		<td colspan="2"><?php
-			if ($account->get_account_id() == -1)
-				echo "New";
-			else
-				echo "Edit";
-			?> Account</td>
-	</tr>
 
 	<tr>
-		<td style="width: 50px;">&nbsp;</td>
 		<td>Account name:</td>
 		<td><input type="text" size="25" maxlength="25" name="account_name"
 			value="<?= $account->get_account_name() ?>"></td>
 	</tr>
 
 	<tr>
-		<td></td>
 		<td>Account description:</td>
 		<td colspan="2"><input type="text" size="50" maxlength="50" name="account_descr"
 			value="<?= $account->get_account_descr() ?>"></td>
 	</tr>
 
 	<tr>
-		<td></td>
 		<td>Normal balance:</td>
 		<td><?= $debit_dropdown ?></td>
 	</tr>
 
 	<tr>
-		<td></td>
 		<td>Equation side:</td>
 		<td><?= $side_dropdown ?></td>
 	</tr>
 
 	<tr>
-		<td></td>
 		<td>Monthly budget:</td>
 		<td><input type="text" size="50" maxlength="9" name="monthly_budget"
 			value="<?= $account->get_budget_default() ?>"></td>
 	</tr>
 
 	<tr>
-		<td></td>
-		<td title="Typically a sub-account of a Checking account">Savings or long-term debt account:</td>
-		<td><input type="checkbox" name="is_savings" value="1"<?= $is_savings_txt ?>></td>
+		<td title="Typically a sub-account of a Checking account">
+			<label for='is_savings'> Savings or long-term debt account: </label></td>
+		<td><input type="checkbox" id='is_savings' name="is_savings" value="1" <?= $is_savings_txt ?>></td>
 	</tr>
 	
 	<tr>
-		<td></td>
-		<td title="Savings account used to smooth out paycheck periods that are not monthly, such as bi-weekly">Is Paycheck Sinking Account:</td>
-		<td><input type="checkbox" name="is_paycheck_sink" value="1"<?= $is_paycheck_sink_txt ?>></td>
+		<td title="Savings account used to smooth out paycheck periods that are not monthly, such as bi-weekly">
+			<label for='is_paycheck_sink'> Is Paycheck Sinking Account: </label></td>
+		<td><input type="checkbox" id='is_paycheck_sink' name="is_paycheck_sink" value="1"<?= $is_paycheck_sink_txt ?>></td>
+	</tr>
+	
+	<tr>
+		<td title="Equity accounts can hold the net Income - Expenses after end of year">
+			<label for='is_equity'> Is Equity Account: </label></td>
+		<td><input type="checkbox" id='is_equity' name="is_equity" value="1" <?= $is_equity_txt ?>></td>
 	</tr>
 
 	<tr>
-		<td></td>
 		<td title="Sinking account linked to this expense account">Linked savings / debt account:</td>
 		<td><?= $savings_dropdown ?></td>
 	</tr>
 
 	<tr>
-		<td></td>
 		<td>Active:</td>
 		<td><input type="checkbox" name="active" value="1"<?= $active_txt ?>></td>
 	</tr>
 
 	<tr>
-		<td></td>
 		<td colspan="3"><hr></td>
 	</tr>
 
 	<tr>
 		<td></td>
-		<td></td>
-		<td><input type="submit" name="save" value="Save account"></td>
+		<td colspan="2"><input type="submit" name="save" value="Save account"></td>
 <?php
 	if ($account->get_account_id() > -1)
 	{
@@ -309,6 +312,8 @@
 ?>
 	</tr>
 </table>
+</fieldset>
+
 
 </form>
 </body>

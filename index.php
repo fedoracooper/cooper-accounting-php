@@ -856,7 +856,7 @@
 		</td>
 		<td id="debitTotal" class="numeric"></td>
 		<td id="creditTotal" class="numeric"></td>
-		<td id="totalDiff" class="numeric" style="font-weight: bold;"></td>
+		<td id="totalDiff" class="numeric"></td>
 	</tr>
 
 	</table>

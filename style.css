@@ -19,6 +19,7 @@ fieldset div {
 
 .red-shadow {
 	color: white;
+	font-weight: bold;  /* easier to read */
 	box-shadow: 0 0 5px #FF0000;
 	background-color: #FF0000;
 }
@@ -245,7 +246,6 @@ table.budget-list td
 {
 	padding-right: 5px;
 	padding-left: 5px;
-	vertical-align: top;
 }
 table.budget-list th
 {

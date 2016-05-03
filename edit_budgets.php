@@ -178,7 +178,7 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 				var unspent = budget - spentOrSaved - toSave;
 				var unspentCell = row.find(".unspent-amt");
 				unspentCell.text(formatCurrency(unspent));
-				setCssClass(unspentCell, 'red-shadow', unspent < -0.001);
+				setCssClass(unspentCell, 'negative', unspent < -0.001);
 				
 				// Available = Budget + max(0.0, Savings) - SpentOrSaved
 				var available = budget + Math.max(savings, 0.0) - spentOrSaved;
@@ -195,7 +195,7 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 			// Format negatives
 
 			$(".unspent-amt").each(function() {
-				setCssClass($(this), 'red-shadow', currencyToNum($(this).text()) < -0.001);
+				setCssClass($(this), 'negative', currencyToNum($(this).text()) < -0.001);
 			});
 
 			$(".available-amt").each(function() {
@@ -224,6 +224,7 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 				total+= currencyToNum($(this).text());
 			});
 			$("#unspent-total").text( formatCurrency(total) );
+			setCssClass($("#unspent-total"), 'all-green', total > 0.001);
 			setCssClass($("#unspent-total"), 'red-shadow', total < -0.001);
 		}
 

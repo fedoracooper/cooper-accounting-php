@@ -406,7 +406,7 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 	</td>
 </tr>
 
-<tr>
+<tr class="income-header">
 	<th colspan="2">Income Account</th>
 	<th class="numeric">Amount</th>
 	<th class="numeric">Total</th>

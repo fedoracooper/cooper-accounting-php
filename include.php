@@ -401,17 +401,17 @@ function format_currency ($amount, $negativeStyle = 'negative')
 	$txt = '';
 	if (is_numeric ($amount))
 	{
-		if (abs($amount) < 0.01) {
+		if (abs($amount) < 0.001) {
 			// Fractional floating point error; set to 0
 			// to avoid spurious negative signs with 0.00.
 			$amount = 0.0;
 		}
-		$amount_str = number_format ($amount, 2);
-		if ($amount < 0.0 && $negativeStyle != NULL)
-			$txt =  "<span class='$negativeStyle'>".
-				$amount_str. '</span>';
-		else
-			$txt = '$'. $amount_str;
+		$amount_str = '$' . number_format ($amount, 2);
+		if ($amount < 0.0 && $negativeStyle != NULL) {
+			$txt =  "<span class='$negativeStyle'> $amount_str </span>";
+		} else {
+			$txt = $amount_str;
+		}
 	}
 
 	return $txt;
@@ -480,6 +480,10 @@ if ($buildHtmlHeaders) {
 		/* Format amount into a text string starting with '$' and with thousands separators.
 		 */
 		function formatCurrency(num) {
+			if (Math.abs(num) < 0.001) {
+				// Very small / rounding error; set to 0 to avoid "-0.00".
+				num = 0.0;
+			}
 			var numStr = num.toFixed(2);
 			return '$' + numStr.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 		}

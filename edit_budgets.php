@@ -178,13 +178,13 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 				var unspent = budget - spentOrSaved - toSave;
 				var unspentCell = row.find(".unspent-amt");
 				unspentCell.text(formatCurrency(unspent));
-				setCssClass(unspentCell, 'negative', unspent < -0.001);
+				setUnspentStyle(unspentCell, unspent);
 				
 				// Available = Budget + max(0.0, Savings) - SpentOrSaved
 				var available = budget + Math.max(savings, 0.0) - spentOrSaved;
 				var availableCell = row.find(".available-amt");
 				availableCell.text(formatCurrency(available));
-				setCssClass(availableCell, 'red-shadow', available < -0.001);
+				setAvailableStyle(availableCell, available);
 				
 				calculateBudgetTotal();
 			});
@@ -192,16 +192,30 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 			// Calculate total on first load
 			calculateBudgetTotal();
 
-			// Format negatives
-
+			// Format negatives on first load
 			$(".unspent-amt").each(function() {
-				setCssClass($(this), 'negative', currencyToNum($(this).text()) < -0.001);
+				var val = currencyToNum($(this).text());
+				setUnspentStyle($(this), val);
 			});
 
 			$(".available-amt").each(function() {
-				setCssClass($(this), 'red-shadow', currencyToNum($(this).text()) < -0.001);
+				setAvailableStyle($(this), currencyToNum($(this).text()));
 			});
 		});
+		
+		/* Set CSS style on Unspent jQuery element, based on the numeric value of num.
+		 */
+		function setUnspentStyle(jQueryElement, num) {
+			setCssClass(jQueryElement, 'red-shadow', num < -0.001);	// Negatives are bright red
+			setCssClass(jQueryElement, 'all-green', num >= 0.999);	// >= $1.00 is bright green
+			setCssClass(jQueryElement, 'green-shadow', num > 0.001 && num < 0.999);	// Light green for 0 to 0.99
+		}
+		
+		/* Set CSS style on Available jQuery element, based on numeric value num.
+		 */
+		function setAvailableStyle(jQueryElement, num) {
+			setCssClass(jQueryElement, 'negative', num < -0.001);
+		}
 
 		function calculateBudgetTotal() {
 			var total = 0.0;
@@ -209,7 +223,7 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 				total += (Number(this.value) || 0.0);
 			});
 
-			$("#new-total-budget").text(formatCurrency(total));
+			$("#new-total-budget").text( formatCurrency(total) );
 			
 			// Get total Income, stripping $ and thousands separators
 			var unbudgeted = currencyToNum($("#total-income").text()) - total;
@@ -246,7 +260,7 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 	<tr>
 		<td>Budget Month (MM/YYYY): </td>
 		<td><input type="text" maxlength="7" name="budget_date" value="<?= $budgetDateText ?>" /></td>
-		<td>&nbsp;&nbsp;<input type="submit" value="Update" name="update_date"></td>
+		<td colspan="2">&nbsp;&nbsp;<input type="submit" value="Update" name="update_date"></td>
 	</tr>
 
 	<tr>
@@ -383,7 +397,7 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 		"		<td class='total'>$savingsTotalString</td> \n".
 		"		<td class='total' id='new-total-budget'></td> \n".
 		"		<td class='total'> $spentTotalString </td> \n".
-		"		<td class='total' id='unspent-total'> $unspentTotalString </td> \n".
+		"		<td class='total' id='unspent-total' title='Unspent Total; should be 0 by end of month'> $unspentTotalString </td> \n".
 		"		<td class='total'> </td> \n";
 ?>
 	<td colspan="1" style="text-align: center;">
@@ -402,19 +416,21 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 <?php
 	foreach ($income_list as $income) {
 		echo "  <tr> <td colspan='2'>". $income->accountName . "</td> \n".
-		"<td class='numeric'>". format_currency($income->amount, NULL) . "</td> \n".
+		"<td class='numeric'>". format_currency($income->amount) . "</td> \n".
 		"<td></td> \n".
 		"<td colspan='4'>". $income->transDescr . "</td>\n".
 		"</tr> \n";
 	}
 	
 	$totalUnbudgeted = $totalIncome - $budgetTotal;
-	echo "<tr><td style='font-weight: bold;'>Total Income</td> <td></td> ".
+	echo "<tr><td colspan='2' class='total'>Total Income</td> ".
 		"<td class='total' id='total-income'>" . format_currency($totalIncome) . "</td> \n".
-		"</tr>";
-	echo "<tr><td style='font-weight: bold;'>Unbudgeted Amount</td> <td></td> <td></td> ".
-		"<td class='total' id='total-unbudgeted'>" . format_currency($totalUnbudgeted, NULL) . "</td> \n".
-		"</tr>";
+		"<td colspan='5'> </td> ".
+		"</tr> \n";
+	echo "<tr><td class='total' colspan='3'>Unbudgeted Income</td> ".
+		"<td class='total' id='total-unbudgeted' title='Money to be budgeted this month'>" . format_currency($totalUnbudgeted, NULL) . "</td> \n".
+		"<td colspan='4'> </td> ".
+		"</tr> \n";
 ?>
 <tr>
 	<td colspan="8"><?php require('footer.php'); ?></td>

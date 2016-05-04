@@ -5,6 +5,17 @@
 	$error = '';
 	$login_user = '';
 	$login_password = '';
+	if (isset($_GET['reason'])) {
+		// User has been redirected from another page due to lack of an active session
+		
+		$logoutReason = $_GET['reason'];
+		if ($logoutReason == 'timeout') {
+			$error = 'Your session has timed out';
+		} else {
+			// Generic message
+			$error = 'Authentication required';
+		}
+	}
 
 	if (isset ($_POST['login_user']))
 	{
@@ -53,7 +64,8 @@
 <body onload="user_focus()">
 <h3><?= $title ?></h3>
 <p class="error"><?= $error ?></p>
-<p>Please log in below.</p>
+
+<p>Please log in below</p>
 
 <form method="post" action="login.php">
 <table class="indented-block">

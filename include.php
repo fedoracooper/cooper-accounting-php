@@ -31,9 +31,12 @@ session_start();
 $SESSION_TIMEOUT_MINUTES = 240;     // After 4 hours of inactivity, logout the user
 $SESSION_ID_TIMEOUT_MINUTES = 30;   // Every 30 minutes, get new session ID for better security.
 
+$logoutReason = '';
+
 if (isset($_SESSION['LAST_ACTIVITY']) && 
 	(time() - $_SESSION['LAST_ACTIVITY'] > $SESSION_TIMEOUT_MINUTES * 60)) {
 	// Session has expired
+	$logoutReason = 'timeout';
 	session_unset();     // unset $_SESSION variable for the run-time 
 	session_destroy();   // destroy session data in storage
 }
@@ -58,7 +61,7 @@ if (isset ($_SESSION['login_id']))
 	// No session.  Only permit one page:  Login (also handles Logout)
 	if ($current_page != 'login') {
 		// no session & not on login page
-		header ("Location: login.php");
+		header ("Location: login.php?reason=$logoutReason");
 		exit();	
 	}
 }

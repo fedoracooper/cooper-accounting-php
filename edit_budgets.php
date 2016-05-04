@@ -207,7 +207,7 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 		 */
 		function setUnspentStyle(jQueryElement, num) {
 			setCssClass(jQueryElement, 'red-shadow', num < -0.001);	// Negatives are bright red
-			setCssClass(jQueryElement, 'green-shadow', num >= -0.001 && num < 0.999);	// Light green for 0 to 0.99
+			setCssClass(jQueryElement, 'green-shadow', num > 0.001 && num < 0.999);	// Light green for 0.01 to 0.99
 			setCssClass(jQueryElement, 'all-green', num >= 0.999);	// >= $1.00 is bright green
 		}
 		
@@ -238,8 +238,8 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 				total+= currencyToNum($(this).text());
 			});
 			$("#unspent-total").text( formatCurrency(total) );
-			setCssClass($("#unspent-total"), 'all-green', total > 0.001);
 			setCssClass($("#unspent-total"), 'red-shadow', total < -0.001);
+			setCssClass($("#unspent-total"), 'all-green', total >= -0.001);
 		}
 
 

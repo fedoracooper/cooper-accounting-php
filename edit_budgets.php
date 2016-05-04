@@ -223,25 +223,34 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 				total += (Number(this.value) || 0.0);
 			});
 
+			// Total Budget
 			$("#new-total-budget").text( formatCurrency(total) );
 			
-			// Get total Income, stripping $ and thousands separators
+			// Get total Income, stripping $ and thousands separators; Total Unbudgeted
 			var unbudgeted = currencyToNum($("#total-income").text()) - total;
-			$("#total-unbudgeted").text( formatCurrency(unbudgeted) );
-			// Highlight the unbudgeted amount in green or red
-			setCssClass($("#total-unbudgeted"), 'red-shadow', unbudgeted < -0.001);
-			setCssClass($("#total-unbudgeted"), 'all-green', unbudgeted >= -0.001);
-			
+			setHighlightedTotals( $("#total-unbudgeted"),     unbudgeted );
+			setHighlightedTotals( $("#total-unbudgeted-top"), unbudgeted );
+
 			// Unspent totals
 			total = 0.0;
 			$(".unspent-amt").each(function() {
 				total+= currencyToNum($(this).text());
 			});
-			$("#unspent-total").text( formatCurrency(total) );
-			setCssClass($("#unspent-total"), 'red-shadow', total < -0.001);
-			setCssClass($("#unspent-total"), 'all-green', total >= -0.001);
+			setHighlightedTotals($("#unspent-total"),     total);
+			setHighlightedTotals($("#unspent-total-top"), total);
 		}
 
+		/* Set the given amount into a jQuery object, and update styles.
+		   Numbers >= 0 will have green highlighting, and negatives will be red.
+		   cell = jQuery object to update; usually a table cell.
+		   amount = numeric value to set into each cell using .text().
+		 */
+		function setHighlightedTotals(cell, amount) {
+			cell.text( formatCurrency(amount) );
+			// Highlight the total amount in green or red
+			setCssClass(cell, 'red-shadow', amount < -0.001);
+			setCssClass(cell, 'all-green', amount >= -0.001);
+		}
 
 	</script>
 </head>
@@ -423,12 +432,13 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 	}
 	
 	$totalUnbudgeted = $totalIncome - $budgetTotal;
+	$totalUnbudgetedString = format_currency($totalUnbudgeted, NULL);
 	echo "<tr><td colspan='2' class='total'>Total Income</td> ".
 		"<td class='total' id='total-income'>" . format_currency($totalIncome) . "</td> \n".
 		"<td colspan='5'> </td> ".
 		"</tr> \n";
 	echo "<tr><td class='total' colspan='3'>Unbudgeted Income</td> ".
-		"<td class='total' id='total-unbudgeted' title='Money to be budgeted this month'>" . format_currency($totalUnbudgeted, NULL) . "</td> \n".
+		"<td class='total' id='total-unbudgeted' title='Money to be budgeted this month'> $totalUnbudgetedString </td> \n".
 		"<td colspan='4'> </td> ".
 		"</tr> \n";
 ?>
@@ -440,6 +450,28 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 </table>
 </form>
 
+
+<div id='budget-totals-top'>
+	<table class='total-table-top'>
+		<tr>
+			<td >
+				Unbudgeted Income:
+			</td>
+			<td id='total-unbudgeted-top' class='total'>
+				<?= $totalUnbudgetedString ?>
+			</td>
+		</tr>
+		
+		<tr>
+			<td >
+				Unspent Total:
+			</td>
+			<td id='unspent-total-top' class='total'>
+				<?= $unspentTotalString ?>
+			</td>
+		</tr>
+	</table>
+</div>
 
 </body>
 </html>

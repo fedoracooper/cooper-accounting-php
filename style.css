@@ -7,6 +7,26 @@ fieldset div {
 	padding: 2px;
 }
 
+/* Fixed-position, top-right corner summary of Unbudeted and Unspent totals */
+#budget-totals-top {
+	position: fixed;
+	top: 10px;
+	right: 5px;
+	z-index: 10;
+	background-color: white;
+	padding: 2px;
+	font-weight: bold;
+	box-shadow:  -2px 2px 6px #000000;
+}
+
+table.total-table-top {
+	border-spacing:  8px;	
+}
+
+table.total-table-top td {
+	padding: 5px 5px 5px 5px;
+}
+
 .green-shadow {
 	box-shadow: 0 0 5px #00FF00;
 }

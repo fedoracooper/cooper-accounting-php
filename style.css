@@ -117,6 +117,10 @@ label.lhs {
 	font-weight: bold;
 }
 
+.total-text {
+	font-weight: bold;
+}
+
 tr.padded-row td {
 	padding-top: 5px;
 	padding-right: 25px;

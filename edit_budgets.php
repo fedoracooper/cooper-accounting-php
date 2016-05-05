@@ -401,7 +401,7 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 		" colspan='8'>&nbsp;</td> \n".
 		"	</tr> \n\n".
 		"	<tr> \n".
-		"		<td class='total'>Total</td> \n".
+		"		<td class='total-text'>Total</td> \n".
 		"		<td class='total'>$defaultTotalString</td> \n".
 		"		<td class='total'>$savingsTotalString</td> \n".
 		"		<td class='total' id='new-total-budget'></td> \n".
@@ -433,11 +433,11 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 	
 	$totalUnbudgeted = $totalIncome - $budgetTotal;
 	$totalUnbudgetedString = format_currency($totalUnbudgeted, NULL);
-	echo "<tr><td colspan='2' class='total'>Total Income</td> ".
+	echo "<tr><td colspan='2' class='total-text'>Total Income</td> ".
 		"<td class='total' id='total-income'>" . format_currency($totalIncome) . "</td> \n".
 		"<td colspan='5'> </td> ".
 		"</tr> \n";
-	echo "<tr><td class='total' colspan='3'>Unbudgeted Income</td> ".
+	echo "<tr><td class='total-text' colspan='3'>Unbudgeted Income</td> ".
 		"<td class='total' id='total-unbudgeted' title='Money to be budgeted this month'> $totalUnbudgetedString </td> \n".
 		"<td colspan='4'> </td> ".
 		"</tr> \n";

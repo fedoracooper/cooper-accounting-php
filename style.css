@@ -31,6 +31,10 @@ table.total-table-top td {
 	box-shadow: 0 0 5px #00FF00;
 }
 
+.orange-shadow {
+	box-shadow: 0 0 5px orange;
+}
+
 .all-green {
 	color: white;
 	box-shadow: 0 0 5px #148B14;

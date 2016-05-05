@@ -158,6 +158,23 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 
 		$(document).ready(function() {
 			
+			$(".default-budget").change(function() {
+				// Update Budget highlighting
+				var row = $(this).parent().parent();
+				var defaultBudget = Number(this.value);
+				var budgetField = row.find(".budgetAmount");
+				var budget = Number(budgetField.val());
+				setBudgetStyle(budgetField, defaultBudget, budget);
+				
+				// Update Default budget total
+				var total = 0.0;
+				$(".default-budget").each(function() {
+					total += Number( this.value ) || 0.0;
+				});
+				
+				$("#default-budget-total").text( formatCurrency(total) );
+			});
+			
 			$(".budgetAmount").change(function() {
 				// input -> td -> tr
 				var row = $(this).parent().parent();
@@ -166,6 +183,9 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 				// Unspent = Budget - SpentOrSaved - To Save
 				// ToSave = max(Savings * -1.0, Budget - SpentOrSaved )
 				var budget = Number(this.value);
+				var defaultBudget = Number(row.find(".default-budget").val());
+				setBudgetStyle($(this), defaultBudget, budget);
+				
 				var spentOrSaved = currencyToNum(row.find(".spent-or-saved").text());
 				var saved = Number(row.find(".saved-amount").text());
 				var savingsText = row.find(".savings-balance").text().trim();
@@ -191,6 +211,14 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 
 			// Calculate total on first load
 			calculateBudgetTotal();
+			
+			// Format Budget on first load
+			$(".budgetAmount").each(function() {
+				var budget = Number(this.value);
+				var row = $(this).parent().parent();
+				var defaultBudget = Number( row.find(".default-budget").val() );
+				setBudgetStyle($(this), defaultBudget, budget);
+			});
 
 			// Format negatives on first load
 			$(".unspent-amt").each(function() {
@@ -202,6 +230,12 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 				setAvailableStyle($(this), currencyToNum($(this).text()));
 			});
 		});
+		
+		function setBudgetStyle(jQueryElement, defaultBudget, budget) {
+			var absDiff = Math.abs(budget - defaultBudget);
+			// Highlight budget amount in orange if it is different from default budget
+			setCssClass(jQueryElement, 'orange-shadow', absDiff > 0.001);
+		}
 		
 		/* Set CSS style on Unspent jQuery element, based on the numeric value of num.
 		 */
@@ -377,7 +411,7 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 			"			<input type='hidden' name='budgetIds[]' value='$budgetId' />".
 			"			<div style='display: none;' class='saved-amount'>$savedAmount</div> \n".
 			"			$accountName </td> \n".
-			"		<td class='numeric'><input type='number' min='0.0' max='999999.99' step='0.01' name='defaultBudgets[]' ".
+			"		<td class='numeric'><input type='number' class='default-budget' min='0.0' max='999999.99' step='0.01' name='defaultBudgets[]' ".
 			" value='$defaultBudget' size='10' /></td> \n".
 			"		<td class='numeric savings-balance' title=\"$savingsAccountName\"> $savingsBalance </td> \n".
 			"		<td class='numeric'><input class='budgetAmount' type='number' min='0.0' max='999999.99' step='0.01' name='budgetAmounts[]' ".
@@ -402,7 +436,7 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 		"	</tr> \n\n".
 		"	<tr> \n".
 		"		<td class='total-text'>Total</td> \n".
-		"		<td class='total'>$defaultTotalString</td> \n".
+		"		<td class='total' id='default-budget-total'>$defaultTotalString</td> \n".
 		"		<td class='total'>$savingsTotalString</td> \n".
 		"		<td class='total' id='new-total-budget'></td> \n".
 		"		<td class='total'> $spentTotalString </td> \n".

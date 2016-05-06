@@ -100,7 +100,7 @@ tr.exclude-budget {
 	margin-top: 0px;
 }
 
-label {
+label.pad {
 	padding-left: 15px;
 	padding-right: 6px;
 }

@@ -731,7 +731,7 @@
 	<fieldset> <legend> Transaction Header </legend>
 		<div id="tx1">
 			<label class="lhs">Status:</label> <?= $status_dropdown ?>
-			<label>Repeat months: </label><input type="number" min="1" max="12" step="1" name="repeat_count"
+			<label class="pad">Repeat months: </label><input type="number" min="1" max="12" step="1" name="repeat_count"
 			value="<?= $trans->get_repeat_count() ?>">
 
 			<div class="info"><?php
@@ -745,11 +745,11 @@
 				<input type="date" min="1980-01-01" max="2100-01-01" name="trans_date"
 				id="trans_date"
 				value="<?= $trans->get_trans_date() ?>">
-			<label> Accounting date: </label> <input type="date" min="1980-01-01" max="2100-01-01" name="accounting_date"
+			<label class="pad"> Accounting date: </label> <input type="date" min="1980-01-01" max="2100-01-01" name="accounting_date"
 				id="accounting_date"
 				value="<?= $trans->get_accounting_date() ?>">
 				
-			<label for="prior_month">Budget for prior month: </label> 
+			<label class="pad" for="prior_month">Budget for prior month: </label> 
 				<input type="checkbox" id="prior_month" name="prior_month" 
 					value="1" <?= get_checked($trans->get_prior_month()) ?>/>
 		</div>
@@ -757,16 +757,16 @@
 		<div id="tx3">			
 			<label class="lhs">Number: </label> <input type="number" min="1" max="9999" name="check_number"
 				value="<?= $trans->get_check_number() ?>">
-			<label>Miles: </label>  <input type="number" min="0" max="999999" step="0.1" name="gas_miles"
+			<label class="pad">Miles: </label>  <input type="number" min="0" max="999999" step="0.1" name="gas_miles"
 				value="<?= $trans->get_gas_miles_trimmed() ?>">
-			<label>Gallons: </label> <input type="number" min="0" max="99" step="0.01" name="gas_gallons"
+			<label class="pad">Gallons: </label> <input type="number" min="0" max="99" step="0.01" name="gas_gallons"
 				value="<?= $trans->get_gas_gallons() ?>">
 		</div>
 
 		<div id="tx4">
 			<label class="lhs"> Description: </label> <input type="text" class="long-text" maxlength="50" name="trans_descr"
 				value="<?= $trans->get_trans_descr() ?>">
-			<label> Vendor: </label> <input type="text" class="long-text" maxlength="50" name="trans_vendor"
+			<label class="pad"> Vendor: </label> <input type="text" class="long-text" maxlength="50" name="trans_vendor"
 				value="<?= $trans->get_trans_vendor() ?>">
 		</div>
 
@@ -777,10 +777,10 @@
 				
 			<!-- Inner div to push checkboxes to top -->
 			<div id="tx5-checkboxes" style="vertical-align: top; display: inline-block;">
-				<label for="exclude_budget">Exclude from budget: </label>
+				<label class="pad" for="exclude_budget">Exclude from budget: </label>
 					<input type="checkbox" id="exclude_budget" name="exclude_budget" 
 					value="1" <?= get_checked($trans->get_exclude_budget()) ?>/> 
-				<label title="When closing Income or Expenses to Equity; avoids interfering with expense & income totals" for="closing_tx">Closing transaction: </label>
+				<label class="pad" title="When closing Income or Expenses to Equity; avoids interfering with expense & income totals" for="closing_tx">Closing transaction: </label>
 					<input type="checkbox" id="closing_tx" name="closing_tx" 
 					value="1" <?= get_checked($trans->get_closing_tx()) ?>/> 				
 			</div>

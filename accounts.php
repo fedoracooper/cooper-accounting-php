@@ -233,7 +233,7 @@
 <input type="hidden" name="sec_account_id" value="<?= $sec_account_id ?>" />
 <input type="hidden" name="ter_account_id" value="<?= $ter_account_id ?>" />
 
-<fieldset id="account-fields" style="padding-left: 30px;">
+<fieldset id="account-fields" style="padding-left: 30px; width: 700px;">
 	<legend>
 		<?= $headerText ?>
 	</legend>

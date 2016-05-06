@@ -275,7 +275,7 @@ function Build_dropdown ($data_list, $dropdown_name, $selected_value = '',
 	{
 		// echo "key => val: $value => $text<br>";
 		$html .= "		<option value=\"$value\"";
-		if ($selected_value <> '' && $value == $selected_value)
+		if ($selected_value !== '' && $value == $selected_value)
 		{
 			$html .= " SELECTED";
 		}

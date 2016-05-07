@@ -242,12 +242,17 @@
 					$record = '';
 				}
 				$amount = $row['amount'];
-				$descr = $row['trans_descr'];
-				$comment = $row['trans_comment'];
-				if (!empty($comment)) {
-					$descr .= "; $comment";
+				$descr = trim($row['trans_descr']);
+				$comment = trim($row['trans_comment']);
+				$payee = trim($row['trans_vendor']);
+				if (!empty($payee)) {
+					$payee .= ': ';
 				}
-				$vendor = $row['trans_vendor'];
+				if (!empty($comment)) {
+					$comment = "M$comment". $lineBreak;
+				}
+
+				$payee .= $descr;
 				$accountingSqlDate = $row['accounting_date'];
 				$txDate = convert_date($accountingSqlDate, 2);
 				$cleared = '';
@@ -258,11 +263,14 @@
 					}
 				}
 
+				// In our application, description is the primary and
+				// vendor is secondary; let's combine vendor and description;
+				// the Memo field is not often used in GnuCash.
 				$record .= "D$txDate". $lineBreak.  // Date
 					"T$amount". $lineBreak.     // Amount
-					"M$descr". $lineBreak.      // Memo
+					$comment .                  // Memo
 					$cleared .                  // Cleared status
-					"P$vendor". $lineBreak;     // Payee
+					"P$payee". $lineBreak;      // Payee
 
 				$buildRecordHeader = false;  // don't print more than once
 

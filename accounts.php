@@ -68,6 +68,10 @@
 		if (isset ($_POST['is_paycheck_sink'])) {
 			$is_paycheck_sink = 1;
 		}
+		$is_equity = 0;
+		if (isset ($_POST['is_equity'])) {
+			$is_equity = 1;
+		}
 
 		$error = $account->Init_account (
 			$account_parent_id,
@@ -82,7 +86,7 @@
 			$_POST['account_id'],
 			$active
 		);
-		$account->set_is_equity($_POST['is_equity']);
+		$account->set_is_equity($is_equity);
 
 		if ($error == '')
 		{
@@ -144,7 +148,10 @@
 
 	// Savings account dropdown
 	$savings_list = array();
-	$error = Account::Get_savings_accounts($_SESSION['login_id'], $savings_list);
+	$error2 = Account::Get_savings_accounts($_SESSION['login_id'], $savings_list);
+	if ($error == '') {
+		$error = $error2;
+	}
 	$savings_list = array('-1' => '--Select--') + $savings_list;
 	$savings_dropdown = Build_dropdown ($savings_list, 'savings_account_id',
 		$account->get_savings_account_id());

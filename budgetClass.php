@@ -50,7 +50,9 @@ class Budget {
 	   Takes a PDO connection, which must be initialized, and a Prepared Statement,
 	   which should be non-null on the second and later invocations for efficiency.
 	 */
-	public function Save($pdo, &$ps) {
+	public function Save($pdo, &$psInsert, &$psUpdate) {
+		
+		$ps = NULL;  // PS will be either Insert or Update
 		
 		if ($this->m_budget_id < 1) {
 			// INSERT
@@ -59,12 +61,13 @@ class Budget {
 				. 'VALUES (:account_id, :budget_month, :budget_amount, '
 				. ' :budget_comment)';
 			
-			if ($ps == NULL) {
-				$ps = $pdo->prepare($sql);
+			if ($psInsert == NULL) {
+				$psInsert = $pdo->prepare($sql);
 			}
-			$ps->bindParam(':account_id', $this->m_account_id);
+			$psInsert->bindParam(':account_id', $this->m_account_id);
 			$dateString = $this->m_budget_month->format('Y-m-d');
-			$ps->bindParam(':budget_month', $dateString);
+			$psInsert->bindParam(':budget_month', $dateString);
+			$ps = $psInsert;
 		
 		} else {
 			// UPDATE
@@ -73,10 +76,11 @@ class Budget {
 				. 'updated_time = current_timestamp '
 				. 'WHERE budget_id = :budget_id';
 			
-			if ($ps == NULL) {
-				$ps = $pdo->prepare($sql);
+			if ($psUpdate == NULL) {
+				$psUpdate = $pdo->prepare($sql);
 			}
-			$ps->bindParam(':budget_id', $this->m_budget_id);
+			$psUpdate->bindParam(':budget_id', $this->m_budget_id);
+			$ps = $psUpdate;
 		}
 
 		$ps->bindParam(':budget_amount', $this->m_budget_amount);

@@ -64,7 +64,8 @@
 $t1 = microtime(true);
 		$pdo->beginTransaction();
 $t2 = microtime(true);
-		$ps = NULL;
+		$psInsert = NULL;
+		$psUpdate = NULL;
 		
 		for ($i = 0; $i < count($accountIds); $i++) {
 			$accountId = $accountIds[$i];
@@ -80,7 +81,7 @@ $t2 = microtime(true);
 			// update budget
 			$budget = new Budget();
 			$budget->Init_budget($accountId, $budgetDate, $newBudget, $comments, $budgetId);
-			$error = $budget->Save($pdo, $ps);
+			$error = $budget->Save($pdo, $psInsert, $psUpdate);
 			if ($error != '') {
 				break;
 			}
@@ -88,7 +89,7 @@ $t2 = microtime(true);
 			// update default budget
 			$account = new Account();
 			$account->Init_for_budget_update($accountId, $defaultBudget);
-			$error = $account->Update_budget_default($pdo, $ps);
+			$error = $account->Update_budget_default($pdo);
 			if ($error != '') {
 				break;
 			}
@@ -106,7 +107,8 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 		}
 		
 		$pdo = NULL;
-		$ps = NULL;
+		$psInsert = NULL;
+		$psUpdate = NULL;
 	}
 
 	$budgetDateText = $budgetDate->format('m/Y');

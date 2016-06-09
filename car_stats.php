@@ -35,11 +35,16 @@
 		//		total_gallons, total_dollars)
 	foreach ($fuel_list as $fuel_data)
 	{
+		$year = $fuel_data[1];
 		$total_miles	= number_format ($fuel_data[3]);
 		$total_gallons	= number_format ($fuel_data[4], 1);
 		$total_dollars	= number_format ($fuel_data[5], 2);
 		$avg_mpg = '0.0';
 		$cost_per_gall = '0.00';
+		$tr_class = 'odd';
+		if ($year % 2 == 0) {
+			$tr_class = 'even';
+		}
 
 		if ($fuel_data[4] != 0.0)
 		{
@@ -52,8 +57,8 @@
 			$avg_miles = number_format ($fuel_data[3] / $fuel_data[2], 1);
 		}
 
-		echo "	<tr> \n".
-			"		<td>$fuel_data[1]</td> \n".
+		echo "	<tr class='$tr_class'> \n".
+			"		<td>$year</td> \n".
 			"		<td>$fuel_data[0]</td> \n".
 			"		<td style=\"text-align: right;\">$fuel_data[2]</td> \n".
 			"		<td style=\"text-align: right;\">$total_miles</td> \n".

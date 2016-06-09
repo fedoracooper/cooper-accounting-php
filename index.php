@@ -16,6 +16,7 @@
 	$search_text = '';
 	$limit = 0;
 	$includeSub = 1;
+	$showCar = 0;
 	$total_period = 'month';
 	$trans = new Transaction();
 	$editClick = 0;
@@ -29,6 +30,7 @@
 		$endTime = strtotime ($_POST['end_date']);
 		$diffTime = $endTime - $startTime + (60 * 60 * 24);  // Plus 1 day
 		$includeSub = isset($_POST['include_sub']) ? 1 : 0;
+		$showCar = isset($_POST['show_car']) ? 1 : 0;
 
 		$limit			= $_POST['limit'];
 		$total_period	= $_POST['total_period'];
@@ -460,6 +462,11 @@
 			<label for="include_sub">Include Subaccounts</label>
 				<input type="checkbox" id="include_sub" name="include_sub" 
 				value="1" <?= get_checked($includeSub) ?> />
+				
+			<label for="show_car">
+				Show MPG fields
+			</label>
+			<input type="checkbox" id="show_car" name="show_car" value="1" <?= get_checked($showCar) ?> />
 		</td>
 	</tr>
 <!--
@@ -476,6 +483,12 @@
 		<th>Vendor</th>
 		<th>Account</th>
 		<th>Other</th>
+<?php
+	if ($showCar == 1) {
+		echo "		<th>Miles</th> ";
+		echo "		<th>Gallons</th> ";
+	}
+?>
 		<th style="text-align: right;">Amount</th>
 		<th style="text-align: right; padding-right: 5px; border-right: 1px solid black;">Total</th>
 		<th style="text-align: center;">Per.</th>
@@ -668,8 +681,14 @@
 		}
 
 		echo "		<td title=\"". $trans_item->get_ledger_memo() . "\">". $trans_item->get_account_display(). "</td>\n".
-			"		<td>$other</td> \n".
-			"		<td class=\"currency\">". $trans_item->get_ledger_amount(). "</td>\n".
+			"		<td>$other</td> \n";
+		
+		if ($showCar == 1) {
+			echo "		<td>$miles</td> \n".
+				"		<td>$gall</td> \n";
+		}
+			
+		echo "		<td class=\"currency\">". $trans_item->get_ledger_amount(). "</td>\n".
 			"		<td$td_style class=\"currency\">$auditAnchor".
 			$trans_item->get_ledger_total(). "$closeAnchor</td>\n".
 			"		$new_text\n".

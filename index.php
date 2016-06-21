@@ -620,9 +620,10 @@
 		}
 
 		echo "	<tr class='$tr_class' title='$title'>\n";
+		$txMemo = $trans_item->get_ledger_memo();
+		
 		if ($new_row) {
 			$txDescription = $trans_item->get_trans_descr();
-			$txMemo = $trans_item->get_ledger_memo();
 			if (!empty($txMemo)) {
 				$txDescription .= " / ". $txMemo;
 			}
@@ -638,7 +639,7 @@
 		else {
 			echo "		<td></td> \n".
 				"		<td></td> \n".
-				"		<td>txMemo</td> \n".
+				"		<td>$txMemo</td> \n".
 				"		<td></td> \n";
 		}
 

@@ -207,7 +207,7 @@ class Transaction
 		}
 	}
 	public function get_ledger_memo() {
-		return $this->m_ledger_memo;
+		return htmlspecialchars($this->m_ledger_memo);
 	}
 	public function get_ledger_total($plain = false) {
 		if (is_null ($this->m_ledger_total))

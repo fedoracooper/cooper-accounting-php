@@ -479,7 +479,7 @@
 	<tr>
 		<th>Edit</th>
 		<th>Date</th>
-		<th>Description</th>
+		<th>Description / Memo</th>
 		<th>Vendor</th>
 		<th>Account</th>
 		<th>Other</th>
@@ -621,18 +621,24 @@
 
 		echo "	<tr class='$tr_class' title='$title'>\n";
 		if ($new_row) {
+			$txDescription = $trans_item->get_trans_descr();
+			$txMemo = $trans_item->get_ledger_memo();
+			if (!empty($txMemo)) {
+				$txDescription .= " / ". $txMemo;
+			}
+			
 			echo '		<td style="width: 40px;"><input type="submit" style="height: 18px; '.
 				'font-size: 8pt;" onClick="clickEdit()" name="edit" value="'.
 				$trans_item->get_trans_id(). "\"></td> \n".
 			"		<td style=\"width: 60px;\">".
 				$trans_item->get_accounting_date(false, true). "</td>\n".
-			"		<td>". $trans_item->get_trans_descr(). "</td>\n".
+			"		<td>$txDescription</td>\n".
 			"		<td>". $trans_item->get_trans_vendor(). "</td>\n";
 		}
 		else {
 			echo "		<td></td> \n".
 				"		<td></td> \n".
-				"		<td></td> \n".
+				"		<td>txMemo</td> \n".
 				"		<td></td> \n";
 		}
 
@@ -680,7 +686,7 @@
 			$closeAnchor = "</a>";
 		}
 
-		echo "		<td title=\"". $trans_item->get_ledger_memo() . "\">". $trans_item->get_account_display(). "</td>\n".
+		echo "		<td>". $trans_item->get_account_display(). "</td>\n".
 			"		<td>$other</td> \n";
 		
 		if ($showCar == 1) {

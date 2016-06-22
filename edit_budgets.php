@@ -392,9 +392,17 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 			$spentOrSaved += $budget_data->getSaved();
 			$savingsBalance = format_currency($savingsAmount);
 			$savingsAccountName = htmlspecialchars($accountSavings->savingsName);
-		} else {
-			// no savings for this period
+		} else {			
 			$budget_data->setSaved(0.0, false);
+		}
+		
+		if ($budget_data->accountActive == 0 
+			&& $budget_data->getSaved() == 0.0
+			&& $budget_data->transactions == 0.0
+			&& $accountSavings->savingsBalance == 0.0) {
+				
+			// No savings, no account activity & account is inactive, so SKIP
+			continue;
 		}
 
 		$spentTotal += $spentOrSaved;

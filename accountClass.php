@@ -926,7 +926,7 @@ $readTime += $t6 - $t5;
 	'    coalesce(ledger_amount, 0.0) else 0.0 end) * a.account_debit as transaction_sum, '.
 	'  a.account_id, a.savings_account_id, '.
 	'  concat(parent.account_name, \':\', a.account_name) as account_name, '.
-	'  a.account_descr, '.
+	'  a.account_descr, a.active as account_active, '.
 	'  min(b.budget_amount) as budget '.
 	'FROM Accounts a '.
 	'LEFT JOIN Ledger_Entries le ON le.account_id = a.account_id '.
@@ -972,6 +972,7 @@ $readTime += $t6 - $t5;
 			$accountSavings->transactions = $row['transaction_sum'];
 			$accountSavings->savingsId = $row['savings_account_id'];
 			$accountSavings->accountDescr = $row['account_descr'];
+			$accountSavings->accountActive = $row['account_active'];
 
 			$account_list[ $row['account_id'] ] = $accountSavings;
 		}
@@ -1008,7 +1009,7 @@ $readTime += $t6 - $t5;
 			'  a.account_id, a.savings_account_id, a.monthly_budget_default, '.
 			'  case when parent.account_id is null then a.account_name else '.
 	 		'  concat(parent.account_name, \':\', a.account_name) end as account_name, '.
-			'  a.account_descr, '.
+			'  a.account_descr, a.active as account_active, '.
 			'  min(b.budget_amount) as budget, b.budget_comment, b.budget_id '.
 			'FROM Accounts a '.
 			'LEFT JOIN Ledger_Entries le ON le.account_id = a.account_id '.
@@ -1023,7 +1024,7 @@ $readTime += $t6 - $t5;
 			"  and t.closing_transaction = '0' ".
 			'WHERE (a.account_id = :account_id or '.
 			'  a.account_parent_id = :account_id or '.
-			'  parent.account_parent_id = :account_id) and a.active = :active '.
+			'  parent.account_parent_id = :account_id) '.  // and a.active = :active '.
 			'GROUP BY a.account_id, a.account_name, parent.account_id, '.
 			'  a.monthly_budget_default, b.budget_comment, b.budget_id '.
 			'ORDER BY coalesce(parent.account_name, a.account_name), '.
@@ -1059,7 +1060,7 @@ $readTime += $t6 - $t5;
 			$accountSavings->budgetId = $row['budget_id'];
 			$accountSavings->budgetComment = $row['budget_comment'];
 			$accountSavings->defaultBudget = $row['monthly_budget_default'];
-
+			$accountSavings->accountActive = $row['account_active'];
 			$account_list[ $row['account_id'] ] = $accountSavings;
 		}
 		

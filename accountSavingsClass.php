@@ -13,6 +13,7 @@ class AccountSavings {
 	public $savingsId;		// Savings Account ID
 	public $expenseAccountId;	// Expense Account ID (expenses)
 	public $accountDescr;	// Account description
+	public $accountActive;	// Account Active flag
 	private $saved = 0.0;	// Amount Saved in this account this month; use setter method
 	private $toSave = 0.0;
 	private $budgetPercent = 0.0;

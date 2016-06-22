@@ -200,6 +200,15 @@
 			$accountSavings->setSaved(0.0, false);
 		}
 		
+		if ($accountSavings->accountActive == 0 
+			&& $accountSavings->getSaved() == 0.0
+			&& $accountSavings->transactions == 0.0
+			&& $accountSavings->savingsBalance == 0.0) {
+				
+			// No savings, no account activity & account is inactive, so SKIP
+			continue;
+		}
+		
 		$balanceTotal += $accountSavings->balance;
 		$budgetTotal += $accountSavings->budget;
 		$transactionTotal += $accountSavings->transactions;

@@ -399,7 +399,7 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 		if ($budget_data->accountActive == 0 
 			&& $budget_data->getSaved() == 0.0
 			&& $budget_data->transactions == 0.0
-			&& $accountSavings->savingsBalance == 0.0) {
+			&& $budget_data->savingsBalance == 0.0) {
 				
 			// No savings, no account activity & account is inactive, so SKIP
 			continue;

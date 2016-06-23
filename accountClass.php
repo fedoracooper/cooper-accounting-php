@@ -1039,7 +1039,7 @@ $readTime += $t6 - $t5;
 		$ps->bindParam(':start_date', $startDateString);
 		$ps->bindParam(':max_date', $endDateString);
 		$ps->bindParam(':min_date', $minDateString);
-		$ps->bindParam(':active', $activeFlag);
+		//$ps->bindParam(':active', $activeFlag);
 		$ps->bindParam(':account_id', $parent_account_id);
 		$success = $ps->execute();
 		

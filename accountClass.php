@@ -998,11 +998,9 @@ $readTime += $t6 - $t5;
 	 */
 	public static function Get_account_details($parent_account_id,
 			DateTime $start_date, DateTime $end_date, DateTime $min_date,
-			$activeOnly,
 			array &$account_list) {
 		
 		$error = '';
-		$activeFlag = $activeOnly ? 1 : 0;
 		$sql = 'SELECT sum(case when t.trans_id > 0 then ledger_amount else 0.0 end) as balance, '.
 			'  sum(case when budget_date >= :start_date then '.
 			'    coalesce(ledger_amount, 0.0) else 0.0 end) as transaction_sum, '.
@@ -1024,7 +1022,7 @@ $readTime += $t6 - $t5;
 			"  and t.closing_transaction = '0' ".
 			'WHERE (a.account_id = :account_id or '.
 			'  a.account_parent_id = :account_id or '.
-			'  parent.account_parent_id = :account_id) '.  // and a.active = :active '.
+			'  parent.account_parent_id = :account_id) '.
 			'GROUP BY a.account_id, a.account_name, parent.account_id, '.
 			'  a.monthly_budget_default, b.budget_comment, b.budget_id '.
 			'ORDER BY coalesce(parent.account_name, a.account_name), '.
@@ -1039,7 +1037,6 @@ $readTime += $t6 - $t5;
 		$ps->bindParam(':start_date', $startDateString);
 		$ps->bindParam(':max_date', $endDateString);
 		$ps->bindParam(':min_date', $minDateString);
-		//$ps->bindParam(':active', $activeFlag);
 		$ps->bindParam(':account_id', $parent_account_id);
 		$success = $ps->execute();
 		

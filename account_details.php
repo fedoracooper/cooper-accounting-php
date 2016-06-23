@@ -76,19 +76,11 @@
 
 	// default account comes from DB (top Expense)
 	$account_id = Account::Get_top_account_id($login_id, '1', 'R');
-	$activeOnly = true;
 	
 	if (!is_numeric($account_id)) {
 		$error = $account_id;
 	} else if (isset ($_POST['account_id'])) {
 		$account_id	= $_POST['account_id'];
-		if (isset ($_POST['activeOnly'])) {
-			$activeOnly = true;
-		} else {
-			// unchecked active only
-			$activeOnly = false;
-			$sinkParentMap = array();
-		}
 	}
 	
 	$searchAccountId = $account_id;
@@ -109,8 +101,6 @@
 		$availableHeader = "  <th class='numeric'> Available </th> \n";
 	}
 	
-	$activeOnlyChecked = $activeOnly ? 'checked="checked"' : '';
-
 	$startDateText = $startDate->format('m/d/Y');
 	$endDateText = $endDate->format('m/d/Y');
 
@@ -143,7 +133,7 @@
 				$endDate, $login_id, $account_list);
 		} else {
 			$error = Account::Get_account_details($account_id, $startDate,
-				$endDate, $minDate, $activeOnly, $account_list);
+				$endDate, $minDate, $account_list);
 		}
 	}
 
@@ -338,8 +328,7 @@
 		<td><input type="text" maxlength="10" name="start_date" value="<?= $startDateText ?>" /></td>
 		<td>End Date: </td>
 		<td><input type="text" maxlength="10" name="end_date" value="<?= $endDateText ?>" /></td>
-		<td>&nbsp;&nbsp;Active: <input type="checkbox" name="activeOnly" value="1"
-			<?= $activeOnlyChecked ?> /></td>
+		<td> </td>
 	</tr>
 
 	<tr>

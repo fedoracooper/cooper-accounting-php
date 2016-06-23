@@ -134,7 +134,7 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 	$budget_list = array();	// pass by reference
 	if ($error == '') {
 		$error = Account::Get_account_details($account_id,
-			$budgetDate, $endOfMonth, $budgetDate, true, $budget_list);
+			$budgetDate, $endOfMonth, $budgetDate, $budget_list);
 		//$error = Account::Get_account_budgets($budgetDate,
 		//	$account_id, $budget_list);
 	}

@@ -20,6 +20,7 @@
 				$budgetTime = mktime(0, 0, 0, $dateArr[0], 1, $dateArr[1]);
 				$budgetDate->setTimestamp($budgetTime);
 			}
+
 		} else {
 			// default date:  first day of current month
 			$dateArr = getdate();
@@ -34,6 +35,10 @@
 	// set default vars
 	// Set budget date to first day of month
 	$budgetDate = initBudgetDate();
+	$copyDefault = false;
+	if (isset ($_POST['copy_default'])) {
+		$copyDefault = true;
+	}
 	
 	// default account comes from DB
 	$account_id = $_SESSION['default_summary2'];
@@ -305,7 +310,11 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 	<tr>
 		<td>Budget Month (MM/YYYY): </td>
 		<td><input type="text" maxlength="7" name="budget_date" value="<?= $budgetDateText ?>" /></td>
-		<td colspan="2">&nbsp;&nbsp;<input type="submit" value="Update" name="update_date"></td>
+		<td colspan="2">&nbsp;&nbsp;<input type="submit" value="Update" name="update_date"> </td>
+		<td>
+			<label for="copy_default" title="Copy Default Budget values into Budget values which are unset">Copy default budgets</label>
+			<input type="checkbox" name="copy_default" id="copy_default" />
+		</td>
 	</tr>
 
 	<tr>
@@ -315,6 +324,7 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 		<!-- Month direction arrows -->
 		<td colspan="1">&nbsp;&nbsp;<input type="submit" value="&lt;" name="prev_month" /> &nbsp;
 		<input type="submit" value="&gt;" name="next_month" /></td>
+		<td> </td>
 	</tr>
 </table>
 </form>
@@ -372,7 +382,7 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 		$spentOrSaved = $budget_data->transactions;
 		
 		$newBudget = $budgetAmount;
-		if ($budgetAmount == null) {
+		if ($budgetAmount == null && $copyDefault) {
 			// Apply default to budget when undefined
 			$newBudget = $defaultBudget;
 		}

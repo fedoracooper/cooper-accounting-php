@@ -196,6 +196,8 @@
 			&& $accountSavings->savingsBalance == 0.0) {
 				
 			// No savings, no account activity & account is inactive, so SKIP
+			// Remove from array (which gets displayed unless sorting).
+			unset($account_list[$account_id]);
 			continue;
 		}
 		

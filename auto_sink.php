@@ -62,7 +62,6 @@
 	$endDate = new DateTime($_POST['end_date']);
 	$endDateText = $endDate->format(SQL_DATE);
 	$minDate = $startDate;
-	$activeOnly = 1;
 	$account_list = array();
 	$doAutoSink = null;
 	if (isset($_POST['doAutoSink'])) {
@@ -81,7 +80,7 @@
 	
 	if ($error == '') {
 		$error = Account::Get_account_details($account_id, $startDate,
-			$endDate, $minDate, $activeOnly, $account_list);
+			$endDate, $minDate, $account_list);
 	}
 
 	$savings_list = array();

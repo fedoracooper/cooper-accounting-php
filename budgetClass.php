@@ -53,8 +53,14 @@ class Budget {
 	public function Save($pdo, &$psInsert, &$psUpdate) {
 		
 		$ps = NULL;  // PS will be either Insert or Update
+		$nullAmount = ($this->m_budget_amount === '');
 		
 		if ($this->m_budget_id < 1) {
+			if ($nullAmount) {
+				// No need to insert a NULL, so skip
+				return '';
+			}
+			
 			// INSERT
 			$sql = 'INSERT INTO Budget (account_id, budget_month, budget_amount,'
 				. ' budget_comment) '
@@ -70,21 +76,31 @@ class Budget {
 			$ps = $psInsert;
 		
 		} else {
-			// UPDATE
-			$sql = 'UPDATE Budget set budget_amount = :budget_amount, '
-				. 'budget_comment = :budget_comment, '
-				. 'updated_time = current_timestamp '
-				. 'WHERE budget_id = :budget_id';
-			
-			if ($psUpdate == NULL) {
-				$psUpdate = $pdo->prepare($sql);
+			// UPDATE or Delete existing row
+			if ($nullAmount) {
+				// Blank / null amount, so delete it
+				$sql = 'DELETE FROM Budget WHERE budget_id = :budget_id';
+				// Deleting budget rows is uncommon, so we don't try to cache the PS
+				$ps = $pdo->prepare($sql);
+			} else {
+				$sql = 'UPDATE Budget set budget_amount = :budget_amount, '
+					. 'budget_comment = :budget_comment, '
+					. 'updated_time = current_timestamp '
+					. 'WHERE budget_id = :budget_id';
+				
+				if ($psUpdate == NULL) {
+					$psUpdate = $pdo->prepare($sql);
+				}
+				
+				$ps = $psUpdate;
 			}
-			$psUpdate->bindParam(':budget_id', $this->m_budget_id);
-			$ps = $psUpdate;
+			$ps->bindParam(':budget_id', $this->m_budget_id);
 		}
 
-		$ps->bindParam(':budget_amount', $this->m_budget_amount);
-		$ps->bindParam(':budget_comment', $this->m_budget_comment, PDO::PARAM_STR);
+		if (!$nullAmount) {
+			$ps->bindParam(':budget_amount', $this->m_budget_amount);
+			$ps->bindParam(':budget_comment', $this->m_budget_comment, PDO::PARAM_STR);
+		}
 $t2 = microtime(true);
 		
 		$success = $ps->execute();

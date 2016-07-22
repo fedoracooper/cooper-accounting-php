@@ -198,8 +198,8 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 				var savingsText = row.find(".savings-balance").text().trim();
 				var savings = currencyToNum(savingsText);
 				var toSave = Math.max(savings * -1.0, budget - spentOrSaved);
-				if (savingsText == '' || Math.abs(saved) > 0.001) {
-					// No savings account or we are already saving or drawing
+				if (savingsText == '') {
+					// No savings account
 					toSave = 0.0;
 				}
 				var unspent = budget - spentOrSaved - toSave;

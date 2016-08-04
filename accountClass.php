@@ -1018,8 +1018,8 @@ $readTime += $t6 - $t5;
 			'LEFT JOIN Transactions t ON t.trans_id = le.trans_id '.
 	  		'  and budget_date >= :min_date '.
 	  		'  and budget_date <= :max_date '.
-			'  and (a.equation_side = \'L\' OR t.exclude_from_budget = \'0\') '.
-			"  and t.closing_transaction = '0' ".
+			"  and (a.equation_side = 'L' OR ".
+			"		(t.exclude_from_budget = '0' and t.closing_transaction = '0')) ".
 			'WHERE (a.account_id = :account_id or '.
 			'  a.account_parent_id = :account_id or '.
 			'  parent.account_parent_id = :account_id) '.

@@ -386,6 +386,8 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 		if ($budgetAmount == null && $copyDefault) {
 			// Apply default to budget when undefined
 			$newBudget = $defaultBudget;
+			// Set into object so calculations are correct
+			$budget_data->budget = $budget_data->defaultBudget;
 		}
 		
 		// Find associated savings account, if applicable

@@ -61,6 +61,7 @@
 	$startDateText = $startDate->format(SQL_DATE);
 	$endDate = new DateTime($_POST['end_date']);
 	$endDateText = $endDate->format(SQL_DATE);
+	$endDateDisplay = $endDate->format(DISPLAY_DATE);
 	$minDate = $startDate;
 	$account_list = array();
 	$doAutoSink = null;
@@ -225,7 +226,7 @@
 <span class="error"><?= $error ?></span>
 <span class="message"><?= $message ?></span>
 
-<p>Savings Accounts for Sinking</p>
+<p>Savings Accounts for Sinking in month ending <?= $endDateDisplay ?></p>
 <table class="budget-list">
   <th>Savings Account</th>
   <th>Expense Account</th>

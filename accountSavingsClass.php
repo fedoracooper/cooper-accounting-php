@@ -24,6 +24,7 @@ class AccountSavings {
 	public $parentName = '';		// Parent Account Name
 	public $savingsDebit;			// Savings Account Debit flag (-1 or +1)
 	public $savingsParentDebit;		// Savings Parent Account Debit flag
+	public $isAutoSink = 1;			// When set to 0, we do not try to auto-sink this account (like HSA, 401k)
 	
 	// After setting the Saved amount for the account, we calculate unspent and toSave.
 	public function setSaved($saved, $setToSave) {
@@ -32,8 +33,8 @@ class AccountSavings {
 		// unspent will be negative when over budget
 		$unspent = $this->budget - $this->transactions - $this->saved;
 		if ($setToSave) {
-			if ($this->savingsBalance < -0.001) {
-				// Long term debt account, so don't try to save
+			if ($this->savingsBalance < -0.001 || !($this->isAutoSink) ) {
+				// Long term debt account or non-auto-sink account, so don't try to save
 				$this->toSave = 0.0;
 			} else {
 				$this->toSave = $this->calculateToSave($unspent);

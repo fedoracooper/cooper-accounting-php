@@ -194,12 +194,13 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 				setBudgetStyle($(this), defaultBudget, budget);
 				
 				var spentOrSaved = currencyToNum(row.find(".spent-or-saved").text());
+				var isAutoSink = row.find(".is-auto-sink").text().trim();
 				var saved = Number(row.find(".saved-amount").text());
 				var savingsText = row.find(".savings-balance").text().trim();
 				var savings = currencyToNum(savingsText);
 				var toSave = Math.max(savings * -1.0, budget - spentOrSaved);
 
-				if (savingsText == '' || savings < -0.001) {
+				if (savingsText == '' || savings < -0.001 || isAutoSink == '0') {
 					// No savings account, or this is a long term debt
 					toSave = 0.0;
 				}
@@ -427,11 +428,13 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 		$available = $budget_data->getAvailable();
 		$availableAmount = format_currency($available, NULL);
 		$savedAmount = $budget_data->getSaved();
+		$isAutoSink = $budget_data->isAutoSink;
 
 		echo "	<tr> \n".
 			"		<td title=\"$accountDescr\"> ".
 			"			<input type='hidden' name='accountIds[]' value='$account_id' />".
 			"			<input type='hidden' name='budgetIds[]' value='$budgetId' />".
+			"			<div style='display: none;' class='is-auto-sink'>$isAutoSink</div>".
 			"			<div style='display: none;' class='saved-amount'>$savedAmount</div> \n".
 			"			$accountName </td> \n".
 			"		<td class='numeric'><input type='number' class='default-budget' min='0.0' max='999999.99' step='0.01' name='defaultBudgets[]' ".

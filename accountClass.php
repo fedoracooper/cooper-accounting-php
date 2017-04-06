@@ -1084,7 +1084,7 @@ $readTime += $t6 - $t5;
 		$sql = 'select a.account_id, ex.account_id as expense_account_id, '.
 		' a.account_name as savings_account_name, '.
 		' a.account_debit as savings_debit, '.
-		' a.account_parent_id, ap.account_name as parent_name, '.
+		' a.account_parent_id, a.is_auto_sink, ap.account_name as parent_name, '.
 		' ap.account_debit as parent_debit, '.
 		' sum(coalesce(CASE WHEN(tle.budget_date >= :min_date '.
 		'   and tle.budget_date <= :max_date '.
@@ -1098,7 +1098,7 @@ $readTime += $t6 - $t5;
 		'  FROM Transactions t JOIN Ledger_Entries le ON le.trans_id = t.trans_id '.
 		'  WHERE t.budget_date <= :max_date) as tle ON '.
 		'  tle.account_id = a.account_id '.
-		'WHERE a.login_id = :login_id AND a.is_auto_sink = 1 '.
+		'WHERE a.login_id = :login_id '.
 		'GROUP BY a.account_id, a.account_name, ex.account_id, ap.account_name, ap.account_debit '.
 		'ORDER BY a.account_parent_id, a.account_name';
 		
@@ -1128,6 +1128,7 @@ $readTime += $t6 - $t5;
 			$accountSavings->savingsBalance = $row['savings_balance'];
 			$accountSavings->savingsDebit = $row['savings_debit'];
 			$accountSavings->savingsParentDebit = $row['parent_debit'];
+			$accountSavings->isAutoSink = $row['is_auto_sink'];
 			
 			$account_list[$row['expense_account_id']] = $accountSavings;
 

@@ -399,6 +399,7 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 			$savingsAmount = $accountSavings->savingsBalance;
 			// Set Savings data into main AccountSavings, which will
 			// then have all data needed to calculate Unspent & Available.
+			$budget_data->isAutoSink = $accountSavings->isAutoSink;
 			$budget_data->savingsBalance = $accountSavings->savingsBalance;
 			$budget_data->setSaved($accountSavings->getSaved(), true);
 

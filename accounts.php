@@ -72,6 +72,11 @@
 		if (isset ($_POST['is_equity'])) {
 			$is_equity = 1;
 		}
+		
+		$is_auto_sink = 0;
+		if (isset ($_POST['is_auto_sink'])) {
+			$is_auto_sink = 1;
+		}
 
 		$error = $account->Init_account (
 			$account_parent_id,
@@ -87,6 +92,7 @@
 			$active
 		);
 		$account->set_is_equity($is_equity);
+		$account->set_is_auto_sink($is_auto_sink);
 
 		if ($error == '')
 		{
@@ -182,6 +188,11 @@
 		$is_equity_txt = ' CHECKED';
 	}
 	
+	$is_auto_sink_txt = '';
+	if ($account->get_is_auto_sink() == 1) {
+		$is_auto_sink_txt = ' CHECKED';
+	}
+	
 	$headerText = 'New Account';
 	if ($account->get_account_id() > 0) {
 		$headerText = 'Edit Account';
@@ -271,25 +282,34 @@
 	<tr>
 		<td>Monthly budget:</td>
 		<td><input type="text" size="50" maxlength="9" name="monthly_budget"
-			value="<?= $account->get_budget_default() ?>"></td>
+			value="<?= $account->get_budget_default() ?>" /></td>
 	</tr>
 
 	<tr>
 		<td title="Typically a sub-account of a Checking account">
 			<label for='is_savings'> Savings or long-term debt account: </label></td>
-		<td><input type="checkbox" id='is_savings' name="is_savings" value="1" <?= $is_savings_txt ?>></td>
+		<td><input type="checkbox" id='is_savings' name="is_savings" value="1" <?= $is_savings_txt ?> /></td>
 	</tr>
 	
 	<tr>
 		<td title="Savings account used to smooth out paycheck periods that are not monthly, such as bi-weekly">
 			<label for='is_paycheck_sink'> Is Paycheck Sinking Account: </label></td>
-		<td><input type="checkbox" id='is_paycheck_sink' name="is_paycheck_sink" value="1"<?= $is_paycheck_sink_txt ?>></td>
+		<td><input type="checkbox" id='is_paycheck_sink' name="is_paycheck_sink" value="1"<?= $is_paycheck_sink_txt ?> /></td>
 	</tr>
 	
 	<tr>
 		<td title="Equity accounts can hold the net Income - Expenses after end of year">
 			<label for='is_equity'> Is Equity Account: </label></td>
-		<td><input type="checkbox" id='is_equity' name="is_equity" value="1" <?= $is_equity_txt ?>></td>
+		<td><input type="checkbox" id='is_equity' name="is_equity" value="1" <?= $is_equity_txt ?> /></td>
+	</tr>
+	
+	<tr>
+		<td title="Some sinking accounts should not be auto-sinked, like HSA and 401k">
+			<label for="is_auto_sink"> Is Auto Sink: </label>
+		</td>
+		<td>
+			<input type="checkbox" id="is_auto_sink" name="is_auto_sink" value="1" <?= $is_auto_sink_txt ?> />
+		</td>
 	</tr>
 
 	<tr>

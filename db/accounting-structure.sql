@@ -45,7 +45,8 @@ CREATE TABLE acct.accounts (
   savings_account_id smallint DEFAULT NULL constraint fk_account_savings REFERENCES acct.accounts(account_id),
   is_savings smallint NOT NULL DEFAULT '0',
   is_paycheck_sink smallint NOT NULL DEFAULT '0',
-  is_equity smallint NOT NULL DEFAULT 0);
+  is_equity smallint NOT NULL DEFAULT 0,
+  is_auto_sink smallint NOT NULL DEFAULT '1');
 
   create index ix_account_login ON acct.accounts(login_id,account_parent_id);
   create index ix_account_parent ON acct.accounts(account_parent_id);

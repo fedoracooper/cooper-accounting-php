@@ -21,6 +21,7 @@ class Account
 	private $m_is_savings			= 0;
 	private $m_is_paycheck_sink		= 0;
 	private $m_is_equity			= 0;
+	private $m_is_auto_sink			= 1;
 	private $m_active				= 1;
 
 
@@ -63,6 +64,12 @@ class Account
 	}
 	public function get_is_equity() {
 		return $this->m_is_equity;
+	}
+	public function set_is_auto_sink($value) {
+		$this->m_is_auto_sink = $value;
+	}
+	public function get_is_auto_sink() {
+		return $this->m_is_auto_sink;
 	}
 	public function get_active() {
 		return $this->m_active;
@@ -1088,7 +1095,7 @@ $readTime += $t6 - $t5;
 		'  FROM Transactions t JOIN Ledger_Entries le ON le.trans_id = t.trans_id '.
 		'  WHERE t.budget_date <= :max_date) as tle ON '.
 		'  tle.account_id = a.account_id '.
-		'WHERE a.login_id = :login_id  '.
+		'WHERE a.login_id = :login_id AND a.is_auto_sink = 1 '.
 		'GROUP BY a.account_id, a.account_name, ex.account_id, ap.account_name, ap.account_debit '.
 		'ORDER BY a.account_parent_id, a.account_name';
 		

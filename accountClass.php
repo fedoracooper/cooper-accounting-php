@@ -169,6 +169,7 @@ class Account
 		$this->m_is_savings			= $row['is_savings'];
 		$this->m_is_paycheck_sink	= $row['is_paycheck_sink'];
 		$this->m_is_equity			= $row['is_equity'];
+		$this->m_is_auto_sink		= $row['is_auto_sink'];
 		$this->m_active				= $row['active'];
 
 		$pdo = null;
@@ -218,10 +219,10 @@ $execTime += $t2 - $t1;
 			$sql = "INSERT INTO Accounts \n".
 				"(login_id, account_parent_id, savings_account_id, ".
 				"account_name, account_descr, is_savings, is_paycheck_sink, is_equity, ".
-				" account_debit, equation_side, monthly_budget_default, active) \n".
+				" is_auto_sink, account_debit, equation_side, monthly_budget_default, active) \n".
 				"VALUES (:login_id, :parent_id, :savings_account_id, ".
 				" :account_name, :account_descr, :is_savings, :is_paycheck_sink, :is_equity, ".
-				" :account_debit, :equation_side, ".
+				" :is_auto_sink, :account_debit, :equation_side, ".
 				" :budget_default, :active) ";
 			$ps = $pdo->prepare($sql);
 		}
@@ -240,6 +241,7 @@ $execTime += $t2 - $t1;
 				"  is_savings = :is_savings, ".
 				"  is_paycheck_sink = :is_paycheck_sink, ".
 				"  is_equity = :is_equity, ".
+				"  is_auto_sink = :is_auto_sink, ".
 				"  updated_time = current_timestamp, ".
 				"  active = :active \n".
 				"WHERE account_id = :account_id ";
@@ -260,6 +262,7 @@ $execTime += $t2 - $t1;
 		$ps->bindParam(':is_savings', $this->m_is_savings);
 		$ps->bindParam(':is_paycheck_sink', $this->m_is_paycheck_sink);
 		$ps->bindParam(':is_equity', $this->m_is_equity);
+		$ps->bindParam(':is_auto_sink', $this->m_is_auto_sink);
 		$ps->bindParam(':active', $this->m_active);
 		
 		$success = $ps->execute();

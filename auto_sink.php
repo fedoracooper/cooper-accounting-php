@@ -106,6 +106,7 @@
 	  			// This is an expense account with a sinking / savings
 	  			// account associated.
 	  			// Set savingsBalance *before* setSaved, for calculation.
+				$accountSavings->isAutoSink = $savingsData->isAutoSink; 
 				$accountSavings->savingsBalance = $savingsData->savingsBalance;
 				$accountSavings->setSaved($savingsData->getSaved(), true);
 				$accountSavings->savingsName = $savingsData->savingsName;

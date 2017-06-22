@@ -538,8 +538,6 @@
 			} elseif ($trans_item->get_exclude_budget() > 0) {
 				$tr_class = 'exclude-budget';
 				$title = 'Excluded from budget';
-			} elseif ($trans_item->get_closing_tx() > 0) {
-				$title = 'Closing transaction; excluded from most summary views';
 			}
 			elseif ($count % 2 == 0) { // odd rows get a different color
 				$tr_class = 'odd';

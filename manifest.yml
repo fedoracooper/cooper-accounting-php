@@ -2,9 +2,6 @@ applications:
 - path: .
   memory: 128M
   instances: 1
-  routes:
-  - route: coop-acct.mybluemix.net
-  name: coop-acct
   disk_quota: 1024M
   buildpacks:
     - php_buildpack

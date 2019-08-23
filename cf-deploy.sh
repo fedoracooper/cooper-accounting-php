@@ -1,7 +1,10 @@
 #!/bin/bash
 # Push app
 if ! cf app "$CF_APP"; then  
-  cf push "$CF_APP"
+  cf push "$CF_APP" --no-start
+  # Added by Cooper to inject DB URL
+  cf set-env "$CF_APP" DATABASE_URL $DATABASE_URL
+  cf start "$CF_APP"
 else
   OLD_CF_APP="${CF_APP}-OLD-$(date +"%s")"
   rollback() {
@@ -16,7 +19,11 @@ else
   set -e
   trap rollback ERR
   cf rename "$CF_APP" "$OLD_CF_APP"
-  cf push "$CF_APP"
+  cf push "$CF_APP" --no-start
+  # Added by Cooper to inject DB URL
+  cf set-env "$CF_APP" DATABASE_URL $DATABASE_URL
+  cf start "$CF_APP"
+
   cf delete "$OLD_CF_APP" -f
 fi
 # Export app name and URL for use in later Pipeline jobs

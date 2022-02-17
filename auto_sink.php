@@ -196,7 +196,8 @@
 		}
 
 		if ($doAutoSink == '1') {
-			$error = $transaction->Save_repeat_transactions();
+			// Skip audit checks, because these sinking transactions shouldn't alter overall balance
+			$error = $transaction->Save_repeat_transactions(false);
 			if ($error != '') {
 				break;
 			}

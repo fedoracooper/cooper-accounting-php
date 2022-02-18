@@ -86,9 +86,9 @@ class Budget {
 			$ps = $pdo->prepare($updateSql);
 			$i = 1;
 			foreach ($updateList as $batch) {
-				$ps->bindParam($i++, $batch->get_budget_amount());
-				$ps->bindParam($i++, $batch->get_budget_comment());
-				$ps->bindParam($i++, $batch->get_budget_id(), PDO::PARAM_INT);
+				$ps->bindValue($i++, $batch->get_budget_amount());
+				$ps->bindValue($i++, $batch->get_budget_comment());
+				$ps->bindValue($i++, $batch->get_budget_id(), PDO::PARAM_INT);
 			}
 			$success = $ps->execute();
 			if (!$success) {
@@ -101,10 +101,10 @@ class Budget {
 			$ps = $pdo->prepare($insertSql);
 			$i = 1;
 			foreach ($insertList as $batch) {
-				$ps->bindParam($i++, $batch->get_account_id(), PDO::PARAM_INT);
-				$ps->bindParam($i++, $batch->get_budget_month()->format('Y-m-d'));
-				$ps->bindParam($i++, $batch->get_budget_amount());
-				$ps->bindParam($i++, $batch->get_budget_comment());
+				$ps->bindValue($i++, $batch->get_account_id(), PDO::PARAM_INT);
+				$ps->bindValue($i++, $batch->get_budget_month()->format('Y-m-d'));
+				$ps->bindValue($i++, $batch->get_budget_amount());
+				$ps->bindValue($i++, $batch->get_budget_comment());
 			}
 			$success = $ps->execute();
 			if (!$success) {

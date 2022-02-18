@@ -50,27 +50,39 @@ class Budget {
 	   with high latency SQL connections. */
 	public static function saveBatch($pdo, $batch_list, &$updateCount) {
 	
-		$updateSql = '';
-		$insertSql = '';
+		$updateSql = 'UPDATE Budget SET '
+			. 'budget_amount = b.amount, '
+			. 'budget_comment = b.comment, '
+			. 'updated_time = current_timestamp '
+			. 'FROM (VALUES ';
+		$insertSql = 'INSERT INTO Budget (account_id, budget_month, budget_amount,'
+			. ' budget_comment) VALUES ';
 		$updateList = array();
 		$insertList = array();
 		$updateCount = 0;
 		foreach ($batch_list as $batch) {
+			// Build VALUES clause for virtual table of values
+		
 			if ($batch->get_budget_id() < 1) {
-				$insertSql .= 'INSERT INTO Budget (account_id, budget_month, budget_amount,'
-				. ' budget_comment) '
-				. 'VALUES (?, ?, ?, ?); ';
+				if (count($insertList) > 0) {
+					$insertSql .= ', ';
+				}
+				$insertSql .= '(?, ?, ?, ?) ';
 				$insertList[] = $batch;
 			} else {
-				$updateSql .= 'UPDATE Budget set budget_amount = ?, '
-					. 'budget_comment = ?, '
-					. 'updated_time = current_timestamp '
-					. 'WHERE budget_id = ?; ';
+				if (count($updateList) > 0) {
+					$updateSql .= ', ';
+				}
+				$updateSql .= '(?, ?, ?) ';
 				$updateList[] = $batch;
 			}
 		}
 		
 		if (! empty($updateList)) {
+			// Close up the Update SQL
+			$updateSql .= ') as b(amount, comment, budget_id) '
+				.= 'WHERE budget.budget_id = b.budget_id ';
+
 			$ps = $pdo->prepare($updateSql);
 			$i = 1;
 			foreach ($updateList as $batch) {

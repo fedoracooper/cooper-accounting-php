@@ -82,14 +82,20 @@ class Budget {
 			// Close up the Update SQL
 			$updateSql .= ') as b(amount, comment, budget_id) '
 				. 'WHERE budget.budget_id = b.budget_id ';
+			error_log("Update SQL to prepare: $updateSql ");
 
 			$ps = $pdo->prepare($updateSql);
 			$i = 1;
 			foreach ($updateList as $batch) {
 				$ps->bindValue($i++, $batch->get_budget_amount());
 				$ps->bindValue($i++, $batch->get_budget_comment());
-				$ps->bindValue($i++, intval($batch->get_budget_id()), PDO::PARAM_INT);
-				error_log("Binding budget ID value of " . $batch->get_budget_id());
+				error_log("Binding budget ID " . $batch->get_budget_id()
+					. " for column $i. ");
+				$result = $ps->bindValue($i++, intval($batch->get_budget_id()), PDO::PARAM_INT);
+				if (!$result) {
+					error_log ('Problem binding budget ID of ' . $batch->get_budget_id()
+						. ' for column ' . ($i-1) . ' ');
+				}
 			}
 			$success = $ps->execute();
 			if (!$success) {

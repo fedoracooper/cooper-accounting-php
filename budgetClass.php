@@ -46,6 +46,62 @@ class Budget {
 		$this->m_updated_time = $updated_time;
 	}
 	
+	/* Build compound SQL statements for Update and Insert, for efficiency
+	   with high latency SQL connections. */
+	public static function saveBatch($pdo, $batch_list, &$updateCount) {
+	
+		$updateSql = '';
+		$insertSql = '';
+		$updateList = array();
+		$insertList = array();
+		$updateCount = 0;
+		foreach ($batch_list as $batch) {
+			if ($batch->get_budget_id() < 1) {
+				$insertSql .= 'INSERT INTO Budget (account_id, budget_month, budget_amount,'
+				. ' budget_comment) '
+				. 'VALUES (?, ?, ?, ?); ';
+				$insertList[] = $batch;
+			} else {
+				$updateSql .= 'UPDATE Budget set budget_amount = ?, '
+					. 'budget_comment = ?, '
+					. 'updated_time = current_timestamp '
+					. 'WHERE budget_id = ?; ';
+				$updateList[] = $batch;
+			}
+		}
+		
+		if (! empty($updateList)) {
+			$ps = $pdo->prepare($updateSql);
+			$i = 1;
+			foreach ($updateList as $batch) {
+				$ps->bindParam($i++, $batch->get_budget_amount());
+				$ps->bindParam($i++, $batch->get_budget_comment());
+				$ps->bindParam($i++, $batch->get_budget_id());
+			}
+			$success = $ps->execute();
+			if (!$success) {
+				return get_pdo_error($ps);
+			}
+			$updateCount += $ps->rowCount();
+		}
+		
+		if (! empty($insertList)) {
+			$ps = $pdo->prepare($insertSql);
+			$i = 1;
+			foreach ($insertList as $batch) {
+				$ps->bindParam($i++, $batch->get_account_id());
+				$ps->bindParam($i++, $batch->get_budget_month()->format('Y-m-d'));
+				$ps->bindParam($i++, $batch->get_budget_amount());
+				$ps->bindParam($i++, $batch->get_budget_comment());
+			}
+			$success = $ps->execute();
+			if (!$success) {
+				return get_pdo_error($ps);
+			}
+			$updateCount += $ps->rowCount();
+		}
+	}
+	
 	/* Insert or update the budget.
 	   Takes a PDO connection, which must be initialized, and a Prepared Statement,
 	   which should be non-null on the second and later invocations for efficiency.

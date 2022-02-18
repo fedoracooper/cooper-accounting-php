@@ -72,6 +72,9 @@ $t2 = microtime(true);
 		$psInsert = NULL;
 		$psUpdate = NULL;
 		
+		$budgetsToSave = array();
+		$defaultsToSave = array();
+		
 		for ($i = 0; $i < count($accountIds); $i++) {
 			$accountId = $accountIds[$i];
 			$newBudget = $newBudgets[$i];
@@ -86,26 +89,34 @@ $t2 = microtime(true);
 			// update budget
 			$budget = new Budget();
 			$budget->Init_budget($accountId, $budgetDate, $newBudget, $comments, $budgetId);
-			$error = $budget->Save($pdo, $psInsert, $psUpdate);
+			$budgetsToSave[] = $budget;
+			/*$error = $budget->Save($pdo, $psInsert, $psUpdate);
 			if ($error != '') {
 				break;
 			}
+			*/
 			
 			// update default budget
 			$account = new Account();
 			$account->Init_for_budget_update($accountId, $defaultBudget);
+			$defaultsToSave[] = $account;
+
 			$error = $account->Update_budget_default($pdo);
 			if ($error != '') {
 				break;
 			}
+
 		}
+		
+		$updateCount = 0;
+		$error = Budget::saveBatch($pdo, $budgetsToSave, $updateCount);
 		
 		if ($error == '') {
 $t3 = microtime(true);
 			$pdo->commit();
 $t4 = microtime(true);
 $txTime += $t2 - $t1 + $t4 - $t3;
-			$message = 'Successfully saved ' . count($accountIds).
+			$message = 'Successfully saved ' . $updateCount //count($accountIds).
 			' budget record(s)';
 		} else {
 			// $pdo->rollBack();

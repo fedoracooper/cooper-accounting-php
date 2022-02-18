@@ -116,7 +116,7 @@ $t3 = microtime(true);
 			$pdo->commit();
 $t4 = microtime(true);
 $txTime += $t2 - $t1 + $t4 - $t3;
-			$message = 'Successfully saved ' . $updateCount //count($accountIds).
+			$message = 'Successfully saved ' . $updateCount . //count($accountIds).
 			' budget record(s)';
 		} else {
 			// $pdo->rollBack();

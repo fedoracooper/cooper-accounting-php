@@ -88,7 +88,8 @@ class Budget {
 			foreach ($updateList as $batch) {
 				$ps->bindValue($i++, $batch->get_budget_amount());
 				$ps->bindValue($i++, $batch->get_budget_comment());
-				$ps->bindValue($i++, $batch->get_budget_id(), PDO::PARAM_INT);
+				$ps->bindValue($i++, intval($batch->get_budget_id()), PDO::PARAM_INT);
+				error_log("Binding budget ID value of " . $batch->get_budget_id());
 			}
 			$success = $ps->execute();
 			if (!$success) {

@@ -81,7 +81,7 @@ class Budget {
 		if (! empty($updateList)) {
 			// Close up the Update SQL
 			$updateSql .= ') as b(amount, comment, budget_id) '
-				.= 'WHERE budget.budget_id = b.budget_id ';
+				. 'WHERE budget.budget_id = b.budget_id ';
 
 			$ps = $pdo->prepare($updateSql);
 			$i = 1;

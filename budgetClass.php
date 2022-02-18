@@ -62,7 +62,7 @@ class Budget {
 		$updateCount = 0;
 		foreach ($batch_list as $batch) {
 			// Build VALUES clause for virtual table of values
-			if (empty($batch->get_budget_amount()) {
+			if (empty($batch->get_budget_amount())) {
 				// cannot insert NULL budget amount; skip
 				continue;
 			}

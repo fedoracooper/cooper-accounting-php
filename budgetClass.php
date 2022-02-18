@@ -62,6 +62,10 @@ class Budget {
 		$updateCount = 0;
 		foreach ($batch_list as $batch) {
 			// Build VALUES clause for virtual table of values
+			if (empty($batch->get_budget_amount()) {
+				// cannot insert NULL budget amount; skip
+				continue;
+			}
 		
 			if ($batch->get_budget_id() < 1) {
 				if (count($insertList) > 0) {
@@ -73,7 +77,8 @@ class Budget {
 				if (count($updateList) > 0) {
 					$updateSql .= ', ';
 				}
-				$updateSql .= '(?, ?, cast(? as integer)) ';
+				// Postgres needs explicit type casts
+				$updateSql .= '(cast(? as decimal), ?, cast(? as integer)) ';
 				$updateList[] = $batch;
 			}
 		}
@@ -87,15 +92,11 @@ class Budget {
 			$ps = $pdo->prepare($updateSql);
 			$i = 1;
 			foreach ($updateList as $batch) {
+				error_log("Binding budget amount " . $batch->get_budget_amount()
+					. " for column $i. ");
 				$ps->bindValue($i++, $batch->get_budget_amount());
 				$ps->bindValue($i++, $batch->get_budget_comment());
-				error_log("Binding budget ID " . $batch->get_budget_id()
-					. " for column $i. ");
-				$result = $ps->bindValue($i++, intval($batch->get_budget_id()), PDO::PARAM_INT);
-				if (!$result) {
-					error_log ('Problem binding budget ID of ' . $batch->get_budget_id()
-						. ' for column ' . ($i-1) . ' ');
-				}
+				$ps->bindValue($i++, $batch->get_budget_id(), PDO::PARAM_INT);
 			}
 			$success = $ps->execute();
 			if (!$success) {

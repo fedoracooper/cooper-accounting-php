@@ -73,7 +73,7 @@ class Budget {
 				if (count($updateList) > 0) {
 					$updateSql .= ', ';
 				}
-				$updateSql .= '(?, ?, ?) ';
+				$updateSql .= '(?, ?, cast(? as integer)) ';
 				$updateList[] = $batch;
 			}
 		}

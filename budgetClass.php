@@ -60,6 +60,8 @@ class Budget {
 		$updateList = array();
 		$insertList = array();
 		$updateCount = 0;
+		$t1 = microtime(true);
+        
 		foreach ($batch_list as $batch) {
 			// Build VALUES clause for virtual table of values
 			if (empty($batch->get_budget_amount())) {
@@ -92,17 +94,23 @@ class Budget {
 			$ps = $pdo->prepare($updateSql);
 			$i = 1;
 			foreach ($updateList as $batch) {
-				error_log("Binding budget amount " . $batch->get_budget_amount()
-					. " for column $i. ");
 				$ps->bindValue($i++, $batch->get_budget_amount());
 				$ps->bindValue($i++, $batch->get_budget_comment());
 				$ps->bindValue($i++, $batch->get_budget_id(), PDO::PARAM_INT);
 			}
+			$t2 = microtime(true);
+            
 			$success = $ps->execute();
 			if (!$success) {
 				return get_pdo_error($ps);
 			}
 			$updateCount += $ps->rowCount();
+            
+			$t3 = microtime(true);
+			$elapsedMs = ($t2 - $t1) / 1000.0;
+			error_log("Took " . number_format($elapsedMs, 2) ' sec to prepare update; ');
+			$elapsedMs = ($t3 - $t2) / 1000.0;
+			error_log("Took " . number_format($elapsedMs, 2) ' sec to execute ');
 		}
 		
 		if (! empty($insertList)) {
@@ -130,7 +138,7 @@ class Budget {
 		
 		$ps = NULL;  // PS will be either Insert or Update
 		$nullAmount = ($this->m_budget_amount === '');
-		
+        
 		if ($this->m_budget_id < 1) {
 			if ($nullAmount) {
 				// No need to insert a NULL, so skip

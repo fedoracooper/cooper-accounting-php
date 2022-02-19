@@ -89,7 +89,6 @@ class Budget {
 			// Close up the Update SQL
 			$updateSql .= ') as b(amount, comment, budget_id) '
 				. 'WHERE budget.budget_id = b.budget_id ';
-			error_log("Update SQL to prepare: $updateSql ");
 
 			$ps = $pdo->prepare($updateSql);
 			$i = 1;
@@ -107,9 +106,9 @@ class Budget {
 			$updateCount += $ps->rowCount();
             
 			$t3 = microtime(true);
-			$elapsedMs = ($t2 - $t1) / 1000.0;
+			$elapsedMs = ($t2 - $t1);
 			error_log("Took " . number_format($elapsedMs, 2) . ' sec to prepare update; ');
-			$elapsedMs = ($t3 - $t2) / 1000.0;
+			$elapsedMs = ($t3 - $t2);
 			error_log("Took " . number_format($elapsedMs, 2) . ' sec to execute ');
 		}
 		

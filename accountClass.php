@@ -186,8 +186,8 @@ class Account
 		
 		// Build value records
 		$toUpdate = array();
-		foreach ($defaultsList as $default) {
-			if ($default->get_budget_default() === '') {
+		foreach ($defaultsList as $account) {
+			if ($account->get_budget_default() === '') {
 				// skip NULL values, which we can't update
 				continue;
 			}
@@ -196,7 +196,7 @@ class Account
 				$sql .= ', ';
 			}
 			$sql .= '(?, CAST(? as decimal)) ';
-			$toUpdate[] = $default;
+			$toUpdate[] = $account;
 		}
 		
 		// close the sql
@@ -208,9 +208,9 @@ class Account
 		
 		// Bind params
 		$i = 1;
-		foreach ($toUpdate as $default) {
-			$ps->bindValue($i++, $default->get_account_id(), PDO::PARAM_INT);
-			$ps->bindValue($i++, $default->get_budget_default());
+		foreach ($toUpdate as $account) {
+			$ps->bindValue($i++, $account->get_account_id(), PDO::PARAM_INT);
+			$ps->bindValue($i++, $account->get_budget_default());
 		}
 		
 		$success = $ps->execute();

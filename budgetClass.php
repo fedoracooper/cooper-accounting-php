@@ -108,9 +108,9 @@ class Budget {
             
 			$t3 = microtime(true);
 			$elapsedMs = ($t2 - $t1) / 1000.0;
-			error_log("Took " . number_format($elapsedMs, 2) ' sec to prepare update; ');
+			error_log("Took " . number_format($elapsedMs, 2) . ' sec to prepare update; ');
 			$elapsedMs = ($t3 - $t2) / 1000.0;
-			error_log("Took " . number_format($elapsedMs, 2) ' sec to execute ');
+			error_log("Took " . number_format($elapsedMs, 2) . ' sec to execute ');
 		}
 		
 		if (! empty($insertList)) {

@@ -195,7 +195,7 @@ class Account
 			if (! empty($toUpdate)) {
 				$sql .= ', ';
 			}
-			$sql .= '(?, CAST(? as decimal)) ';
+			$sql .= '(CAST(? as smallint), CAST(? as decimal)) ';
 			$toUpdate[] = $account;
 		}
 		

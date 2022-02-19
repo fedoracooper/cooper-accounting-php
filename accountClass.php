@@ -180,7 +180,7 @@ class Account
 	*/
 	public static function updateDefaultsBatch($pdo, $defaultsList) {
 		$sql = 'UPDATE Accounts '.
-			'SET monthly_budget_default = b.default, '.
+			'SET monthly_budget_default = b.budget_default, '.
 			'  updated_time = current_timestamp '.
 			'FROM (VALUES ';
 		
@@ -200,9 +200,9 @@ class Account
 		}
 		
 		// close the sql
-		$sql .= ') as b(account_id, default) '
+		$sql .= ') as b(account_id, budget_default) '
 			. 'WHERE account_id = b.account_id '
-			. ' AND monthly_budget_default <> b.default ';
+			. ' AND monthly_budget_default <> b.budget_default ';
 		
 		$ps = $pdo->prepare($sql);
 		

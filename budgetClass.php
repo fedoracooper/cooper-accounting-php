@@ -127,6 +127,10 @@ class Budget {
 			}
 			$updateCount += $ps->rowCount();
 		}
+		
+		error_log("Successfully updated $updateCount budget rows ");
+		
+		return '';
 	}
 	
 	/* Insert or update the budget.

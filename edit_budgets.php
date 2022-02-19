@@ -100,16 +100,20 @@ $t2 = microtime(true);
 			$account = new Account();
 			$account->Init_for_budget_update($accountId, $defaultBudget);
 			$defaultsToSave[] = $account;
-
+			/*
 			$error = $account->Update_budget_default($pdo);
 			if ($error != '') {
 				break;
 			}
+			*/
 
 		}
 		
 		$updateCount = 0;
 		$error = Budget::saveBatch($pdo, $budgetsToSave, $updateCount);
+		if ($error == '') {
+			$error = Account::updateDefaultsBatch($pdo, $defaultsToSave);
+		}
 		
 		if ($error == '') {
 $t3 = microtime(true);

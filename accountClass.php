@@ -176,6 +176,53 @@ class Account
 		return '';
 	}
 	
+	/* Update a batch of default budget values all at once.
+	*/
+	public static function updateDefaultsBatch($pdo, $defaultsList) {
+		$sql = 'UPDATE Accounts '.
+			'SET monthly_budget_default = b.default, '.
+			'  updated_time = current_timestamp '.
+			'FROM (VALUES ';
+		
+		// Build value records
+		$toUpdate = array();
+		foreach ($defaultsList as $default) {
+			if ($default->get_budget_default() === '') {
+				// skip NULL values, which we can't update
+				continue;
+			}
+			
+			if (! empty($toUpdate)) {
+				$sql .= ', ';
+			}
+			$sql .= '(?, CAST(? as decimal)) ';
+			$toUpdate[] = $default;
+		}
+		
+		// close the sql
+		$sql .= ') as b(account_id, default) '
+			. 'WHERE account_id = b.account_id '
+			. ' AND monthly_budget_default <> b.default ';
+		
+		$ps = $pdo->prepare($sql);
+		
+		// Bind params
+		$i = 1;
+		foreach ($toUpdate as $default) {
+			$ps->bindValue($i++, $default->get_account_id(), PDO::PARAM_INT);
+			$ps->bindValue($i++, $default->get_budget_default());
+		}
+		
+		$success = $ps->execute();
+		if (!$success) {
+			return get_pdo_error($ps);
+		}
+		$updateCount = $ps->rowCount();
+		error_log("Successfully updated $updateCount default budget rows ");
+		
+		return '';
+	}
+	
 	public function Update_budget_default($pdo) {
 		if ($this->m_account_id< 1) {
 			return 'Cannot update budget default without account ID';

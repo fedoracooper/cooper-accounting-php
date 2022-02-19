@@ -62,26 +62,26 @@ class Budget {
 		$updateCount = 0;
 		$t1 = microtime(true);
         
-		foreach ($batch_list as $batch) {
+		foreach ($batch_list as $item) {
 			// Build VALUES clause for virtual table of values
-			if (empty($batch->get_budget_amount())) {
+			if (empty($item->get_budget_amount())) {
 				// cannot insert NULL budget amount; skip
 				continue;
 			}
 		
-			if ($batch->get_budget_id() < 1) {
+			if ($item->get_budget_id() < 1) {
 				if (count($insertList) > 0) {
 					$insertSql .= ', ';
 				}
 				$insertSql .= '(?, ?, ?, ?) ';
-				$insertList[] = $batch;
+				$insertList[] = $item;
 			} else {
 				if (count($updateList) > 0) {
 					$updateSql .= ', ';
 				}
 				// Postgres needs explicit type casts
 				$updateSql .= '(cast(? as decimal), ?, cast(? as integer)) ';
-				$updateList[] = $batch;
+				$updateList[] = $item;
 			}
 		}
 		
@@ -92,10 +92,10 @@ class Budget {
 
 			$ps = $pdo->prepare($updateSql);
 			$i = 1;
-			foreach ($updateList as $batch) {
-				$ps->bindValue($i++, $batch->get_budget_amount());
-				$ps->bindValue($i++, $batch->get_budget_comment());
-				$ps->bindValue($i++, $batch->get_budget_id(), PDO::PARAM_INT);
+			foreach ($updateList as $item) {
+				$ps->bindValue($i++, $item->get_budget_amount());
+				$ps->bindValue($i++, $item->get_budget_comment());
+				$ps->bindValue($i++, $item->get_budget_id(), PDO::PARAM_INT);
 			}
 			$t2 = microtime(true);
             
@@ -115,11 +115,11 @@ class Budget {
 		if (! empty($insertList)) {
 			$ps = $pdo->prepare($insertSql);
 			$i = 1;
-			foreach ($insertList as $batch) {
-				$ps->bindValue($i++, $batch->get_account_id(), PDO::PARAM_INT);
-				$ps->bindValue($i++, $batch->get_budget_month()->format('Y-m-d'));
-				$ps->bindValue($i++, $batch->get_budget_amount());
-				$ps->bindValue($i++, $batch->get_budget_comment());
+			foreach ($insertList as $item) {
+				$ps->bindValue($i++, $item->get_account_id(), PDO::PARAM_INT);
+				$ps->bindValue($i++, $item->get_budget_month()->format('Y-m-d'));
+				$ps->bindValue($i++, $item->get_budget_amount());
+				$ps->bindValue($i++, $item->get_budget_comment());
 			}
 			$success = $ps->execute();
 			if (!$success) {

@@ -1380,7 +1380,9 @@ $readTime += $t5 - $t4;
 		}
 		
 		/* Query key details about all transactions for this account
-		   and its subaccounts.
+		   and its subaccounts.  Current assumption is that splits will be sorted
+		   to return BEFORE the main account being exported.  This is needed
+		   to pull the split category into Payee or Memo line.
 		 
 		   For performance & memory reasons, we will return the resultset
 		   so it can be output without holding all in memory.
@@ -1392,6 +1394,7 @@ $readTime += $t5 - $t4;
 		   are multiple ledger entries for the same parent account.
 		 */
 		$sql = "select DISTINCT txac.account_id, txac.account_name, txac.account_descr, ".
+			" case when txledger.account_id = ac.account_id then 1 else 0 end as is_main_account, ".
 			" txac.account_debit, txac.equation_side, txac2.account_name as parent_account, ".
 			" txac3.account_name as parent_parent_account, ".
 			" t.trans_id, t.trans_descr, t.trans_comment, t.trans_vendor, ".
@@ -1406,7 +1409,7 @@ $readTime += $t5 - $t4;
 			"JOIN transactions t on t.trans_id = le.trans_id ".
 			"WHERE ac.account_id = :account_id ".
 			"  AND t.accounting_date > :min_date ".
-			"ORDER BY t.accounting_date, t.trans_id, txledger.ledger_id ";
+			"ORDER BY t.accounting_date, t.trans_id, is_main_account, txledger.ledger_id ";
 			
 		$pdo = db_connect_pdo();
 		$ps = $pdo->prepare($sql);

@@ -23,6 +23,7 @@
 		require('include.php');
 		$topAccountId = $_POST['account_id'];
 		$startDate = $_POST['startDate'];
+		$prefixPayee = $_POST['prefixPayee'];
 		$accountIds = NULL;
 		$fileName = NULL;
 
@@ -72,7 +73,7 @@
 			}
 			// Generate the output file
 			// loop through results
-			buildTransactions($accountId, $ps, $lastAudit, $accountIdsExported);
+			buildTransactions($accountId, $ps, $lastAudit, $accountIdsExported, $prefixPayee);
 			echo $lineBreak . $lineBreak;
 
 			$accountIdsExported[] = $accountId;
@@ -139,6 +140,40 @@
 		}
 	}
 	
+	
+	function combineDescrComment($descr, $comment) {
+		if (empty($descr)) {
+			// comment only
+			return $comment;
+		} else {
+			if (empty($comment)) {
+				// Description only
+				return $descr;
+			} else {
+				// Both values are present, some combine w/ semi-colon delimiter
+				return "$descr; $comment";
+			}
+		}
+	}
+	
+	function getMemoText($descrComment, $shouldPrefixMemo, $splits) {
+
+		if (isset( $shouldPrefixMemo ) && count( $splits ) > 0 ) {
+			return 'M[' . $splits[0]->account . '] ' . $descrComment ?? '';
+		} else {
+			return "M" . $descrComment ?? '';
+		}
+	}
+	
+	function getPayeeText($vendor, $prefixPayee, $splits) {
+	
+		if (isset( $prefixPayee ) && count( $splits ) > 0 ) {
+			return '[' . $splits[0]->account . ']' . ($vendor == '' ? '' : " $vendor");
+		} else {
+			return $vendor;
+		}
+	}
+	
 	/*
 	   Loop through records until we have a complete transaction.
 	   Then output the QIF text record and continue processing.
@@ -149,7 +184,8 @@
 	   we will skip any transactions with these accounts to avoid
 	   duplicate transactions, which will keep export file smaller.
 	 */
-	function buildTransactions($mainAccountId, $ps, $lastAudit, $accountIdsExported) {
+	function buildTransactions($mainAccountId, $ps, $lastAudit, $accountIdsExported,
+	$prefixPayee) {
 		$splits = array();
 		$record = '';
 		global $lineBreak;
@@ -244,15 +280,9 @@
 				$amount = $row['amount'];
 				$descr = trim($row['trans_descr']);
 				$comment = trim($row['trans_comment']);
-				$payee = trim($row['trans_vendor']);
-				if (!empty($payee)) {
-					$payee .= ': ';
-				}
-				if (!empty($comment)) {
-					$comment = "M$comment". $lineBreak;
-				}
-
-				$payee .= $descr;
+				$descrComment = combineDescrComment($descr, $comment);
+				$memo = getMemoText($descrComment, NULL, $splits);
+				$payee = getPayeeText(trim($row['trans_vendor']), $prefixPayee, $splits);
 				$accountingSqlDate = $row['accounting_date'];
 				$txDate = convert_date($accountingSqlDate, 2);
 				$cleared = '';
@@ -268,7 +298,7 @@
 				// the Memo field is not often used in GnuCash.
 				$record .= "D$txDate". $lineBreak.  // Date
 					"T$amount". $lineBreak.     // Amount
-					$comment .                  // Memo
+					$memo . $lineBreak.        	// Memo
 					$cleared .                  // Cleared status
 					"P$payee". $lineBreak;      // Payee
 
@@ -326,6 +356,9 @@
 			<label> Start Date </label></td>
 		<td>
 			<input type="date" name="startDate" /> </td>
+		<td><label title="Needed for software that doesn't handle account / category import directly."> 
+		Prefix Payee with Account Name </label> </td>
+		<td> <input type="checkbox" name="prefixPayee" /> </td>
 		</tr>
 		<tr> <td></td/>
 			<td>

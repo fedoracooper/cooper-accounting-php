@@ -1393,7 +1393,13 @@ $readTime += $t5 - $t4;
 		   Added DISTINCT because le will join multiple times for a tx if there
 		   are multiple ledger entries for the same parent account.
 		 */
-		$sql = "select DISTINCT txac.account_id, txac.account_name, txac.account_descr, ".
+		$sql = "select account_id, account_name, account_descr, ".
+			"is_main_account, account_debit, equation_side, ".
+			"parent_account, parent_account_id, parent_parent_account, trans_id, ".
+			"trans_descr, trans_comment, trans_vendor, accounting_date, check_number, ".
+			"sum(amount) as amount, min(memo) as memo ".
+			"FROM ( ".
+			"select DISTINCT txac.account_id, txac.account_name, txac.account_descr, ".
 			" case when txledger.account_id = ac.account_id then 1 else 0 end as is_main_account, ".
 			" txac.account_debit, txac.equation_side, txac2.account_name as parent_account, ".
 			" txac2.account_id as parent_account_id, ".
@@ -1410,7 +1416,12 @@ $readTime += $t5 - $t4;
 			"JOIN transactions t on t.trans_id = le.trans_id ".
 			"WHERE ac.account_id = :account_id ".
 			"  AND t.accounting_date > :min_date ".
-			"ORDER BY t.accounting_date, t.trans_id, is_main_account, txledger.ledger_id ";
+			") as vw1 ".
+			"GROUP BY account_id, account_name, account_descr, ".
+			"is_main_account, account_debit, equation_side, parent_account, ".
+			"parent_account_id, parent_parent_account, trans_id, trans_descr, ".
+			"trans_comment, trans_vendor, accounting_date, check_number ".
+			"ORDER BY accounting_date, trans_id, is_main_account ";
 			
 		$pdo = db_connect_pdo();
 		$ps = $pdo->prepare($sql);

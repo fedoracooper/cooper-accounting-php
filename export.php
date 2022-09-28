@@ -233,7 +233,7 @@
 				$newAmount += $split->amount;
 			}
 		}
-		return $newAmount;
+		return round($newAmount, 2);
 	}
 	
 	/*

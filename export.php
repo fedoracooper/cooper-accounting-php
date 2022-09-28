@@ -24,6 +24,7 @@
 		$topAccountId = $_POST['account_id'];
 		$startDate = $_POST['startDate'];
 		$prefixPayee = $_POST['prefixPayee'];
+		$collapseSubAccounts = $_POST['collapseSubAccounts'] ?? 0;
 		$accountIds = NULL;
 		$fileName = NULL;
 
@@ -73,7 +74,8 @@
 			}
 			// Generate the output file
 			// loop through results
-			buildTransactions($accountId, $ps, $lastAudit, $accountIdsExported, $prefixPayee);
+			buildTransactions($accountId, $ps, $lastAudit, $accountIdsExported,
+				$prefixPayee, $collapseSubAccounts);
 			echo $lineBreak . $lineBreak;
 
 			$accountIdsExported[] = $accountId;
@@ -93,6 +95,7 @@
 		public $accountId;
 		public $memo;
 		public $amount;
+		public $parentAccountId;
 
 		public function getSplitRecord() {
 			global $lineBreak;
@@ -165,13 +168,92 @@
 		}
 	}
 	
-	function getPayeeText($vendor, $prefixPayee, $splits) {
+	function getPayeeText($vendor, $prefixPayee, $splits, $amount) {
 	
+		$maxDiff = 0.0;
 		if (isset( $prefixPayee ) && count( $splits ) > 0 ) {
-			return '[' . $splits[0]->account . ']' . ($vendor == '' ? '' : " $vendor");
+			// Find the best split to use
+			$splitAccount = 'None';
+			foreach ($splits as $split) {
+				if (abs($amount - $split->amount) > $maxDiff) {
+					$maxDiff = abs($amount - $split->amount);
+					$splitAccount = $split->account;
+				}
+			}
+				
+			return '[' . $splitAccount . ']' . ($vendor == '' ? '' : " $vendor");
 		} else {
 			return $vendor;
 		}
+	}
+	
+	/*
+		Combine all sub-accounts of the main account.  Sub-account ledger entries
+		are treated as entries against the main account.  We total them all up to
+		get a net total.  Return updated $splits array.
+	*/
+	function collapseSplitsIfNeeded($collapseSubAccounts, $splits, $mainAccountId) {
+		if ($collapseSubAccounts == 0) {
+			return $splits;
+		}
+		
+		$mainTotal = 0.0;
+		$newSplits = array();
+		$mainSplit = new Split();
+		$mainSplit->amount = 0.0;
+		$mainSplit->accountId = $mainAccountId;
+		$mainSplit->account = 'Collapsed Account';
+
+		foreach ($splits as $split) {
+			if ($split->parentAccountId == $mainAccountId) {
+				// Child account to collapse
+				$mainSplit->amount += $split->amount;
+			} else {
+				// Unrelated account, so include it
+				$newSplits[] = $split;
+			}
+		}
+		
+		if ($mainSplit->amount <> 0.0) {
+			// Non-zero total
+			$newSplits[] = $mainSplit;
+		}
+		
+		return $newSplits;
+	}
+	
+	/**
+		Check for splits which have the main account under export,
+		and combine the amount with the main transaction.
+	*/
+	function collapseSplitAmounts($splits, $mainAmount, $mainAccountId) {
+		$newAmount = $mainAmount;
+		foreach ($splits as $split) {
+			if ($split->accountId == $mainAccountId) {
+				$newAmount += $split->amount;
+			}
+		}
+		return $newAmount;
+	}
+	
+	/*
+		After main transaction has been generated, we now need to
+		strip out splits which duplicate the main account, as their
+		amount has already been added to the main transaction.
+		This is for a scenario where the same account occurs more than
+		once in a transaction.
+		
+		Returns the updated splits array
+	*/
+	function removeCollapsedSplits($splits, $mainAccountId) {
+		$newSplits = array();
+		foreach ($splits as $split) {
+			if ($split->accountId != $mainAccountId) {
+				// different account
+				$newSplits[] = $split;
+			}
+		}
+		return $newSplits;
 	}
 	
 	/*
@@ -185,7 +267,7 @@
 	   duplicate transactions, which will keep export file smaller.
 	 */
 	function buildTransactions($mainAccountId, $ps, $lastAudit, $accountIdsExported,
-	$prefixPayee) {
+	$prefixPayee, $collapseSubAccounts) {
 		$splits = array();
 		$record = '';
 		global $lineBreak;
@@ -208,7 +290,7 @@
 				$lastTxId = $txId;
 			}
 			if ($txId != $lastTxId) {
-				
+				$splits = removeCollapsedSplits($splits, $mainAccountId);
 				// Finish previous record (assume header already in record)
 				$skipTx = false;
 				$numSplits = count($splits);
@@ -277,12 +359,14 @@
 					echo $record;
 					$record = '';
 				}
-				$amount = $row['amount'];
+				
+				$splits = collapseSplitsIfNeeded($collapseSubAccounts, $splits, $mainAccountId);				
+				$amount = collapseSplitAmounts($splits, $row['amount'], $mainAccountId);
 				$descr = trim($row['trans_descr']);
 				$comment = trim($row['trans_comment']);
 				$descrComment = combineDescrComment($descr, $comment);
 				$memo = getMemoText($descrComment, NULL, $splits);
-				$payee = getPayeeText(trim($row['trans_vendor']), $prefixPayee, $splits);
+				$payee = getPayeeText(trim($row['trans_vendor']), $prefixPayee, $splits, $amount);
 				$accountingSqlDate = $row['accounting_date'];
 				$txDate = convert_date($accountingSqlDate, 2);
 				$cleared = '';
@@ -311,6 +395,7 @@
 				$split->accountId = $accountId;
 				$split->memo = $row['memo'];
 				$split->amount = $row['amount'];
+				$split->parentAccountId = $row['parent_account_id'];
 				$splits[] = $split;
 			}
 		} while (true);
@@ -356,9 +441,16 @@
 			<label> Start Date </label></td>
 		<td>
 			<input type="date" name="startDate" /> </td>
+		</tr>
+		<tr>
 		<td><label title="Needed for software that doesn't handle account / category import directly."> 
 		Prefix Payee with Account Name </label> </td>
-		<td> <input type="checkbox" name="prefixPayee" /> </td>
+		<td> <input type="checkbox" name="prefixPayee" value="1" /> </td>
+		</tr>
+		<tr>
+		<td><label title="Useful for virtual sub-accounts."> 
+		Collapse Sub Accounts </label> </td>
+		<td> <input type="checkbox" name="collapseSubAccounts" value="1" /> </td>
 		</tr>
 		<tr> <td></td/>
 			<td>

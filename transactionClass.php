@@ -1396,6 +1396,7 @@ $readTime += $t5 - $t4;
 		$sql = "select DISTINCT txac.account_id, txac.account_name, txac.account_descr, ".
 			" case when txledger.account_id = ac.account_id then 1 else 0 end as is_main_account, ".
 			" txac.account_debit, txac.equation_side, txac2.account_name as parent_account, ".
+			" txac2.account_id as parent_account_id, ".
 			" txac3.account_name as parent_parent_account, ".
 			" t.trans_id, t.trans_descr, t.trans_comment, t.trans_vendor, ".
 			" t.accounting_date, t.check_number, txledger.ledger_id, ".

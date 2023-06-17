@@ -90,6 +90,12 @@ class AccountSavings {
   public function getBudgetPercent() {
     return $this->budgetPercent;
   }
+  
+  // Null-safe getter will return empty string instead of null
+  public function getBudgetComment() {
+  	return $this->budgetComment == NULL ? '' : $this->budgetComment;
+  }
+  
 }  // End AccountSavings
 
 

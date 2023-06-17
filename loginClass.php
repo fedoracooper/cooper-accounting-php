@@ -414,8 +414,9 @@ class Login
 
 		$successChar = $success ? 'Y' : 'N';
 		$lockedChar = $locked ? 'Y' : 'N';
+		$ipAddress = Login::Get_client_ip();
 		$ps->bindParam(':login_user', $login_user);
-		$ps->bindParam(':ip_address', Login::Get_client_ip());
+		$ps->bindParam(':ip_address', $ipAddress);
 		$ps->bindParam(':login_success', $successChar);
 		$ps->bindParam(':account_locked', $lockedChar);
 
@@ -536,9 +537,9 @@ class Login
 					$result = $error;
 				}
 			}
-			else if (strlen($login_id) > 5)
+			else
 			{
-				$result = "Problem finding login_id: " . $login_id;
+				$result = "Problem logging in";
 			}
 
 			$auditResult = Login::Insert_login_audit($pdo, $user, false, $is_locked);

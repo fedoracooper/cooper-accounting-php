@@ -23,7 +23,7 @@
 		require('include.php');
 		$topAccountId = $_POST['account_id'];
 		$startDate = $_POST['startDate'];
-		$prefixPayee = $_POST['prefixPayee'];
+		$prefixPayee = $_POST['prefixPayee'] ?? NULL;
 		$collapseSubAccounts = $_POST['collapseSubAccounts'] ?? 0;
 		$accountIds = NULL;
 		$fileName = NULL;
@@ -363,7 +363,7 @@
 				$splits = collapseSplitsIfNeeded($collapseSubAccounts, $splits, $mainAccountId);				
 				$amount = collapseSplitAmounts($splits, $row['amount'], $mainAccountId);
 				$descr = trim($row['trans_descr']);
-				$comment = trim($row['trans_comment']);
+				$comment = trim($row['trans_comment'] ?? '');
 				$descrComment = combineDescrComment($descr, $comment);
 				$memo = getMemoText($descrComment, NULL, $splits);
 				$payee = getPayeeText(trim($row['trans_vendor']), $prefixPayee, $splits, $amount);

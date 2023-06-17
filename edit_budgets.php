@@ -395,7 +395,7 @@ $txTime += $t2 - $t1 + $t4 - $t3;
 		}
 		$budgetId = $budget_data->budgetId;
 		$accountDescr = htmlspecialchars($budget_data->accountDescr);
-		$budgetComment = htmlspecialchars($budget_data->budgetComment);
+		$budgetComment = htmlspecialchars($budget_data->getBudgetComment());
 		$spentOrSaved = $budget_data->transactions;
 		
 		$newBudget = $budgetAmount;

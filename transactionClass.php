@@ -282,6 +282,7 @@ class Transaction
 	{
 
 		//truncate comment to 1000 chars
+		$trans_comment = ($trans_comment == NULL ? '' : $trans_comment);
 		$trans_comment = substr ($trans_comment, 0, 1000);
 		$trans_time	= parse_sql_date ($trans_date);
 		if (trim ($accounting_date) == '')

@@ -160,11 +160,13 @@
 	}
 	
 	function getMemoText($descrComment, $shouldPrefixMemo, $splits) {
+		// Remove line breaks from memo text, as QIF does not support it.
+		$comment = str_replace(array("\r", "\n"), " ", $descrComment);
 
 		if (isset( $shouldPrefixMemo ) && count( $splits ) > 0 ) {
-			return 'M[' . $splits[0]->account . '] ' . $descrComment ?? '';
+			return 'M[' . $splits[0]->account . '] ' . $comment ?? '';
 		} else {
-			return "M" . $descrComment ?? '';
+			return "M" . $comment ?? '';
 		}
 	}
 	
